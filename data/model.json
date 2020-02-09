@@ -1,0 +1,14 @@
+{
+    "in_game": {
+    
+        "black_forest": {
+            "dynamic_layers": false,
+            "animated_layers": false,
+            "bg_pos_x": 0,
+            "bg_pos_y": "bottom",
+            "ground_height": 90}
+    },
+    
+    "menu": {}
+
+}

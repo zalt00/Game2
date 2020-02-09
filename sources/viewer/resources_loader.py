@@ -2,7 +2,7 @@
 
 import pygame
 import os
-from glob import iglob
+from glob import glob
 import configparser
 from dataclasses import dataclass
 from typing import Any
@@ -42,19 +42,21 @@ class ResourceLoader:
     @staticmethod
     def _load_bg(directory, cfg):
         layers = []
-        for layer_path in iglob(os.path.join(directory, '*.png').replace('\\', '/')):
-            layers.append(pygame.image.load(layer_path).convert())
+        for layer_path in reversed(glob(os.path.join(directory, '*.png').replace('\\', '/'))):
+            layers.append(pygame.image.load(layer_path).convert_alpha())
             
-        return Background(layers, cfg['dimensions'].getint('width'), cfg['dimensions'].getint('height'))
+        return Background(layers, cfg['dimensions'].getint('width'), cfg['dimensions'].getint('height'), cfg['general'].getint('foreground'))
     
     @staticmethod
     def _load_entity(directory, cfg):
         sheets = {}
-        for sheet_path in iglob(os.path.join(directory, '*.png').replace('\\', '/')):
+        for sheet_path in reversed(glob(os.path.join(directory, '*.png').replace('\\', '/'))):
             name = os.path.basename(sheet_path)[:-4]
-            sheets[name] = pygame.image.load(sheet_path).convert()
-            
-        return Entity(sheets, cfg['dimensions'].getint('width'), cfg['dimensions'].getint('height'))
+            img = pygame.image.load(sheet_path).convert_alpha()
+            scale = cfg['dimensions'].getfloat('scale')
+            sheets[name] = pygame.transform.scale(img, (int(img.get_width() * scale), int(img.get_height() * scale)))
+        
+        return Entity(sheets, cfg['dimensions'].getint('width') * scale, cfg['dimensions'].getint('height') * scale)
     
     def clear_cache(self):
         self.cache = {}
@@ -64,6 +66,7 @@ class Background:
     layers: list
     width: int
     height: int
+    foreground: int
 
 
 @dataclass
