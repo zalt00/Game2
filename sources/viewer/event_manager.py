@@ -1,5 +1,7 @@
 # -*- coding:Utf-8 -*-
 
+import pygame
+pygame.init()
 from pygame.locals import *
 
 class BaseEventManager:
@@ -29,7 +31,7 @@ class GameEventManager(EventManager):
         self.handlers[KEYDOWN] = self.keydown
         self.handlers[KEYUP] = self.keyup
         
-    def keydown(self, event):
+    def keydown(self, event): 
         action = self.controls.get(event.key, None)
         if action is not None:
             self.action_manager.do(action)
@@ -38,4 +40,18 @@ class GameEventManager(EventManager):
         action = self.controls.get(event.key, None)
         if action is not None:
             self.action_manager.stop(action)
+
+
+class MenuEventManager(EventManager):
+    def __init__(self, action_manager):
+        super().__init__(action_manager)
+        self.handlers[MOUSEMOTION] = self.mousemotion
+        self.handlers[MOUSEBUTTONDOWN] = self.click
+        
+    def mousemotion(self, event):
+        self.action_manager.do(self.action_manager.MOUSEMOTION, event.pos)
+
+    def click(self, event):
+        if event.button == 1:
+            self.action_manager.do(self.action_manager.RIGHT_CLICK, event.pos)
     

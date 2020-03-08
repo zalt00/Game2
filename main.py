@@ -1,12 +1,15 @@
 # -*- coding:Utf-8 -*-
 
 from pygame.constants import FULLSCREEN
-from model import model_loader
+from utils.model_loader import get_model
 from viewer import window
 from controller import app
+from utils.exception_wrapper import ExceptionWrapper
+from utils.logger import logger
 
 if __name__ == '__main__':
-    m = model_loader.get_model('data/model.json')
-    w = window.Window(1600, 900, FULLSCREEN)
+    m = get_model('data/')
+    w = window.Window(1280, 720, FULLSCREEN * 1)
     a = app.App(w, m)
-    w.run()
+    with ExceptionWrapper(w, logger):
+        w.run()

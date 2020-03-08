@@ -43,7 +43,7 @@ class ResourceLoader:
     def _load_bg(directory, cfg):
         layers = []
         for layer_path in reversed(glob(os.path.join(directory, '*.png').replace('\\', '/'))):
-            layers.append(pygame.image.load(layer_path).convert_alpha())
+            layers.append(pygame.transform.scale2x(pygame.image.load(layer_path).convert_alpha()))
             
         return Background(layers, cfg['dimensions'].getint('width'), cfg['dimensions'].getint('height'), cfg['general'].getint('foreground'))
     
@@ -56,7 +56,10 @@ class ResourceLoader:
             scale = cfg['dimensions'].getfloat('scale')
             sheets[name] = pygame.transform.scale(img, (int(img.get_width() * scale), int(img.get_height() * scale)))
         
-        return Entity(sheets, cfg['dimensions'].getint('width') * scale, cfg['dimensions'].getint('height') * scale)
+        return Entity(sheets,
+                      cfg['dimensions'].getint('width'),
+                      cfg['dimensions'].getint('height'),
+                      (cfg['dimensions'].getint('dec_x') * 2, cfg['dimensions'].getint('dec_y') * 2))
     
     def clear_cache(self):
         self.cache = {}
@@ -74,4 +77,5 @@ class Entity:
     sheets: dict
     width: int
     height: int
+    dec: tuple
 

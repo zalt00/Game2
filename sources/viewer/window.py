@@ -3,9 +3,9 @@
 import pygame
 pygame.init()
 from pygame.locals import *
-from .event_manager import INACTIVE_EVENT_MANAGER, GameEventManager
-from .sprites import BgLayer, ABgLayer, DBgLayer, ADBgLayer, Entity
-from .image_handler import BgLayerImageHandler, EntityImageHandler
+from .event_manager import INACTIVE_EVENT_MANAGER, GameEventManager, MenuEventManager
+from .sprites import BgLayer, ABgLayer, DBgLayer, ADBgLayer, Entity, Button
+from .image_handler import BgLayerImageHandler, TBEntityImageHandler, FBEntityImageHandler, ButtonImageHandler
 from .resources_loader import ResourceLoader
 
 class Window:
@@ -13,11 +13,14 @@ class Window:
         self.screen = pygame.display.set_mode((width, height), flags)
         self.screen_rect = self.screen.get_rect()
         
+        self.current_bg = self.screen.copy()
+        self.is_bg_updated = False
+        
         # LOOP
         self.loop_running = False
         
         # CLOCK
-        self.fps = 20
+        self.fps = 60
         self.clock = pygame.time.Clock()
         
         # EVENTS
@@ -31,6 +34,10 @@ class Window:
         self.bg_group = pygame.sprite.LayeredUpdates()
         self.fg_group = pygame.sprite.LayeredUpdates()
         self.entity_group = pygame.sprite.Group()
+        self.button_group = pygame.sprite.Group()
+        
+        ##
+        self.on_draw = lambda _: None
         
     def run(self):
         """Starts the main loop"""
@@ -38,19 +45,30 @@ class Window:
 
         while self.loop_running:
             dt = self.clock.tick(self.fps)
-            
+            self.on_draw(dt / 1000)
+
             for event in pygame.event.get():
                 if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
-                    self.loop_running = False
+                    self.stop_loop()
                 self.event_manager.do(event)
             
             self.global_group.update()
-            self.bg_group.draw(self.screen)
+            if not self.is_bg_updated:
+                self.bg_group.draw(self.screen)
+                self.is_bg_updated = False
+                
+            #self.screen.blit(self.current_bg, (0, 0))
+
             self.entity_group.draw(self.screen)
+            self.button_group.draw(self.screen)
             self.fg_group.draw(self.screen)
-            
+
             pygame.display.set_caption(str(self.clock.get_fps()))
-            pygame.display.flip()    
+            pygame.display.flip()
+        self.quit()
+    
+    def stop_loop(self):
+        self.loop_running = False
     
     def get_number_of_layers(self, res_name):
         return len(self.res_loader.load(res_name).layers)
@@ -82,12 +100,36 @@ class Window:
         self.global_group.add(sprite)
         self.bg_group.add(sprite)
 
-    def add_entity(self, res_name, position_handler):
+    def add_entity(self, res_name, position_handler, physics_updater, end_animation_callback):
         res = self.res_loader.load(res_name)
-        img_hdlr = EntityImageHandler(res, lambda _: None)
-        entity = Entity(img_hdlr, position_handler)
+        img_hdlr = TBEntityImageHandler(res, end_animation_callback)
+        entity = Entity(img_hdlr, position_handler, physics_updater, res.dec)
         self.global_group.add(entity)
         self.entity_group.add(entity)
-
+        
+        return entity
+    
+    def add_button(self, res_name, position_handler, action_name):
+        res = self.res_loader.load(res_name)
+        img_handler = ButtonImageHandler(res)
+        button = Button(img_handler, position_handler, action_name)
+        
+        self.global_group.add(button)
+        self.button_group.add(button)
+        
+        return button
+        
+    
+    def set_menu_action_manager(self, am):
+        self.event_manager = MenuEventManager(am)
+    
     def set_game_event_manager(self, am, ctrls):
         self.event_manager = GameEventManager(am, ctrls)
+    
+    def on_draw(self, *_, **__):
+        pass
+    
+    def quit(self, *_, **__):
+        pass
+    
+    
