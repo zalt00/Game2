@@ -54,5 +54,31 @@ class Data:
                     name = 'player'
                     pos_x = Save(0)
                     pos_y = Save(1)
-
-
+            
+            class Triggers:
+                triggers = ('LeftBorderTrigger',)
+                class LeftBorderTrigger:
+                    form = (False, True, False, True)  # order: top, left, bottom, right
+                    top = None
+                    left = 1000
+                    bottom = None
+                    right = 1100
+                    enabled = True
+                    class Actions:
+                        actions = ('Action1',)
+                        class MoveCamera:
+                            typ = 'absolute_movecam'
+                            x = -1000
+                            y = 0
+                            vx = 100
+                            vy = 0
+                            fade_in = 5
+                            fade_out = 5
+                        class EnableRBT:
+                            typ = 'enable/disable_trigger'
+                            target = 'RightBorderTrigger'
+                            disable = False
+                        class SelfDisable:
+                            typ = 'enable/disable_trigger'
+                            targey = 'RightBorderTrigger'
+                            disable = False
