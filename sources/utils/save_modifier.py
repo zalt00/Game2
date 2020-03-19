@@ -13,8 +13,24 @@ class Save:
     def get(self):
         return self.data[self.i]
     
+    def get_chars(self):
+        a, b = self.get_shorts()
+        return chr(a) + chr(b)
+    
+    def get_shorts(self):
+        a = self.data[self.i] % 256
+        b = self.data[self.i] >> 8
+        return a, b
+        
     def set(self, value):
-        self.data[self.i] = value    
+        self.data[self.i] = value
+        
+    def set_shorts(self, a, b):
+        value = a | (b << 8)
+        self.data[self.i] = value
+        
+    def set_chars(self, s):
+        self.set_shorts(ord(s[0]), ord(s[1]))
     
     @classmethod
     def load(cls, path):

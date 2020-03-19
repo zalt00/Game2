@@ -5,14 +5,16 @@ import pygame
 pygame.init()
 
 class Sprite(pygame.sprite.Sprite):
-    def __init__(self, image_handler, position_handler, dec=(0, 0)):
+    def __init__(self, image_handler, position_handler, dec=(0, 0), screen_dec=[0, 0]):
         super().__init__()
         
+        self.screen_dec = screen_dec
         self.image_handler = image_handler
         self.position_handler = position_handler
         
         self.image = image_handler.update_image(self)
         self.rect = self.image.get_rect()
+        self.raw_dec = dec
         self.dec = (0 - dec[0], 800 - self.rect.height + dec[1])
         
         self.rect.x, self.rect.y = position_handler.update_position(self)
@@ -54,7 +56,7 @@ class ADBgLayer(AnimatedDynamicSprite, BgLayer):
 
 # ENTITY
 class Entity(AnimatedDynamicSprite):
-    def __init__(self, image_handler, position_handler, physics_updater, dec):
+    def __init__(self, image_handler, position_handler, physics_updater, particles_handler, dec, screen_dec):
         self.state = 'idle'
         self.secondary_state = ''
         self.air_control = 0
@@ -62,11 +64,26 @@ class Entity(AnimatedDynamicSprite):
         self.thrust = Vec2d(0, 0)
         self.is_on_ground = False
         self.physics_updater = physics_updater
-        super().__init__(image_handler, position_handler, dec)
+        self.particles_handler = particles_handler
+        super().__init__(image_handler, position_handler, dec, screen_dec)
     
     def update(self):
+        self.particles_handler.update(self)
         self.physics_updater.update(self)
         super().update()
+        #print(self.rect.x, self.rect.y)
+
+
+class Particle(AnimatedDynamicSprite):
+    def __init__(self, image_handler, position_handler, dec, screen_dec, state, direction):
+        self.state = state
+        self.direction = direction
+        super().__init__(image_handler, position_handler, dec, screen_dec)
+        
+    def update(self, *args, **kwargs):
+        super().update(*args, **kwargs)
+
+        
 
 
 class Button(AnimatedSprite):
@@ -74,3 +91,4 @@ class Button(AnimatedSprite):
         self.state = 'idle'
         self.action = action_name
         super().__init__(image_handler, position_handler)
+        

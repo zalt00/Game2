@@ -2,6 +2,7 @@
 
 
 from pymunk.vec2d import Vec2d
+import pygame.mouse
 
 class ActionManager:
     def __init__(self):
@@ -25,21 +26,66 @@ class MenuActionManager(ActionManager):
     RIGHT_CLICK = 1
     LEFT_CLICK = 2
     
+    DOWN = 3
+    UP = 4
+    ACTIVATE = 5
+    
     def __init__(self, buttons, start_game_callback, quit_game_callback):
         super().__init__()
         self.buttons = buttons
+        self.controller = False
+        self.focus = 0
         self.play = start_game_callback
         self.quit = quit_game_callback
         self.do_handlers[self.MOUSEMOTION] = self.update_buttons
         self.do_handlers[self.RIGHT_CLICK] = self.right_click
+        self.do_handlers[self.DOWN] = self.move_focus_down
+        self.do_handlers[self.UP] = self.move_focus_up
+        self.do_handlers[self.ACTIVATE] = self.button_activation
     
     def update_buttons(self, mouse_pos):
+        self.controller = False
+        pygame.mouse.set_visible(True)
         for button in self.buttons.sprites():
             if button.rect.collidepoint(mouse_pos):
                 button.state = 'activated'
             else:
                 button.state = 'idle'
                 
+    def update_buttons2(self):
+        for i, button in enumerate(self.buttons.sprites()):
+            if i == self.focus:
+                button.state = 'activated'
+            else:
+                button.state = 'idle'
+                
+    def move_focus_up(self):
+        pygame.mouse.set_visible(False)
+        if self.controller:
+            buttons = self.buttons.sprites()
+            self.focus -= 1
+            if self.focus == -1:
+                self.focus = len(buttons) - 1
+        else:
+            self.controller = True
+        self.update_buttons2()
+        
+    def move_focus_down(self):
+        pygame.mouse.set_visible(False)
+
+        if self.controller:
+            buttons = self.buttons.sprites()
+            self.focus += 1
+            if self.focus == len(buttons):
+                self.focus = 0
+        else:
+            self.controller = True
+        self.update_buttons2()    
+        
+    def button_activation(self):
+        buttons = self.buttons.sprites()
+        return getattr(self, buttons[self.focus].action)()
+        
     def right_click(self, mouse_pos):
         for button in self.buttons.sprites():
             if button.rect.collidepoint(mouse_pos):
@@ -51,8 +97,7 @@ class GameActionManager(ActionManager):
     WALK_LEFT = 1
     ATTACK = 2
     ATTACK2 = 3
-    GESTURE = 4
-    DASH = 5
+    DASH = 4
     JUMP = 6
     RUN = 7
     SAVE = 8
@@ -75,9 +120,7 @@ class GameActionManager(ActionManager):
         
         self.do_handlers[self.ATTACK] = self.attack
         self.do_handlers[self.ATTACK2] = self.attack2
-        
-        self.do_handlers[self.GESTURE] = self.gesture
-        
+                
         self.do_handlers[self.DASH] = self.dash
         self.do_handlers[self.JUMP] = self.jump
         
@@ -90,11 +133,19 @@ class GameActionManager(ActionManager):
         self.next_state = 'idle'
         self.next_direction = 1
         self.next_tp = Vec2d(0, 0)
+        
+        self.already_dashed = True
     
     def land(self):
+        if self.still_walking:
+            if self.still_running:
+                self.player.secondary_state = 'slowly_run'
+            else:
+                self.player.secondary_state = 'slowly_walk'
         self.player.state = 'land'
         self.next_state = 'idle'
         self.player.is_on_ground = True
+        self.already_dashed = False        
     
     def jump(self):
         if self.player.state in ('walk', 'run'):
@@ -118,11 +169,14 @@ class GameActionManager(ActionManager):
         else:
             self.next_state = 'attack2'
             
-    def gesture(self):
-        if self.player.state == 'walk':
-            self.player.state = 'gesture'
-        else:
-            self.next_state = 'gesture'
+    def dash(self):
+        if not self.already_dashed:
+            if self.player.state == 'fall':
+                self.player.state = 'dash'
+                self.already_dashed = True
+            elif not self.player.is_on_ground:
+                self.next_state = 'dash'
+                self.already_dashed = True
     
     def run(self):
         self.still_running = True
@@ -186,7 +240,7 @@ class GameActionManager(ActionManager):
             self.player.state = 'idle'
         self.next_state = 'idle'
     
-    def dash(self):
+    def dash2(self):
         if self.player.state == 'walk':
             self.player.state = 'dash'
             self.next_tp.x += 110 * self.player.direction
@@ -194,6 +248,18 @@ class GameActionManager(ActionManager):
             self.next_state = 'dash'
 
     def set_state(self, *args, **kwargs):
+        
+        if self.player.state == 'land':
+            self.player.secondary_state = ''
+        
+        if self.player.state == 'dash':
+            if self.still_walking:
+                if self.still_running:
+                    self.player.position_handler.body.velocity = Vec2d(150 * self.player.direction, 0)
+                else:
+                    self.player.position_handler.body.velocity = Vec2d(100 * self.player.direction, 0)
+            else:
+                self.player.position_handler.body.velocity = Vec2d(0, 0)
         
         if self.player.state == 'prejump':
             self.next_state = 'jump'
@@ -205,6 +271,7 @@ class GameActionManager(ActionManager):
         
         if not self.player.is_on_ground and self.next_state in ('walk', 'run', 'idle', 'prejump'):
             self.next_state = 'fall'
+
         elif self.next_state == 'prejump':
             if self.still_walking:
                 if self.still_running:
@@ -213,7 +280,9 @@ class GameActionManager(ActionManager):
                     self.player.secondary_state = 'walk'
             else:
                 self.player.secondary_state = ''
+                
         self.player.state = self.next_state
+        
         if self.player.is_on_ground:
             if self.still_walking:
                 if self.still_running:
@@ -230,5 +299,4 @@ class GameActionManager(ActionManager):
             if self.still_walking:
                 self.player.air_control = self.player.direction
             
-
 

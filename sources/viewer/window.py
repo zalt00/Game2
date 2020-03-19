@@ -4,7 +4,7 @@ import pygame
 pygame.init()
 from pygame.locals import *
 from .event_manager import INACTIVE_EVENT_MANAGER, GameEventManager, MenuEventManager
-from .sprites import BgLayer, ABgLayer, DBgLayer, ADBgLayer, Entity, Button
+from .sprites import BgLayer, ABgLayer, DBgLayer, ADBgLayer, Entity, Button, Particle
 from .image_handler import BgLayerImageHandler, TBEntityImageHandler, FBEntityImageHandler, ButtonImageHandler
 from .resources_loader import ResourceLoader
 
@@ -20,7 +20,7 @@ class Window:
         self.loop_running = False
         
         # CLOCK
-        self.fps = 60
+        self.fps = 130
         self.clock = pygame.time.Clock()
         
         # EVENTS
@@ -33,8 +33,11 @@ class Window:
         self.global_group = pygame.sprite.Group()
         self.bg_group = pygame.sprite.LayeredUpdates()
         self.fg_group = pygame.sprite.LayeredUpdates()
+        self.particle_group = pygame.sprite.Group()
         self.entity_group = pygame.sprite.Group()
-        self.button_group = pygame.sprite.Group()
+        self.button_group = pygame.sprite.OrderedUpdates()
+        
+        self.screen_dec = [0, 0]
         
         ##
         self.on_draw = lambda _: None
@@ -53,12 +56,11 @@ class Window:
                 self.event_manager.do(event)
             
             self.global_group.update()
-            if not self.is_bg_updated:
-                self.bg_group.draw(self.screen)
-                self.is_bg_updated = False
+            self.bg_group.draw(self.screen)
+            self.is_bg_updated = False
                 
             #self.screen.blit(self.current_bg, (0, 0))
-
+            self.particle_group.draw(self.screen)
             self.entity_group.draw(self.screen)
             self.button_group.draw(self.screen)
             self.fg_group.draw(self.screen)
@@ -73,6 +75,9 @@ class Window:
     def get_number_of_layers(self, res_name):
         return len(self.res_loader.load(res_name).layers)
     
+    def get_length(self, res_name):
+        return self.res_loader.load(res_name).width
+    
     def add_bg(self, res_name, position_handlers, all_dynamic=True, all_animated=False):
         res = self.res_loader.load(res_name)
         for i, pos_hdlr in enumerate(position_handlers):
@@ -82,9 +87,8 @@ class Window:
             ts = self.bg_group.get_top_sprite()
             self.bg_group.remove(ts)
             self.fg_group.add(ts)
-            self.fg_group.move_to_back(ts)
             
-    def add_bg_layer(self, res, layer_id, position_handler, dynamic=True, animated=False):
+    def add_bg_layer(self, res, layer_id, position_handler, dynamic=True, animated=False, foreground=False):
         if isinstance(res, str):
             res = self.res_loader.load(res)
 
@@ -98,12 +102,15 @@ class Window:
             sprite = BgLayer(imghdlr, position_handler, layer_id)
         
         self.global_group.add(sprite)
-        self.bg_group.add(sprite)
+        if foreground:
+            self.fg_group.add(sprite)
+        else:
+            self.bg_group.add(sprite)
 
-    def add_entity(self, res_name, position_handler, physics_updater, end_animation_callback):
+    def add_entity(self, res_name, position_handler, physics_updater, particles_handler, end_animation_callback):
         res = self.res_loader.load(res_name)
         img_hdlr = TBEntityImageHandler(res, end_animation_callback)
-        entity = Entity(img_hdlr, position_handler, physics_updater, res.dec)
+        entity = Entity(img_hdlr, position_handler, physics_updater, particles_handler, res.dec, self.screen_dec)
         self.global_group.add(entity)
         self.entity_group.add(entity)
         
@@ -119,6 +126,13 @@ class Window:
         
         return button
         
+    def spawn_particle(self, res, position_handler, state, dec, direction):
+        img_hdlr = TBEntityImageHandler(res, None)
+        particle = Particle(img_hdlr, position_handler, dec, self.screen_dec, state, direction)
+        img_hdlr.end_animation_callback = lambda *_, **__: particle.kill()
+        
+        self.global_group.add(particle)
+        self.particle_group.add(particle)
     
     def set_menu_action_manager(self, am):
         self.event_manager = MenuEventManager(am)

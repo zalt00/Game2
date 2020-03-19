@@ -17,7 +17,7 @@ class PhysicsUpdater:
     def update(self, entity):
         self.on_ground = False
         self.body.each_arbiter(self.is_on_ground)
-        
+                
         landed = (not entity.is_on_ground) and self.on_ground
         entity.is_on_ground = self.on_ground
         if landed:

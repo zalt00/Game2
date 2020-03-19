@@ -18,7 +18,8 @@ class ExceptionWrapper:
             self.logger.critical(value, extra={'traceback': a})
             self.viewer.stop_loop()
             self.viewer.quit()
-            sys.exit(-1)            
+            print(a, file=sys.stderr)
+            sys.exit(-1)
             
         return False
 

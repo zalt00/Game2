@@ -34,8 +34,10 @@ class ResourceLoader:
                 
         if cfg['general'].getint('type') == 0:
             res = self._load_bg(local_dir, cfg)
-        else:
+        elif cfg['general'].getint('type') == 1:
             res = self._load_entity(local_dir, cfg)
+        else:
+            res = self._load_tileset(local_dir, cfg)
         self.cache[raw_name] = res
         return res
     
@@ -61,6 +63,33 @@ class ResourceLoader:
                       cfg['dimensions'].getint('height'),
                       (cfg['dimensions'].getint('dec_x') * 2, cfg['dimensions'].getint('dec_y') * 2))
     
+    @staticmethod
+    def _load_tileset(directory, cfg):
+        sheets = {}
+        for sheet_path in glob(os.path.join(directory, '*.png').replace('\\', '/')):
+            name = os.path.basename(sheet_path)[:-4]
+            img = pygame.image.load(sheet_path).convert()
+            
+            th = cfg['dimensions'].getint('tile_height')
+            width = cfg['dimensions'].getint('width')
+            
+            n_w = width // cfg['dimensions'].getint('tile_width')
+            n_h = cfg['dimensions'].getint('height') // th
+            
+            n = n_w * n_h
+            
+            surf = pygame.Surface((n * cfg['dimensions'].getint('tile_width'), th)).convert()
+            for i in range(n_h):
+                r = pygame.Rect(0, i * th, width, th)
+                surf.blit(img, (i * width, 0), r)
+            
+            sheets[name] = surf
+        
+        return Tileset(sheets,
+                      n * cfg['dimensions'].getint('tile_width'),
+                      cfg['dimensions'].getint('tile_width'),
+                      cfg['dimensions'].getint('tile_height'))
+    
     def clear_cache(self):
         self.cache = {}
 
@@ -79,3 +108,11 @@ class Entity:
     height: int
     dec: tuple
 
+
+@dataclass
+class Tileset:
+    sheets: dict
+    width: int
+    tile_width: int
+    height: int
+    
