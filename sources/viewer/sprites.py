@@ -20,22 +20,22 @@ class Sprite(pygame.sprite.Sprite):
         self.rect.x, self.rect.y = position_handler.update_position(self)
         
         
-    def update(self):
+    def update(self, n=1):
         pass
     
 class DynamicSprite(Sprite):
-    def update(self):
-        super().update()
-        self.rect.x, self.rect.y = self.position_handler.update_position(self)
+    def update(self, n=1):
+        super().update(n)
+        self.rect.x, self.rect.y = self.position_handler.update_position(self, n)
 
 class AnimatedSprite(Sprite):   
-    def update(self):
-        super().update()
-        self.image = self.image_handler.update_image(self)
+    def update(self, n=1):
+        super().update(n)
+        self.image = self.image_handler.update_image(self, n)
 
 class AnimatedDynamicSprite(DynamicSprite, AnimatedSprite):
-    def update(self):
-        super().update()
+    def update(self, n=1):
+        super().update(n)
 
 
 # BG
@@ -67,10 +67,10 @@ class Entity(AnimatedDynamicSprite):
         self.particles_handler = particles_handler
         super().__init__(image_handler, position_handler, dec, screen_dec)
     
-    def update(self):
+    def update(self, n=1):
         self.particles_handler.update(self)
-        self.physics_updater.update(self)
-        super().update()
+        self.physics_updater.update(self, n)
+        super().update(n)
         #print(self.rect.x, self.rect.y)
 
 
@@ -83,10 +83,14 @@ class Particle(AnimatedDynamicSprite):
     def update(self, *args, **kwargs):
         super().update(*args, **kwargs)
 
-        
+
+class Structure(AnimatedDynamicSprite):
+    def __init__(self, image_handler, position_handler, dec, screen_dec, state):
+        self.state = state
+        super().__init__(image_handler, position_handler, dec, screen_dec)
 
 
-class Button(AnimatedSprite):
+class Button(AnimatedDynamicSprite):
     def __init__(self, image_handler, position_handler, action_name):
         self.state = 'idle'
         self.action = action_name

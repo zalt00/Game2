@@ -64,22 +64,22 @@ class EntityPositionHandler:
     
     def update_position(self, entity):
         if entity.state == 'walk':
-            if abs(self.body.velocity.x) < 70:
-                entity.thrust.x = 60000 * entity.direction
-        elif entity.state == 'run':
-            if abs(self.body.velocity.x) < 120:
-                entity.thrust.x = 60000 * entity.direction
-        elif entity.secondary_state == 'slowly_walk':
             if abs(self.body.velocity.x) < 60:
                 entity.thrust.x = 60000 * entity.direction
+        elif entity.state == 'run':
+            if abs(self.body.velocity.x) < 130:
+                entity.thrust.x = 60000 * entity.direction
+        elif entity.secondary_state == 'slowly_walk':
+            if abs(self.body.velocity.x) < 50:
+                entity.thrust.x = 60000 * entity.direction
         elif entity.secondary_state == 'slowly_run':
-            if abs(self.body.velocity.x) < 110:
+            if abs(self.body.velocity.x) < 120:
                 entity.thrust.x = 60000 * entity.direction
         elif entity.secondary_state == 'walk':
-            if abs(self.body.velocity.x) < 70:
+            if abs(self.body.velocity.x) < 60:
                 entity.thrust.x = 60000 * entity.direction
         elif entity.secondary_state == 'run':
-            if abs(self.body.velocity.x) < 120:
+            if abs(self.body.velocity.x) < 130:
                 entity.thrust.x = 60000 * entity.direction
         elif entity.state == 'dash':
             entity.thrust = Vec2d(0, 0)
@@ -90,7 +90,7 @@ class EntityPositionHandler:
                 (entity.direction == -1 and self.body.velocity.x > 0) or
                 (entity.direction == 1 and self.body.velocity.x < 0)):
                 
-                entity.thrust.x = 30000 * entity.air_control
+                entity.thrust.x = 50000 * entity.air_control
             entity.air_control = 0
         
         self.body.apply_force_at_local_point(entity.thrust, (0, 0))

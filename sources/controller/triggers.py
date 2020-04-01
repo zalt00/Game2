@@ -15,13 +15,11 @@ class Trigger:
             action = action_getter(action_data.typ, action_data.kwargs)
             self.actions.append(action)
     
-    
     def update(self, x, y):
         if self.enabled:
             if self.collide(x, y):
                 for action in self.actions:
                     action()
-    
     
     def collide(self, x, y):
         if self.top is not None:

@@ -11,6 +11,7 @@ import pymunk.pygame_util
 from utils.save_modifier import Save
 from .triggers import Trigger
 from .trigger_action_getter import GameActionGetter
+from time import perf_counter
 
 
 class App:
@@ -46,10 +47,16 @@ class Menu:
         self.model = model
         self.state = 'menu'
         
+        Save.load()
+        
+        self.window.screen_dec[:] = (0, 0)
+        
+        self.window.init_joys()
+        
+        self.window.fps = 25
+        
         pygame.mouse.set_visible(True)
-        
-        Save.load('data/save.data')
-        
+                
         self.page = self.model.Menu.MainMenu
         self.page_res = self.page.bg_res
         
@@ -65,6 +72,7 @@ class Menu:
             self.page_res,
             pos_hdlrs,
             True,
+            False,
             False
         )
         
@@ -78,21 +86,116 @@ class Menu:
         """
         self.pos_hdlrs = pos_hdlrs
         
-        pb = self.page.Objects.PlayButton
-        bpos_hdlr = StaticPositionHandler(pb.pos)
-        self.window.add_button(pb.res, bpos_hdlr, pb.action)
+        self.panels = {}
+        self.main_menu_objects = []
+        self.options_menu_objects = []
         
-        ob = self.page.Objects.OptionsButton
-        opos_hdlr = StaticPositionHandler(ob.pos)
-        self.window.add_button(ob.res, opos_hdlr, ob.action)   
+        self.mainmenu_classic_buttons = {}
+        self.options_classic_buttons = {}
         
-        qb = self.page.Objects.QuitButton
-        qpos_hdlr = StaticPositionHandler(qb.pos)
-        self.window.add_button(qb.res, qpos_hdlr, qb.action)        
-        
-        actionmanager = MenuActionManager(self.window.button_group, start_game_callback, self.quit_game)
+        for oname in self.page.Objects.objects:
+            data = self.page.Objects.get(oname)
+            obj = None
+            if data.typ == 'button':
+                bpos_hdlr = StaticPositionHandler(data.pos)
+                obj = self.window.add_button(data.res, bpos_hdlr, data.action)
+            elif data.typ == 'structure':
+                spos_hdlr = StaticPositionHandler(data.pos)
+                obj = self.window.add_structure(data.res, spos_hdlr, 'idle')
+                if hasattr(data, 'panel_name'):
+                    additional_buttons = self.init_panel_buttons(data)
+                    self.panels[data.panel_name] = dict(structure=obj, buttons=additional_buttons, buttons_order=data.buttons_order, data=data)
+                    
+            if obj is not None:
+                if oname in self.page.Objects.main_menu_objects:
+                    self.main_menu_objects.append(obj)
+                    if hasattr(data, 'button_name'):
+                        self.mainmenu_classic_buttons[data.button_name] = obj                    
+                elif oname in self.page.Objects.options_objects:
+                    self.options_menu_objects.append(obj)
+                    if hasattr(data, 'button_name'):
+                        self.options_classic_buttons[data.button_name] = obj                     
+                
+        actionmanager = MenuActionManager(
+            self.window.button_group,
+            self.mainmenu_classic_buttons,
+            self.options_classic_buttons,
+            self.page.Objects.menu_classic_buttons_order,
+            start_game_callback,
+            self.quit_game,
+            self.open_options,
+            self.close_options,
+            self.panels,
+            self.page.Objects.panel_order,
+            (self.window.screen_rect.width, self.window.screen_rect.height),
+            self.model.Options
+        )
         self.window.set_menu_action_manager(actionmanager)
-            
+        self.action_manager = actionmanager
+    
+    def init_panel_buttons(self, panel_data):
+        data = panel_data
+        buttons_data = panel_data.additional_buttons
+        ndict = {}
+        for bname, bdata in buttons_data.items():
+            res_name = bdata.get('res', None)
+            if res_name is None:
+                font_data = bdata['font']
+                if font_data[0] == 'nkb':
+                    txt = pygame.key.name(font_data[2].get())
+                elif font_data[0] == 'txt':
+                    txt = font_data[2]
+                res = self.window.render_font(txt, font_data[1], font_data[3], font_data[4], font_data[5], font_data[6], font_data[7])
+            else:
+                res = self.window.res_loader.load(res_name)
+            button = self.window.add_button(res, StaticPositionHandler(bdata['pos']), bdata['action'])
+            if 'arg' in bdata:
+                button.arg = bdata['arg']
+                if hasattr(data, 'options_save'):
+                    self.set_state(data, button, bname)
+              
+            ndict[bname] = button
+        return ndict
+    
+    def reinit_panel_buttons(self):
+        for panel_name, p in self.panels.items():
+            data = p['data']
+            if hasattr(data, 'options_save'):
+                for bname in p['buttons']:
+                    self.set_state(data, p['buttons'][bname], bname)
+    
+    def set_state(self, data, button, bname):
+        button.arg[0] = data.options_save[bname][self.model.Options.get(data.panel_name).get(bname).get()]
+        res, value = button.arg[button.arg[0] + 1]
+        button.image_handler.change_res(res)  
+        
+    def open_options(self):
+        self.reinit_panel_buttons()
+        for obj in self.main_menu_objects:
+            x, y = obj.position_handler.pos
+            y *= 1000
+            obj.position_handler.pos = x, y
+        for obj in self.options_menu_objects:
+            x, y = obj.position_handler.pos
+            y //= 1000
+            obj.position_handler.pos = x, y
+        self.action_manager.set_panel_to_video()
+    
+    def close_options(self):
+        for obj in self.main_menu_objects:
+            x, y = obj.position_handler.pos
+            y /= 1000
+            obj.position_handler.pos = x, y
+        for obj in self.options_menu_objects:
+            x, y = obj.position_handler.pos
+            y *= 1000
+            obj.position_handler.pos = x, y
+        self.action_manager.classic_buttons = self.mainmenu_classic_buttons
+        self.action_manager.classic_buttons_order = self.page.Objects.menu_classic_buttons_order
+        self.action_manager.focus = [0, 0]
+        self.action_manager.remove_current_panel()
+        self.action_manager.update_buttons2()
+    
     def reverse_trajectory(self, t):
         if int(t.target[0]) == 0:
             for p in self.pos_hdlrs:
@@ -103,9 +206,10 @@ class Menu:
     
     @staticmethod
     def dump_save():
-        Save.dump('data/save.data')    
+        Save.dump()    
     
     def quit_game(self):
+        self.dump_save()
         self.window.stop_loop()
     
     def quit(self):
@@ -118,15 +222,25 @@ class Game:
         self.model = model
         self.state = 'in_game'
         
+        self.t1 = perf_counter()
+        self.number_of_updates = 0
+        self.count = []
+        
+        self.window.fps = 130
+
+        self.window.init_joys()
+        #self.draw_options = pymunk.pygame_util.DrawOptions(self.window.screen)
+        
         pygame.mouse.set_visible(False)
         
-        Save.load('data/save.data')
+        Save.load()
         
-        self.level = getattr(self.model.Game, self.model.Game.maps[self.model.Game.current_map_id.get()])
+        self.level = self.model.Game.get(self.model.Game.maps[self.model.Game.current_map_id.get()])
         self.level_res = self.level.res      
          
         self.space = GameSpace(self.level.ground_height, self.level.ground_length)
         
+        ### BG ###
         dynamic = self.level.dynamic_layers
         n_layers = self.window.get_number_of_layers(self.level_res)
         pos = self.level.bg_pos
@@ -136,7 +250,6 @@ class Game:
         else:
             pos_hdlrs = [BgLayerPositionHandler(pos, self.window.screen_dec) for _ in range(n_layers)]
         
-                
         self.window.add_bg(
             self.level_res,
             pos_hdlrs,
@@ -148,72 +261,97 @@ class Game:
         ph = BgLayerPositionHandler(pos2, self.window.screen_dec)
         pos_hdlrs.append(ph)
         self.window.add_bg_layer(self.level_res, 4, ph, foreground=True)
+        ######
         
         self.entities = dict()
+        self.structures = dict()
         
+        ### TRIGGERS ###
         self.triggers = [None] * len(self.level.Triggers.triggers)
         self.ag = GameActionGetter(self.triggers, self.window, pos_hdlrs, self.entities)
         for trig_name in self.level.Triggers.triggers:
-            trigdata = getattr(self.level.Triggers, trig_name)
+            trigdata = self.level.Triggers.get(trig_name)
             self.triggers[trigdata.id_] = Trigger(trigdata, self.ag)          
-        
-        self.space.add_humanoid_entity(
-            self.level.Objects.Player.height,
-            self.level.Objects.Player.width,
-            (self.level.Objects.Player.pos_x.get(), self.level.Objects.Player.pos_y.get()),
-            self.level.Objects.Player.name)
+        #####
         
         action_manager = GameActionManager(None, return_to_main_menu, self.save_position)
+        self.action_manager = action_manager
         
-        name = self.level.Objects.Player.name
-        self.player = self.window.add_entity(
-            self.level.Objects.Player.res,
-            PlayerPositionHandler(self.space.entities[name][0], self.triggers),
-            PhysicsUpdater(self.space.entities[name][0], action_manager.land),
-            ParticleHandler(self.window.spawn_particle),
-            action_manager.set_state)
+        ### OBJECTS ###
+        for object_name in self.level.Objects.objects:
+            
+            data = self.level.Objects.get(object_name)
+            if object_name == self.level.Objects.player:
+                self.init_player(data)
+            elif data.typ == 'structure':
+                self.init_structure(data)
+        #####
         
-        self.entities[self.level.Objects.Player.name] = self.player
+        ### EVENT MANAGER ###             
+        ctrls = {}
+        for action in self.model.Options.Controls.actions:
+            kb, controller = self.model.Options.Controls.get(action)
+            action_id = getattr(GameActionManager, action.upper())
+            
+            ctrls[kb.get()] = action_id
+            ctrls[controller.get_shorts()] = action_id
         
-        self.window.set_game_event_manager(action_manager, {
-            K_d: GameActionManager.WALK_RIGHT,
-            K_a: GameActionManager.WALK_LEFT,
-            K_LSHIFT: GameActionManager.RUN,
-            K_w: GameActionManager.DASH,
-            K_SPACE: GameActionManager.JUMP,
-            K_F1: GameActionManager.SAVE,
-            K_TAB: GameActionManager.RETURN_TO_MAIN_MENU,
-            (0, 1): GameActionManager.WALK_RIGHT,
-            (0, -1): GameActionManager.WALK_LEFT,
-            0: GameActionManager.JUMP,
-            1: GameActionManager.DASH,
-            7: GameActionManager.RETURN_TO_MAIN_MENU,
-            5: GameActionManager.RUN
-        })
-        action_manager.player = self.player
-        
+        self.window.set_game_event_manager(action_manager, ctrls)
+        #####
         
         self.window.on_draw = self.update
         self.window.quit = self.dump_save
     
+    def init_structure(self, data):
+        
+        name = data.name
+        pos_handler = StaticPositionHandler((data.pos_x, data.pos_y))
+        struct = self.window.add_structure(data.res, pos_handler, data.state)
+        
+        self.space.add_structure((data.pos_x, data.pos_y), data.poly, data.ground, name)
+        
+        self.structures[name] = struct
+        
+    
+    def init_player(self, player_data):
+        name = player_data.name
+        
+        self.space.add_humanoid_entity(player_data.height, player_data.width, (player_data.pos_x.get(), player_data.pos_y.get()), name)
+        
+        self.player = self.window.add_entity(
+            player_data.res,
+            PlayerPositionHandler(self.space.objects[name][0], self.triggers),
+            PhysicsUpdater(self.space.objects[name][0], self.action_manager.land, self.save_position),
+            ParticleHandler(self.window.spawn_particle),
+            self.action_manager.set_state)
+        self.action_manager.player = self.player
+        
+        self.entities[name] = self.player
+        
     @staticmethod
     def dump_save():
-        Save.dump('data/save.data')
+        Save.dump()
     
     def save_position(self):
         self.level.Objects.Player.pos_x.set(round(self.player.position_handler.body.position.x))
         self.level.Objects.Player.pos_y.set(round(self.player.position_handler.body.position.y))
     
     def quit(self):
-        self.save_position()
+        print(sum(self.count) / len(self.count))
         self.dump_save()
     
     def update(self, dt):
         self.update_space(dt)
     
     def update_space(self, dt):
-        n = round(dt * 60 * 4)
-        for i in range(n):
+        #self.space.debug_draw(self.draw_options)
+        n = round((perf_counter() - self.t1) * 60) - self.number_of_space_updates
+        self.window.global_group.update(n)
+
+        n2 = round(dt * 60 * 4)
+        self.count.append(n)
+        for i in range(n * 4):
+            self.number_of_space_updates += 1
             self.space.step(1/60/4)
 
 

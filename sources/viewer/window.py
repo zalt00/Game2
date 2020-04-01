@@ -1,12 +1,16 @@
 # -*- coding:Utf-8 -*-
 
 import pygame
+import pygame.freetype
 pygame.init()
 from pygame.locals import *
 from .event_manager import INACTIVE_EVENT_MANAGER, GameEventManager, MenuEventManager
-from .sprites import BgLayer, ABgLayer, DBgLayer, ADBgLayer, Entity, Button, Particle
-from .image_handler import BgLayerImageHandler, TBEntityImageHandler, FBEntityImageHandler, ButtonImageHandler
-from .resources_loader import ResourceLoader
+from .sprites import BgLayer, ABgLayer, DBgLayer, ADBgLayer, Entity, Button, Particle, Structure
+from .image_handler import BgLayerImageHandler, TBEntityImageHandler, FBEntityImageHandler, ButtonImageHandler, StructureImageHandler
+from .resources_loader import ResourceLoader, Entity as EntityResource
+
+pygame.joystick.init()
+
 
 class Window:
     def __init__(self, width, height, flags=0):
@@ -15,6 +19,8 @@ class Window:
         
         self.current_bg = self.screen.copy()
         self.is_bg_updated = False
+        
+        self.init_joys()
         
         # LOOP
         self.loop_running = False
@@ -42,18 +48,24 @@ class Window:
         ##
         self.on_draw = lambda _: None
         
+    def init_joys(self):
+        joysticks = [pygame.joystick.Joystick(x) for x in range(pygame.joystick.get_count())]
+        for j in joysticks:
+            j.init()        
+        
     def run(self):
         """Starts the main loop"""
         self.loop_running = True
 
         while self.loop_running:
-            dt = self.clock.tick(self.fps)
-            self.on_draw(dt / 1000)
-
+            dt = self.clock.tick(self.fps)       
+            
             for event in pygame.event.get():
                 if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
                     self.stop_loop()
                 self.event_manager.do(event)
+            
+            self.on_draw(dt / 1000)            
             
             self.global_group.update()
             self.bg_group.draw(self.screen)
@@ -64,7 +76,7 @@ class Window:
             self.entity_group.draw(self.screen)
             self.button_group.draw(self.screen)
             self.fg_group.draw(self.screen)
-
+            
             pygame.display.set_caption(str(self.clock.get_fps()))
             pygame.display.flip()
         self.quit()
@@ -78,15 +90,16 @@ class Window:
     def get_length(self, res_name):
         return self.res_loader.load(res_name).width
     
-    def add_bg(self, res_name, position_handlers, all_dynamic=True, all_animated=False):
+    def add_bg(self, res_name, position_handlers, all_dynamic=True, all_animated=False, foreground=True):
         res = self.res_loader.load(res_name)
         for i, pos_hdlr in enumerate(position_handlers):
             self.add_bg_layer(res, i, pos_hdlr, all_dynamic, all_animated)
         
-        for i in range(res.foreground):
-            ts = self.bg_group.get_top_sprite()
-            self.bg_group.remove(ts)
-            self.fg_group.add(ts)
+        if foreground:
+            for i in range(res.foreground):
+                ts = self.bg_group.get_top_sprite()
+                self.bg_group.remove(ts)
+                self.fg_group.add(ts)
             
     def add_bg_layer(self, res, layer_id, position_handler, dynamic=True, animated=False, foreground=False):
         if isinstance(res, str):
@@ -116,9 +129,19 @@ class Window:
         
         return entity
     
-    def add_button(self, res_name, position_handler, action_name):
+    def add_structure(self, res_name, position_handler, state):
         res = self.res_loader.load(res_name)
-        img_handler = ButtonImageHandler(res)
+        img_handler = StructureImageHandler(res)
+        struct = Structure(img_handler, position_handler, res.dec, self.screen_dec, state)
+        self.global_group.add(struct)
+        self.entity_group.add(struct)
+        
+        return struct
+    
+    def add_button(self, res, position_handler, action_name):
+        if isinstance(res, str):
+            res = self.res_loader.load(res)
+        img_handler = ButtonImageHandler(res, self.res_loader)
         button = Button(img_handler, position_handler, action_name)
         
         self.global_group.add(button)
@@ -139,6 +162,42 @@ class Window:
     
     def set_game_event_manager(self, am, ctrls):
         self.event_manager = GameEventManager(am, ctrls)
+    
+    def render_font(self, txt, size, passive_color, active_color, width=0, height=0, rectangle=0):
+        """renders a font for a button"""
+        if isinstance(passive_color, str):
+            passive_color = self.convert_color(passive_color)
+        if isinstance(active_color, str):
+            active_color = self.convert_color(active_color)
+        font = pygame.freetype.Font('m3x6.ttf', size)
+        if width == height == 0:
+            (pimg, r) = font.render(txt, passive_color)
+            (aimg, r) = font.render(txt, active_color)
+        else:
+            r = font.get_rect(txt)
+            pimg = pygame.surface.Surface((width, height)).convert_alpha()
+            pimg.fill((255, 255, 255, 0))
+            aimg = pimg.copy()
+            font.render_to(pimg, (round(width / 2 - r.width / 2), round(height / 2 - r.height / 2)), txt, passive_color)
+            font.render_to(aimg, (round(width / 2 - r.width / 2), round(height / 2 - r.height / 2)), txt, active_color)
+            r = aimg.get_rect()
+            
+        if rectangle != 0:
+            pygame.draw.rect(pimg, passive_color, r, rectangle)
+            pygame.draw.rect(aimg, active_color, r, rectangle)  
+            
+        sheets = dict(idle=pimg, activated=aimg)
+        return EntityResource(sheets, r.width, r.height, (0, 0))
+        
+        
+    @staticmethod
+    def convert_color(hexcolor):
+        a = []
+        for i in range(1, len(hexcolor), 2):
+            c = hexcolor[i:i+2]
+            a.append(int(c, 16))
+        a.append(255)
+        return tuple(a)
     
     def on_draw(self, *_, **__):
         pass

@@ -85,7 +85,22 @@ class TBEntityImageHandler(EntityImageHandler):
             return img
 
 
+class StructureImageHandler(ImageHandler):
+    def update_image(self, struct):
+        return self.res.sheets[struct.state]
+
+
 class ButtonImageHandler(ImageHandler):
+    def __init__(self, res, res_loader):
+        super().__init__(res)
+        self.res_loader = res_loader
+        
+    def change_res(self, new_res_name):
+        self.res = self.res_loader.load(new_res_name)
+        
     def update_image(self, button):
-        return self.res.sheets[button.state]
+        img = self.res.sheets.get(button.state, None)
+        if img is None:
+            img = self.res.sheets['idle']
+        return img
 

@@ -1,4 +1,2 @@
-pyglet
+pygame
 pymunk
-numpy
-Pillow

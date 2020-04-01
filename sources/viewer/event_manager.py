@@ -4,11 +4,6 @@ import pygame
 pygame.init() 
 from pygame.locals import *
 
-pygame.joystick.init()
-joysticks = [pygame.joystick.Joystick(x) for x in range(pygame.joystick.get_count())]
-for j in joysticks:
-    j.init()
-
 
 class BaseEventManager:
     def __init__(self, *args, **kwargs):
@@ -41,17 +36,17 @@ class GameEventManager(EventManager):
         self.handlers[JOYBUTTONUP] = self.joybuttonup
     
     def joybuttondown(self, event):
-        action = self.controls.get(event.button, None)
+        action = self.controls.get((10, event.button), None)
         if action is not None:
             self.action_manager.do(action)
     
     def joybuttonup(self, event):
-        action = self.controls.get(event.button, None)
+        action = self.controls.get((10, event.button), None)
         if action is not None:
             self.action_manager.stop(action)            
             
     def axis_motion(self, event):
-        if abs(event.value) > 0.35:
+        if abs(event.value) > 0.3:
             if event.value > 0:
                 action = self.controls.get((event.axis, 1), None)
             else:
@@ -59,15 +54,14 @@ class GameEventManager(EventManager):
             if action is not None:
                 self.action_manager.do(action)
         else:
-            if event.value > 0:
-                action = self.controls.get((event.axis, 1), None)
-            else:
-                action = self.controls.get((event.axis, -1), None)
+            action = self.controls.get((event.axis, 1), None)
             if action is not None:
-                self.action_manager.stop(action)            
+                self.action_manager.stop(action)
+            action = self.controls.get((event.axis, -1), None)
+            if action is not None:
+                self.action_manager.stop(action)
     
-    
-    def keydown(self, event): 
+    def keydown(self, event):
         action = self.controls.get(event.key, None)
         if action is not None:
             self.action_manager.do(action)
@@ -91,10 +85,18 @@ class MenuEventManager(EventManager):
             self.action_manager.do(self.action_manager.UP)
         elif event.value[1] == -1:
             self.action_manager.do(self.action_manager.DOWN)
+        elif event.value[0] == -1:
+            self.action_manager.do(self.action_manager.LEFT)
+        elif event.value[0] == 1:
+            self.action_manager.do(self.action_manager.RIGHT)
 
     def joybuttondown(self, event):
         if event.button == 0:
             self.action_manager.do(self.action_manager.ACTIVATE)
+        elif event.button == 5:
+            self.action_manager.do(self.action_manager.NEXT)
+        elif event.button == 4:
+            self.action_manager.do(self.action_manager.PREVIOUS)
             
     def mousemotion(self, event):
         self.action_manager.do(self.action_manager.MOUSEMOTION, event.pos)
