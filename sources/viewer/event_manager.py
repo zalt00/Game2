@@ -26,15 +26,43 @@ class EventManager(BaseEventManager):
             f(event)
 
 class GameEventManager(EventManager):
-    def __init__(self, action_manager, controls):
+    def __init__(self, action_manager, controls, deadzones):
         super().__init__(action_manager)
         self.controls = controls
+        self.deadzones = deadzones
         self.handlers[KEYDOWN] = self.keydown
         self.handlers[KEYUP] = self.keyup
         self.handlers[JOYAXISMOTION] = self.axis_motion
         self.handlers[JOYBUTTONDOWN] = self.joybuttondown
         self.handlers[JOYBUTTONUP] = self.joybuttonup
+        self.handlers[JOYHATMOTION] = self.joyhatmotion
     
+    def joyhatmotion(self, event):
+        if event.value[0] == 0:
+            action1 = self.controls.get((11, 1), None)
+            if action1 is not None:
+                self.action_manager.stop(action1)
+            action1 = self.controls.get((11, -1), None)
+            if action1 is not None:
+                self.action_manager.stop(action1)
+        else:
+            action1 = self.controls.get((11, event.value[0]), None)
+            if action1 is not None:
+                self.action_manager.do(action1)
+        
+        if event.value[1] == 0:
+            action2 = self.controls.get((12, 1), None)
+            if action2 is not None:
+                self.action_manager.stop(action2)
+            action2 = self.controls.get((12, -1), None)
+            if action2 is not None:
+                self.action_manager.stop(action2)
+        else:
+            action2 = self.controls.get((12, event.value[1]), None)
+            if action2 is not None:
+                self.action_manager.do(action2)        
+
+
     def joybuttondown(self, event):
         action = self.controls.get((10, event.button), None)
         if action is not None:
@@ -46,7 +74,7 @@ class GameEventManager(EventManager):
             self.action_manager.stop(action)            
             
     def axis_motion(self, event):
-        if abs(event.value) > 0.3:
+        if abs(event.value) > self.deadzones[event.axis]:
             if event.value > 0:
                 action = self.controls.get((event.axis, 1), None)
             else:
@@ -62,6 +90,7 @@ class GameEventManager(EventManager):
                 self.action_manager.stop(action)
     
     def keydown(self, event):
+
         action = self.controls.get(event.key, None)
         if action is not None:
             self.action_manager.do(action)
@@ -80,19 +109,34 @@ class MenuEventManager(EventManager):
         self.handlers[JOYHATMOTION] = self.joyhatmotion
         self.handlers[JOYBUTTONDOWN] = self.joybuttondown
         
+        self.joyhatpressed = False
+        
     def joyhatmotion(self, event):
         if event.value[1] == 1:
-            self.action_manager.do(self.action_manager.UP)
+            if not self.joyhatpressed:
+                self.action_manager.do(self.action_manager.UP)
+                self.joyhatpressed = True
         elif event.value[1] == -1:
-            self.action_manager.do(self.action_manager.DOWN)
+            if not self.joyhatpressed:
+                self.action_manager.do(self.action_manager.DOWN)
+                self.joyhatpressed = True
         elif event.value[0] == -1:
-            self.action_manager.do(self.action_manager.LEFT)
+            if not self.joyhatpressed:
+                self.action_manager.do(self.action_manager.LEFT)
+                self.joyhatpressed = True            
         elif event.value[0] == 1:
-            self.action_manager.do(self.action_manager.RIGHT)
-
+            if not self.joyhatpressed:            
+                self.action_manager.do(self.action_manager.RIGHT)
+                self.joyhatpressed = True            
+        
+        if not any(event.value):
+            self.joyhatpressed = False
+        
     def joybuttondown(self, event):
         if event.button == 0:
             self.action_manager.do(self.action_manager.ACTIVATE)
+        elif event.button == 1:
+            self.action_manager.do(self.action_manager.CANCEL)
         elif event.button == 5:
             self.action_manager.do(self.action_manager.NEXT)
         elif event.button == 4:
@@ -104,4 +148,41 @@ class MenuEventManager(EventManager):
     def click(self, event):
         if event.button == 1:
             self.action_manager.do(self.action_manager.RIGHT_CLICK, event.pos)
+    
+
+class ChangeCtrlsEventManager(EventManager):
+    def __init__(self, action_manager, con_or_kb):
+        super().__init__(action_manager)
+        if con_or_kb == "kb":
+            self.handlers[KEYDOWN] = self.keydown
+        else:
+            self.handlers[KEYDOWN] = self.keydown2
+            self.handlers[JOYAXISMOTION] = self.axis_motion
+            self.handlers[JOYBUTTONDOWN] = self.joybuttondown
+            self.handlers[JOYHATMOTION] = self.joyhatmotion
+    
+    def keydown(self, event):
+        self.action_manager.do(self.action_manager.SET_CTRL, event.key)
+        
+    def keydown2(self, event):
+        if event.key == K_ESCAPE:
+            self.action_manager.do(self.action_manager.SET_CTRL, (20, 20))
+        
+    def joyhatmotion(self, event):
+        if event.value[0] != 0:
+            self.action_manager.do(self.action_manager.SET_CTRL, (11, event.value[0]))
+        
+        elif event.value[1] != 0:
+            self.action_manager.do(self.action_manager.SET_CTRL, (12, event.value[0]))  
+
+    def joybuttondown(self, event):
+        self.action_manager.do(self.action_manager.SET_CTRL, (10, event.button))
+            
+    def axis_motion(self, event):
+        if abs(event.value) > 0.5:
+            if event.value > 0:
+                self.action_manager.do(self.action_manager.SET_CTRL, (event.axis, 1))                
+            else:
+                self.action_manager.do(self.action_manager.SET_CTRL, (event.axis, -1))  
+    
     

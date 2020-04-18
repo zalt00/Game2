@@ -4,15 +4,55 @@ from utils.save_modifier import Save
 from utils.types import Trigger, DataContainer
 from pymunk import Vec2d
 from pygame.color import THECOLORS
+from pygame.constants import *
 
 
 class Data(DataContainer):
+    key_names = {
+        K_LSHIFT: 'shift',
+        K_RSHIFT: 'shift',
+        K_LCTRL: 'ctrl',
+        K_RCTRL: 'ctrl',
+        K_LALT: 'alt',
+        K_RALT: 'alt'
+    }
+    
+    controller_values_name = {
+        (0, -1): 'LX-',
+        (0, 1): 'LX+',
+        (1, -1): 'LY+',
+        (1, 1): 'LY-',
+        (2, 1): 'LT',
+        (2, -1): 'RT',
+        (4, -1): 'RX-',
+        (4, 1): 'RX+',
+        (3, -1): 'RY+',
+        (3, 1): 'RY-',
+        (10, 0): 'A',
+        (10, 1): 'B',
+        (10, 2): 'X',
+        (10, 3): 'Y',
+        (10, 4): 'LB',
+        (10, 5): 'RB',
+        (10, 6): 'BACK',
+        (10, 7): 'START',
+        (10, 8): 'TL',
+        (10, 9): 'TR',
+        (11, 1): 'DPADX+',
+        (11, -1): 'DPADX-',
+        (12, 1): 'DPADY+',
+        (12, -1): 'DPADY-',
+        (20, 20): '/'
+    }
+        
+    
     class Options(DataContainer):
         option_types = ('Video', 'Gameplay', 'Controls')
         class Video(DataContainer):
             display_mode = Save(3)
             width = Save(4)
             height = Save(5)
+            resolution = width + height
             luminosity = Save(6)
         
         class Gameplay(DataContainer):
@@ -20,15 +60,16 @@ class Data(DataContainer):
             invert_axis = Save(8)
             
         class Controls(DataContainer):
-            actions = 'left', 'right', 'run', 'dash', 'jump', 'return_to_main_menu', 'interact'
+            actions = 'left', 'right', 'run', 'dash', 'jump', 'menu', 'interact'
             left = (Save(9), Save(16))
             right = (Save(10), Save(17))
             run = (Save(11), Save(18))
             dash = (Save(12), Save(19))
             jump = (Save(13), Save(20))
-            return_to_main_menu = (Save(14), Save(21))
+            menu = (Save(14), Save(21))
             interact = (Save(15), Save(22))
     
+######################################################################################################
     
     class Menu(DataContainer):
         pages = ('MainMenu',)
@@ -79,15 +120,32 @@ class Data(DataContainer):
                     res = 'panels/options_controls_panel'
                     pos = (70, 220 * 1000)
                     buttons_order = (
-                        ('kb_left', 'con_left', None, None),
-                        ('kb_right', 'con_right', None, None),
+                        ('kb_left', 'con_left', 'kb_menu', 'con_menu'),
+                        ('kb_right', 'con_right', 'kb_interact', 'con_interact'),
+                        ('kb_run', 'con_run', None, None),
+                        ('kb_dash', 'con_dash', None, None),
+                        ('kb_jump', 'con_jump', None, None),
+                        
                         ('apply_button', 'cancel_button', None, 'reset_button'),
                     )
                     additional_buttons = dict(
-                        kb_left=dict(pos=(205, 500 * 1000), action='set_kbkey', arg='left', font=('nkb', 58, Save(9), "#eeeeee", "#58998a", 100, 35, 3)),
-                        con_left=dict(pos=(430, 500 * 1000), action='set_conkey', arg='left', font=('nkb', 58, Save(9), "#eeeeee", "#58998a", 100, 35, 3)),
-                        kb_right=dict(pos=(205, 440 * 1000), action='set_kbkey', arg='right', font=('nkb', 58, Save(10), "#eeeeee", "#58998a", 100, 35, 3)),
-                        con_right=dict(pos=(430, 440 * 1000), action='set_conkey', arg='right', font=('nkb', 58, Save(10), "#eeeeee", "#58998a", 100, 35, 3))
+                        kb_left=dict(pos=(205, 500 * 1000), action='set_kbkey', arg='left', font=('nkb', 40, Save(9), "#eeeeee", "#888888", 100, 35, 5)),
+                        kb_right=dict(pos=(205, 440 * 1000), action='set_kbkey', arg='right', font=('nkb', 40, Save(10), "#eeeeee", "#888888", 100, 35, 5)),
+                        kb_run=dict(pos=(205, 380 * 1000), action='set_kbkey', arg='run', font=('nkb', 40, Save(11), "#eeeeee", "#888888", 100, 35, 5)),
+                        kb_dash=dict(pos=(205, 320 * 1000), action='set_kbkey', arg='dash', font=('nkb', 40, Save(12), "#eeeeee", "#888888", 100, 35, 5)),
+                        kb_jump=dict(pos=(205, 260 * 1000), action='set_kbkey', arg='jump', font=('nkb', 40, Save(13), "#eeeeee", "#888888", 100, 35, 5)),
+                        kb_menu=dict(pos=(790, 500 * 1000), action='set_kbkey', arg='menu', font=('nkb', 40, Save(14), "#eeeeee", "#888888", 100, 35, 5)),
+                        kb_interact=dict(pos=(790, 440 * 1000), action='set_kbkey', arg='interact', font=('nkb', 40, Save(15), "#eeeeee", "#888888", 100, 35, 5)),
+
+                        
+                        con_left=dict(pos=(430, 500 * 1000), action='set_conkey', arg='left', font=('ncon', 40, Save(16), "#eeeeee", "#888888", 100, 35, 5)),
+                        con_right=dict(pos=(430, 440 * 1000), action='set_conkey', arg='right', font=('ncon', 40, Save(17), "#eeeeee", "#888888", 100, 35, 5)),                        
+                        con_run=dict(pos=(430, 380 * 1000), action='set_conkey', arg='run', font=('ncon', 40, Save(18), "#eeeeee", "#888888", 100, 35, 5)),
+                        con_dash=dict(pos=(430, 320 * 1000), action='set_conkey', arg='dash', font=('ncon', 40, Save(19), "#eeeeee", "#888888", 100, 35, 5)),  
+                        con_jump=dict(pos=(430, 260 * 1000), action='set_conkey', arg='jump', font=('ncon', 40, Save(20), "#eeeeee", "#888888", 100, 35, 5)),
+                        con_menu=dict(pos=(1025, 500 * 1000), action='set_conkey', arg='menu', font=('ncon', 40, Save(21), "#eeeeee", "#888888", 100, 35, 5)),
+                        con_interact=dict(pos=(1025, 440 * 1000), action='set_conkey', arg='interact', font=('ncon', 40, Save(22), "#eeeeee", "#888888", 100, 35, 5)),
+
                     )
                     panel_name = 'Controls'
                 class VideoPanel:
@@ -96,14 +154,24 @@ class Data(DataContainer):
                     pos = (70, 404 * 1000)
                     buttons_order = (
                         ('display_mode', 'display_mode', None),
+                        ('resolution', 'resolution', None),
+                        ('luminosity', 'luminosity', None),
                         ('apply_button', 'cancel_button', 'reset_button'),
                     )                    
                     additional_buttons = dict(
                         display_mode=dict(pos=(320, 567 * 1000),
                                           arg=[0, ('buttons/fullscreen', 1), ('buttons/windowed', 0), 'display_mode'],
-                                          action='change_option', res='buttons/fullscreen')
+                                          action='change_option', res='buttons/fullscreen'),
+                        resolution=dict(pos=(320, 489 * 1000),
+                                          arg=[0, ('buttons/resolutions/1280 x 720', (1280, 720)), ('buttons/resolutions/1280 x 960', (1280, 960)), 'resolution'],
+                                          action='change_option', res='buttons/resolutions/1280 x 720'),      
+                        luminosity=dict(pos=(320, 411 * 1000),
+                                          arg=[0, ('buttons/luminosity/normal', 0), 'luminosity'],
+                                          action='change_option', res='buttons/luminosity/normal'),                             
                     )
-                    options_save = dict(display_mode={0: 1, 1: 0})  # permet de passer du valeur de la save a l'indice du bouton a afficher
+                    options_save = dict(display_mode={0: 1, 1: 0},
+                                        resolution={(1280, 720): 0, (1280, 960): 1},
+                                        luminosity={0: 0})  # permet de passer de la valeur de la save a l'indice du bouton a afficher
                     panel_name = 'Video'
                 class GameplayPanel:
                     typ = 'structure'
@@ -149,6 +217,9 @@ class Data(DataContainer):
                     action = 'reset'
                     button_name = 'reset_button'
                     pos = (1092, 150 * 1000)                    
+                    
+                    
+######################################################################################################
                     
     class Game(DataContainer):
         current_map_id = Save(2)

@@ -3,6 +3,7 @@
 import xdrlib
 from array import array
 import os
+import sys
 
 
 class Save:
@@ -52,8 +53,34 @@ class Save:
         b = p.get_buffer()
         with open(cls.path, 'wb') as file:
             file.write(b)
+    
+    def __repr__(self):
+        return 'Save({})'.format(self.i)
+    
+    def __add__(self, value):
+        a = SaveCombination()
+        a.append(self)
+        a.append(value)
+        return a
 
+class SaveCombination(list):
+    def get(self):
+        return tuple((save.get() for save in self))
+    
+    def set(self, iterable):
+        for value, save in zip(iterable, self):
+            save.set(value)
             
+    def get_long(self):
+        if len(self) == 2:
+            value = self[1].get() | (self[0].get() << 16)
+            return value
+        raise ValueError("SaveCombination's length must be 2 to call this method")
+            
+    def __repr__(self):
+        return 'SaveCombination({})'.format(super().__repr__())
+            
+
 def set_to_default(path):
     Save.data = array('i', [200, 500, 0])
     Save.dump(path)
@@ -73,8 +100,13 @@ def main():
     os.system('cls')
     stop = False
     while not stop:
-        print(*(f'{i}-{l}: {value} ({t})' for (i, (l, t)), value in zip(enumerate(labels), Save.data)), sep='\n', end='\n\n')
-        print('m: modify a value')
+        for i, (l, t) in enumerate(labels):
+            if t == 'shorts':
+                value = Save(i).get_shorts()
+            else:
+                value = Save(i).get()
+            print(f'{i}-{l}: {value}')
+        print('\nm: modify a value')
         print('a: add a new value')
         print('r: remove a value')
         print('s: save and quit')
@@ -118,8 +150,12 @@ def main():
             print('enter your python code: ')
             code = '1'
             while code != 'stop':
-                exec(code)
-                code = input()
+                try:
+                    exec(code)
+                except Exception as e:
+                    print(repr(e), file=sys.stderr)
+                else:
+                    code = input()
                 
         elif command == 'gs':
             i = int(input('enter the id of the shorts you want to get: '))

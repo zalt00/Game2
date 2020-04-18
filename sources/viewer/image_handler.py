@@ -9,11 +9,11 @@ class ImageHandler:
     def __init__(self, res):
         self.res = res
         
-    def update_image(self, _):
+    def update_image(self, _, n=1):
         raise NotImplementedError
 
 class BgLayerImageHandler(ImageHandler):
-    def update_image(self, sprite):
+    def update_image(self, sprite, n=1):
         return self.res.layers[sprite.layer]
 
 class EntityImageHandler(ImageHandler):
@@ -27,7 +27,7 @@ class EntityImageHandler(ImageHandler):
         raise NotImplementedError
     
 class FBEntityImageHandler(EntityImageHandler):
-    def update_image(self, entity):
+    def update_image(self, entity, n=1):
         
         if entity.state != self.previous_state:
             self.previous_state = entity.state
@@ -54,29 +54,24 @@ class FBEntityImageHandler(EntityImageHandler):
 class TBEntityImageHandler(EntityImageHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        
-        self.t1 = perf_counter()
+            
     
-    
-    def update_image(self, entity):
+    def update_image(self, entity, n=1):
         
         if entity.state != self.previous_state:
             self.previous_state = entity.state
             self.advance = 0
-            self.t1 = perf_counter()
         
-        self.advance = round((perf_counter() - self.t1) * 60)
+        self.advance += n
         a = self.advance // 6
         sheet = self.res.sheets[entity.state]
         if a * self.res.width >= sheet.get_width():
             self.advance = 0
             a = 0
-            self.t1 = perf_counter()
             self.end_animation_callback(entity.state)
             return self.update_image(entity)
         else:
             rect = pygame.Rect(a * self.res.width, 0, self.res.width, self.res.height)
-            self.advance += 1
             
             img = pygame.transform.scale2x(sheet.subsurface(rect))
     
@@ -86,7 +81,7 @@ class TBEntityImageHandler(EntityImageHandler):
 
 
 class StructureImageHandler(ImageHandler):
-    def update_image(self, struct):
+    def update_image(self, struct, n=1):
         return self.res.sheets[struct.state]
 
 
@@ -98,7 +93,7 @@ class ButtonImageHandler(ImageHandler):
     def change_res(self, new_res_name):
         self.res = self.res_loader.load(new_res_name)
         
-    def update_image(self, button):
+    def update_image(self, button, n=1):
         img = self.res.sheets.get(button.state, None)
         if img is None:
             img = self.res.sheets['idle']

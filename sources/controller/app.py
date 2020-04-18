@@ -49,10 +49,10 @@ class Menu:
         
         Save.load()
         
+        self.empty_button_res = self.window.render_font('', 40, '#eeeeee', '#eeeeee', 100, 35, 5)
+        
         self.window.screen_dec[:] = (0, 0)
-        
         self.window.init_joys()
-        
         self.window.fps = 25
         
         pygame.mouse.set_visible(True)
@@ -63,9 +63,7 @@ class Menu:
         n_layers = self.window.get_number_of_layers(self.page_res)
         pos = self.page.bg_pos
         
-        
         position_handler = StaticPositionHandler(pos)
-        
         pos_hdlrs = [BgLayerPositionHandler(pos, [0, 0]) for _ in range(n_layers)]
         
         self.window.add_bg(
@@ -127,11 +125,18 @@ class Menu:
             self.close_options,
             self.panels,
             self.page.Objects.panel_order,
-            (self.window.screen_rect.width, self.window.screen_rect.height),
-            self.model.Options
+            self.model.Options,
+            self.change_kb_ctrls,
+            self.change_con_ctrls,
+            self.set_ctrl
         )
-        self.window.set_menu_action_manager(actionmanager)
+        self.window.set_menu_event_manager(actionmanager)
         self.action_manager = actionmanager
+        
+        self.window.on_draw = self.update
+        
+    def update(self, *_, **__):
+        self.window.global_group.update()
     
     def init_panel_buttons(self, panel_data):
         data = panel_data
@@ -142,7 +147,10 @@ class Menu:
             if res_name is None:
                 font_data = bdata['font']
                 if font_data[0] == 'nkb':
-                    txt = pygame.key.name(font_data[2].get())
+                    txt = self.get_key_name(font_data[2].get())
+                if font_data[0] == 'ncon':
+                    txt = self.get_controller_value_name(font_data[2].get_shorts())
+                
                 elif font_data[0] == 'txt':
                     txt = font_data[2]
                 res = self.window.render_font(txt, font_data[1], font_data[3], font_data[4], font_data[5], font_data[6], font_data[7])
@@ -157,12 +165,38 @@ class Menu:
             ndict[bname] = button
         return ndict
     
+    def get_key_name(self, nkey):
+        name = self.model.key_names.get(nkey, None)
+        if name is None:
+            name = pygame.key.name(nkey)
+        return name
+    
+    def get_controller_value_name(self, nvalue):
+        name = self.model.controller_values_name[nvalue]
+        return name
+    
     def reinit_panel_buttons(self):
         for panel_name, p in self.panels.items():
             data = p['data']
             if hasattr(data, 'options_save'):
                 for bname in p['buttons']:
                     self.set_state(data, p['buttons'][bname], bname)
+            else:
+                for bname, bdata in p['data'].additional_buttons.items():
+                    res_name = bdata.get('res', None)
+                    if res_name is None:
+                        font_data = bdata['font']
+                        if font_data[0] == 'nkb':
+                            txt = self.get_key_name(font_data[2].get())
+                        if font_data[0] == 'ncon':
+                            txt = self.get_controller_value_name(font_data[2].get_shorts())
+                        
+                        elif font_data[0] == 'txt':
+                            txt = font_data[2]
+                        res = self.window.render_font(txt, font_data[1], font_data[3], font_data[4], font_data[5], font_data[6], font_data[7])
+                    else:
+                        res = self.window.res_loader.load(res_name)
+                    p['buttons'][bname].image_handler.res = res
     
     def set_state(self, data, button, bname):
         button.arg[0] = data.options_save[bname][self.model.Options.get(data.panel_name).get(bname).get()]
@@ -196,6 +230,24 @@ class Menu:
         self.action_manager.remove_current_panel()
         self.action_manager.update_buttons2()
     
+    def change_kb_ctrls(self, button):
+        button.image_handler.res = self.empty_button_res
+        self.window.set_change_ctrls_event_manager(self.action_manager, 'kb')
+        
+    def change_con_ctrls(self, button):
+        button.image_handler.res = self.empty_button_res
+        self.window.set_change_ctrls_event_manager(self.action_manager, 'con')
+        
+    def set_ctrl(self, value, button):
+        if isinstance(value, tuple):
+            name = self.get_controller_value_name(value)
+        else:
+            name = self.get_key_name(value)
+        
+        button.image_handler.res = self.window.render_font(name, 40, '#eeeeee', '#888888', 100, 35, 5)
+        self.window.set_menu_event_manager(self.action_manager)
+        
+    
     def reverse_trajectory(self, t):
         if int(t.target[0]) == 0:
             for p in self.pos_hdlrs:
@@ -224,7 +276,7 @@ class Game:
         
         self.t1 = perf_counter()
         self.number_of_updates = 0
-        self.count = []
+        self.number_of_space_updates = 0
         
         self.window.fps = 130
 
@@ -296,7 +348,7 @@ class Game:
             ctrls[kb.get()] = action_id
             ctrls[controller.get_shorts()] = action_id
         
-        self.window.set_game_event_manager(action_manager, ctrls)
+        self.window.set_game_event_manager(action_manager, ctrls, [0.35, 0.35, 0.3, 0.15, 0.15])
         #####
         
         self.window.on_draw = self.update
@@ -311,7 +363,6 @@ class Game:
         self.space.add_structure((data.pos_x, data.pos_y), data.poly, data.ground, name)
         
         self.structures[name] = struct
-        
     
     def init_player(self, player_data):
         name = player_data.name
@@ -337,21 +388,24 @@ class Game:
         self.level.Objects.Player.pos_y.set(round(self.player.position_handler.body.position.y))
     
     def quit(self):
-        print(sum(self.count) / len(self.count))
         self.dump_save()
     
     def update(self, dt):
+        #  pygame.display.set_caption(str(self.window.clock.get_fps()))      
+        pygame.display.set_caption(str(1/dt)) 
         self.update_space(dt)
     
     def update_space(self, dt):
         #self.space.debug_draw(self.draw_options)
-        n = round((perf_counter() - self.t1) * 60) - self.number_of_space_updates
-        self.window.global_group.update(n)
-
-        n2 = round(dt * 60 * 4)
-        self.count.append(n)
-        for i in range(n * 4):
-            self.number_of_space_updates += 1
+        n1 = round((perf_counter() - self.t1) * 60 * 4) - self.number_of_space_updates
+        n2 = round((perf_counter() - self.t1) * 60) - self.number_of_updates
+        self.window.global_group.update(n2)
+        
+        
+        for i in range(n1):
             self.space.step(1/60/4)
+        self.number_of_space_updates += n1
+        self.number_of_updates += n2
+        
 
 

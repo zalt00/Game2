@@ -23,37 +23,9 @@ class ActionManager:
         except KeyError:
             pass
 
-class MenuActionManager(ActionManager):
-    MOUSEMOTION = 0
-    RIGHT_CLICK = 1
-    LEFT_CLICK = 2
-    
-    DOWN = 3
-    UP = 4
-    LEFT = 8
-    RIGHT = 9
-    
-    ACTIVATE = 5
-    
-    NEXT = 6
-    PREVIOUS = 7
-    
-    def __init__(self, buttons, menu_classic_buttons, base_options_classic_buttons, classic_buttons_order,
-                 start_game_callback, quit_game_callback, open_options_callback, close_options_callback,
-                 panels, panel_order, dim, options_data):
-        """Constructor of the class
-        :param buttons: all the buttons
-        :param menu_classic_buttons: buttons that we can change the focus with the directional cross on the main menu
-        :param base_options_classic_buttons: buttons by default that we can change the focus with the directional cross in the options
-        :param classic_buttons_order: order of the buttons
-        :param start_game_callback: start game callback
-        :param quit_game_callback: quit game callback
-        :param open_options_callback: open options callback
-        :param panels: panels of the page that we can change by pressing L1 or R1
-        :param panel_order: order of the panels
-        :param dim: dimensions of the screen
-        :param options_data: Data.Options
-        """
+
+class BaseMenuActionManager(ActionManager):
+    def __init__(self, buttons, menu_classic_buttons, base_options_classic_buttons, classic_buttons_order, panels, panel_order, options_data):
         
         super().__init__()
         
@@ -62,9 +34,7 @@ class MenuActionManager(ActionManager):
         self.current_panel = ""
         
         self.options_data = options_data
-        
-        self.dim = dim
-        
+                
         self.classic_buttons_order = classic_buttons_order
         self.classic_buttons = menu_classic_buttons
         self.base_options_classic_buttons = base_options_classic_buttons
@@ -76,23 +46,6 @@ class MenuActionManager(ActionManager):
         self.controller = False
         self.focus = [0, 0]
         
-        self.play = start_game_callback
-        self.quit = quit_game_callback
-        self.open_options_menu = open_options_callback
-        self.close_options = close_options_callback
-        
-        self.do_handlers[self.MOUSEMOTION] = self.update_buttons
-        self.do_handlers[self.RIGHT_CLICK] = self.right_click
-        
-        self.do_handlers[self.DOWN] = self.move_focus_down
-        self.do_handlers[self.UP] = self.move_focus_up
-        self.do_handlers[self.LEFT] = self.move_focus_left
-        self.do_handlers[self.RIGHT] = self.move_focus_right
-        
-        self.do_handlers[self.ACTIVATE] = self.button_activation
-        self.do_handlers[self.NEXT] = self.next_panel
-        self.do_handlers[self.PREVIOUS] = self.previous_panel
-    
     def update_buttons(self, mouse_pos):
         if not self.controller:
             self.count = 0
@@ -217,14 +170,6 @@ class MenuActionManager(ActionManager):
         self.focus = [0, 0]
         self.update_buttons2()
     
-    def set_panel_to_controls(self):
-        self._set_panel_to('Controls')
-        
-    def set_panel_to_gameplay(self):
-        self._set_panel_to('Gameplay')
-        
-    def set_panel_to_video(self):
-        self._set_panel_to('Video')
     
     def next_panel(self):
         if self.current_panel:
@@ -252,17 +197,6 @@ class MenuActionManager(ActionManager):
             npanel = self.panel_order[i - 1]
             self._set_panel_to(npanel)
        
-    def apply(self):
-        Save.dump()
-        self.close_options()
-        
-    def cancel(self):
-        Save.load()
-        self.close_options()
-    
-    def reset(self):
-        print('reset')
-    
     def change_option(self, arg):
         if len(arg) == arg[0] + 3:
             arg[0] = 0
@@ -270,9 +204,118 @@ class MenuActionManager(ActionManager):
             arg[0] += 1
         res, value = arg[arg[0] + 1]
         self.classic_buttons[arg[-1]].image_handler.change_res(res)
-        self.options_data.get(self.current_panel).get(arg[-1]).set(value)
+        self.options_data.get(self.current_panel).get(arg[-1]).set(value)        
+        
+        
+        
+class MenuActionManager(BaseMenuActionManager):
+    MOUSEMOTION = 0
+    RIGHT_CLICK = 1
+    LEFT_CLICK = 2
     
+    DOWN = 3
+    UP = 4
+    LEFT = 8
+    RIGHT = 9
     
+    ACTIVATE = 5
+    CANCEL = 11
+    
+    NEXT = 6
+    PREVIOUS = 7
+    
+    SET_CTRL = 10
+    
+    def __init__(self, buttons, menu_classic_buttons, base_options_classic_buttons, classic_buttons_order,
+                 start_game_callback, quit_game_callback, open_options_callback, close_options_callback,
+                 panels, panel_order, options_data, change_kb_ctrls_callback, change_con_ctrls_callback, set_ctrl_callback):
+        """Constructor of the class
+        :param buttons: all the buttons
+        :param menu_classic_buttons: buttons that we can change the focus with the directional cross on the main menu
+        :param base_options_classic_buttons: buttons by default that we can change the focus with the directional cross in the options
+        :param classic_buttons_order: order of the buttons
+        :param start_game_callback: start game callback
+        :param quit_game_callback: quit game callback
+        :param open_options_callback: open options callback
+        :param panels: panels of the page that we can change by pressing L1 or R1
+        :param panel_order: order of the panels
+        :param options_data: Data.Options
+        :param change_kb_ctrls_callback: change keyboard controls callback
+        :param change_con_ctrls_callback: change controller controls callback
+        :param set_ctrl_callback: set a control callback
+
+        """
+        
+        super().__init__(buttons, menu_classic_buttons, base_options_classic_buttons, classic_buttons_order, panels, panel_order, options_data)
+        
+        self.changing_ctrl = ''
+        self.changing_ctrl_button = None
+        
+        self.play = start_game_callback
+        self.quit = quit_game_callback
+        self.open_options_menu = open_options_callback
+        self.close_options = close_options_callback
+        
+        self.change_kb_ctrls = change_kb_ctrls_callback
+        self.change_con_ctrls = change_con_ctrls_callback
+        self._set_ctrl = set_ctrl_callback
+        
+        self.do_handlers[self.MOUSEMOTION] = self.update_buttons
+        self.do_handlers[self.RIGHT_CLICK] = self.right_click
+        
+        self.do_handlers[self.DOWN] = self.move_focus_down
+        self.do_handlers[self.UP] = self.move_focus_up
+        self.do_handlers[self.LEFT] = self.move_focus_left
+        self.do_handlers[self.RIGHT] = self.move_focus_right
+        
+        self.do_handlers[self.ACTIVATE] = self.button_activation
+        self.do_handlers[self.CANCEL] = self.cancel
+        self.do_handlers[self.NEXT] = self.next_panel
+        self.do_handlers[self.PREVIOUS] = self.previous_panel
+        
+        self.do_handlers[self.SET_CTRL] = self.set_ctrl
+       
+    def set_panel_to_controls(self):
+        self._set_panel_to('Controls')
+        
+    def set_panel_to_gameplay(self):
+        self._set_panel_to('Gameplay')
+        
+    def set_panel_to_video(self):
+        self._set_panel_to('Video')    
+       
+    def apply(self):
+        Save.dump()
+        self.close_options()
+        
+    def cancel(self):
+        if self.current_panel:
+            Save.load()
+            self.close_options()
+    
+    def reset(self):
+        print('reset')
+    
+    def set_kbkey(self, arg):
+        button = self.classic_buttons['kb_' + arg]
+        self.changing_ctrl = arg
+        self.changing_ctrl_button = button
+        self.change_kb_ctrls(button)
+        
+    def set_conkey(self, arg):
+        button = self.classic_buttons['con_' + arg]
+        self.changing_ctrl = arg
+        self.changing_ctrl_button = button        
+        self.change_con_ctrls(button)
+        
+    def set_ctrl(self, value):
+        if isinstance(value, tuple):
+            self.options_data.Controls.get(self.changing_ctrl)[1].set_shorts(*value)
+        else:
+            self.options_data.Controls.get(self.changing_ctrl)[0].set(value)
+            
+        self._set_ctrl(value, self.changing_ctrl_button)
+        
     
 class GameActionManager(ActionManager):
     RIGHT = 0
@@ -283,7 +326,7 @@ class GameActionManager(ActionManager):
     JUMP = 6
     RUN = 7
     SAVE = 8
-    RETURN_TO_MAIN_MENU = 9
+    MENU = 9
     INTERACT = 10
     
     def __init__(self, player, return_to_main_menu=lambda: None, save_callback=lambda: None):
@@ -305,7 +348,7 @@ class GameActionManager(ActionManager):
         self.do_handlers[self.JUMP] = self.jump
         
         self.do_handlers[self.SAVE] = self.save
-        self.do_handlers[self.RETURN_TO_MAIN_MENU] = return_to_main_menu
+        self.do_handlers[self.MENU] = return_to_main_menu
         
         self.still_walking = False
         self.still_running = False
@@ -407,6 +450,7 @@ class GameActionManager(ActionManager):
             self.player.secondary_state = ''
         
         if self.player.state == 'dash':
+            self.player.state = 'fall'
             if self.still_walking:
                 if self.still_running:
                     self.player.position_handler.body.velocity = Vec2d(150 * self.player.direction, 0)
@@ -416,7 +460,7 @@ class GameActionManager(ActionManager):
                 self.player.position_handler.body.velocity = Vec2d(0, 0)
         
         if not self.player.is_on_ground:
-            if self.player.state in ('jump',):
+            if self.player.state in ('jump',) or self.next_state in ('walk', 'run', 'prejump'):
                 self.next_state = self.player.state
             else:
                 self.next_state = 'fall'        
@@ -437,7 +481,7 @@ class GameActionManager(ActionManager):
                     self.player.secondary_state = 'walk'
             else:
                 self.player.secondary_state = ''
-                
+        
         self.player.state = self.next_state
         
         if self.player.is_on_ground:

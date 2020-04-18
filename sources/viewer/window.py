@@ -4,7 +4,7 @@ import pygame
 import pygame.freetype
 pygame.init()
 from pygame.locals import *
-from .event_manager import INACTIVE_EVENT_MANAGER, GameEventManager, MenuEventManager
+from .event_manager import INACTIVE_EVENT_MANAGER, GameEventManager, MenuEventManager, ChangeCtrlsEventManager
 from .sprites import BgLayer, ABgLayer, DBgLayer, ADBgLayer, Entity, Button, Particle, Structure
 from .image_handler import BgLayerImageHandler, TBEntityImageHandler, FBEntityImageHandler, ButtonImageHandler, StructureImageHandler
 from .resources_loader import ResourceLoader, Entity as EntityResource
@@ -61,13 +61,12 @@ class Window:
             dt = self.clock.tick(self.fps)       
             
             for event in pygame.event.get():
-                if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
+                if event.type == QUIT or (event.type == KEYDOWN and event.key == K_DELETE):
                     self.stop_loop()
                 self.event_manager.do(event)
             
             self.on_draw(dt / 1000)            
             
-            self.global_group.update()
             self.bg_group.draw(self.screen)
             self.is_bg_updated = False
                 
@@ -77,7 +76,6 @@ class Window:
             self.button_group.draw(self.screen)
             self.fg_group.draw(self.screen)
             
-            pygame.display.set_caption(str(self.clock.get_fps()))
             pygame.display.flip()
         self.quit()
     
@@ -157,11 +155,14 @@ class Window:
         self.global_group.add(particle)
         self.particle_group.add(particle)
     
-    def set_menu_action_manager(self, am):
+    def set_menu_event_manager(self, am):
         self.event_manager = MenuEventManager(am)
     
-    def set_game_event_manager(self, am, ctrls):
-        self.event_manager = GameEventManager(am, ctrls)
+    def set_change_ctrls_event_manager(self, am, con_or_kb):
+        self.event_manager = ChangeCtrlsEventManager(am, con_or_kb)
+    
+    def set_game_event_manager(self, am, ctrls, deadzones):
+        self.event_manager = GameEventManager(am, ctrls, deadzones)
     
     def render_font(self, txt, size, passive_color, active_color, width=0, height=0, rectangle=0):
         """renders a font for a button"""
@@ -169,12 +170,13 @@ class Window:
             passive_color = self.convert_color(passive_color)
         if isinstance(active_color, str):
             active_color = self.convert_color(active_color)
-        font = pygame.freetype.Font('m3x6.ttf', size)
+        font = pygame.freetype.Font('m5x7.ttf', size)
         if width == height == 0:
             (pimg, r) = font.render(txt, passive_color)
             (aimg, r) = font.render(txt, active_color)
         else:
             r = font.get_rect(txt)
+            width = max(width, r.width)
             pimg = pygame.surface.Surface((width, height)).convert_alpha()
             pimg.fill((255, 255, 255, 0))
             aimg = pimg.copy()
