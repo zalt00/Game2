@@ -63,6 +63,7 @@ class Save:
         a.append(value)
         return a
 
+
 class SaveCombination(list):
     def get(self):
         return tuple((save.get() for save in self))

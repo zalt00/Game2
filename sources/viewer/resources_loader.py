@@ -9,6 +9,7 @@ from typing import Any
 
 pygame.init()
 
+
 class ResourceLoader:
     def __init__(self, resources_directory):
         self.dir_ = resources_directory

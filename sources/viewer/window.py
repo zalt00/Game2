@@ -5,8 +5,8 @@ import pygame.freetype
 pygame.init()
 from pygame.locals import *
 from .event_manager import INACTIVE_EVENT_MANAGER, GameEventManager, MenuEventManager, ChangeCtrlsEventManager
-from .sprites import BgLayer, ABgLayer, DBgLayer, ADBgLayer, Entity, Button, Particle, Structure
-from .image_handler import BgLayerImageHandler, TBEntityImageHandler, FBEntityImageHandler, ButtonImageHandler, StructureImageHandler
+from .sprites import BgLayer, DBgLayer, Entity, Button, Particle, Structure, Text
+from .image_handler import BgLayerImageHandler, TBEntityImageHandler, ButtonImageHandler, StructureImageHandler, TextImageHandler
 from .resources_loader import ResourceLoader, Entity as EntityResource
 
 pygame.joystick.init()
@@ -36,18 +36,23 @@ class Window:
         self.res_loader = ResourceLoader('resources')
         
         # SPRITES
-        self.global_group = pygame.sprite.Group()
+        self.global_group = pygame.sprite.RenderUpdates()
         self.bg_group = pygame.sprite.LayeredUpdates()
         self.fg_group = pygame.sprite.LayeredUpdates()
-        self.particle_group = pygame.sprite.Group()
-        self.entity_group = pygame.sprite.Group()
-        self.button_group = pygame.sprite.OrderedUpdates()
+        self.particle_group = pygame.sprite.RenderUpdates()
+        self.entity_group = pygame.sprite.RenderUpdates()
+        self.button_group = pygame.sprite.Group()
+        self.everything_but_bgfg_group = pygame.sprite.Group()
+        self.text_group = pygame.sprite.Group()
         
         self.screen_dec = [0, 0]
         
         ##
         self.on_draw = lambda _: None
-        
+
+        self.i = 0
+        self.previous = Rect(0, 0, 0, 0)
+
     def init_joys(self):
         joysticks = [pygame.joystick.Joystick(x) for x in range(pygame.joystick.get_count())]
         for j in joysticks:
@@ -56,27 +61,37 @@ class Window:
     def run(self):
         """Starts the main loop"""
         self.loop_running = True
-
         while self.loop_running:
-            dt = self.clock.tick(self.fps)       
-            
+            dt = self.clock.tick(self.fps)
+
             for event in pygame.event.get():
                 if event.type == QUIT or (event.type == KEYDOWN and event.key == K_DELETE):
                     self.stop_loop()
                 self.event_manager.do(event)
             
-            self.on_draw(dt / 1000)            
-            
-            self.bg_group.draw(self.screen)
-            self.is_bg_updated = False
-                
-            #self.screen.blit(self.current_bg, (0, 0))
-            self.particle_group.draw(self.screen)
-            self.entity_group.draw(self.screen)
-            self.button_group.draw(self.screen)
+            self.on_draw(dt / 1000)
+
+            sprite_rect = self.bg_group.get_top_sprite().rect
+
+            if not self.is_bg_updated:
+                self.bg_group.draw(self.current_bg)
+                self.screen.blit(self.current_bg, (0, 0))
+                self.is_bg_updated = True
+
+            self.fg_group.clear(self.screen, self.current_bg)
+            self.everything_but_bgfg_group.clear(self.screen, self.current_bg)
+
+            self.everything_but_bgfg_group.draw(self.screen)
             self.fg_group.draw(self.screen)
-            
+
+            if sprite_rect != self.previous:
+                self.is_bg_updated = False
+                self.previous = sprite_rect.copy()
+
+            # self.on_draw(dt / 1000)
+
             pygame.display.flip()
+
         self.quit()
     
     def stop_loop(self):
@@ -123,6 +138,7 @@ class Window:
         img_hdlr = TBEntityImageHandler(res, end_animation_callback)
         entity = Entity(img_hdlr, position_handler, physics_updater, particles_handler, res.dec, self.screen_dec)
         self.global_group.add(entity)
+        self.everything_but_bgfg_group.add(entity)
         self.entity_group.add(entity)
         
         return entity
@@ -132,6 +148,7 @@ class Window:
         img_handler = StructureImageHandler(res)
         struct = Structure(img_handler, position_handler, res.dec, self.screen_dec, state)
         self.global_group.add(struct)
+        self.everything_but_bgfg_group.add(struct)
         self.entity_group.add(struct)
         
         return struct
@@ -143,18 +160,27 @@ class Window:
         button = Button(img_handler, position_handler, action_name)
         
         self.global_group.add(button)
+        self.everything_but_bgfg_group.add(button)
         self.button_group.add(button)
         
         return button
-        
+
+    def add_text(self, res_getter, position_handler):
+        img_hdlr = TextImageHandler(res_getter)
+        sprite = Text(img_hdlr, position_handler, (0, 0))
+        self.global_group.add(sprite)
+        self.everything_but_bgfg_group.add(sprite)
+        self.text_group.add(sprite)
+
     def spawn_particle(self, res, position_handler, state, dec, direction):
         img_hdlr = TBEntityImageHandler(res, None)
         particle = Particle(img_hdlr, position_handler, dec, self.screen_dec, state, direction)
-        img_hdlr.end_animation_callback = lambda *_, **__: particle.kill()
+        img_hdlr.end_animation_callback = particle.kill
         
         self.global_group.add(particle)
+        self.everything_but_bgfg_group.add(particle)
         self.particle_group.add(particle)
-    
+
     def set_menu_event_manager(self, am):
         self.event_manager = MenuEventManager(am)
     
@@ -190,8 +216,26 @@ class Window:
             
         sheets = dict(idle=pimg, activated=aimg)
         return EntityResource(sheets, r.width, r.height, (0, 0))
-        
-        
+
+    def render_text(self, txt, color, size):
+        """render a text"""
+        if isinstance(color, str):
+            color = self.convert_color(color)
+
+        max_width = 0
+        font = pygame.freetype.Font('m5x7.ttf', size)
+        imgs = []
+        for line in txt.split('\n'):
+            img, r = font.render(line, fgcolor=color)
+            imgs.append(img)
+            max_width = max(max_width, r.width)
+        height = font.get_sized_glyph_height()
+        surf = pygame.Surface((max_width, height * len(imgs)), SRCALPHA)
+        for i, img in enumerate(imgs):
+            surf.blit(img, (0, i * height))
+        r = surf.get_rect()
+        return EntityResource(dict(idle=surf), r.width, r.height, (0, 0))
+
     @staticmethod
     def convert_color(hexcolor):
         a = []
@@ -207,4 +251,4 @@ class Window:
     def quit(self, *_, **__):
         pass
     
-    
+

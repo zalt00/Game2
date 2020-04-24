@@ -37,8 +37,7 @@ class BgLayerPositionHandler:
             if self.advance > self.trajectory_duration:
                 self.advance = self.trajectory_duration
                 end = True
-            
-            
+
             npos = self.trajectory(self.advance)
             self.pos[0], self.pos[1] = npos[0], npos[1]
             if end:
@@ -55,52 +54,54 @@ class BgLayerPositionHandler:
         n_layers = len(entity.image_handler.res.layers)
         i = (n_layers - entity.layer) ** 2
 
-        return self.pos[0] / i + entity.dec[0], -self.pos[1] / i + entity.dec[1]
+        return self.base_pos[0] + self.sdr[0] / i + entity.dec[0], -self.base_pos[1] - self.sdr[1] / i + entity.dec[1]
                 
 
 class EntityPositionHandler:
     def __init__(self, body):
         self.body = body
         self.pos = [0, 0]
-    
+
+        self.jumped = False
+        self.jump_counter_deactivation_states = {'fall', 'land', 'walk', 'idle', 'run'}
+
+        self.mapping = dict(
+            walk=50,
+            run=130,
+            slowly_walk=50,
+            slowly_run=130,
+        )
+
     def update_position(self, entity, n=1):
-        for _ in range(1):
-            if entity.state == 'walk':
-                if abs(self.body.velocity.x) < 60:
-                    entity.thrust.x = 60000 * entity.direction
-            elif entity.state == 'run':
-                if abs(self.body.velocity.x) < 150:
-                    entity.thrust.x = 60000 * entity.direction
-            elif entity.secondary_state == 'slowly_walk':
-                if abs(self.body.velocity.x) < 50:
-                    entity.thrust.x = 60000 * entity.direction
-            elif entity.secondary_state == 'slowly_run':
-                if abs(self.body.velocity.x) < 130:
-                    entity.thrust.x = 60000 * entity.direction
-            elif entity.secondary_state == 'walk':
-                if abs(self.body.velocity.x) < 60:
-                    entity.thrust.x = 60000 * entity.direction
-            elif entity.secondary_state == 'run':
-                if abs(self.body.velocity.x) < 150:
-                    entity.thrust.x = 60000 * entity.direction
-            elif entity.state == 'dash':
-                entity.thrust = Vec2d(0, 0)
-                self.body.velocity = Vec2d(2000 * entity.direction, 0)
-            
-            elif entity.air_control:
-                if (abs(self.body.velocity.x) < 60 or
+        if entity.state in self.jump_counter_deactivation_states:
+            self.jumped = False
+
+        m = max(self.mapping.get(entity.state, -1),
+                self.mapping.get(entity.secondary_state, -1))
+        if abs(self.body.velocity.x) <= m:
+            entity.thrust.x = 200000 * entity.direction / max(abs(self.body.velocity.x * 5 / m), 1)
+
+        if entity.state == 'jump' and entity.is_on_ground and not self.jumped:
+            self.jumped = True
+            entity.thrust.y = 1_250_000
+
+        elif entity.state == 'dash':
+            entity.thrust = Vec2d(0, 0)
+            self.body.velocity = Vec2d(3000 * entity.direction, 0)
+
+        elif entity.air_control:
+            if (abs(self.body.velocity.x) < 60 or
                     (entity.direction == -1 and self.body.velocity.x > 0) or
                     (entity.direction == 1 and self.body.velocity.x < 0)):
-                    
-                    entity.thrust.x = 50000 * entity.air_control
-                entity.air_control = 0
-            
-            self.body.apply_force_at_local_point(entity.thrust, (0, 0))
-            entity.thrust = Vec2d(0, 0)
-            
+
+                entity.thrust.x = 100000 * entity.air_control
+            entity.air_control = 0
+
+        self.body.apply_force_at_local_point(entity.thrust, (0, 0))
+        entity.thrust = Vec2d(0, 0)
+
         self.pos = self.body.position
         return self.body.position.x + entity.dec[0] + entity.screen_dec[0], -self.body.position.y + entity.dec[1] + entity.screen_dec[1]
-    
     
 
 class PlayerPositionHandler(EntityPositionHandler):
@@ -110,9 +111,10 @@ class PlayerPositionHandler(EntityPositionHandler):
 
     def update_position(self, entity, n=1):
         x, y = super().update_position(entity, n)
+        self.update_triggers()
+        return x, y
+
+    def update_triggers(self):
         for trigger in self.triggers:
             trigger.update(self.body.position.x, self.body.position.y)
-        #print(x, y, '                                         ', end='\r')
-        return x, y
-    
-    
+

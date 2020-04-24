@@ -169,8 +169,7 @@ class BaseMenuActionManager(ActionManager):
             button.position_handler.pos = x, y        
         self.focus = [0, 0]
         self.update_buttons2()
-    
-    
+
     def next_panel(self):
         if self.current_panel:
             i = 0
@@ -206,8 +205,7 @@ class BaseMenuActionManager(ActionManager):
         self.classic_buttons[arg[-1]].image_handler.change_res(res)
         self.options_data.get(self.current_panel).get(arg[-1]).set(value)        
         
-        
-        
+
 class MenuActionManager(BaseMenuActionManager):
     MOUSEMOTION = 0
     RIGHT_CLICK = 1
@@ -361,27 +359,27 @@ class GameActionManager(ActionManager):
     def land(self):
         if self.still_walking:
             if self.still_running:
-                self.player.secondary_state = 'slowly_run'
+                self.player.secondary_state = 'run'
             else:
-                self.player.secondary_state = 'slowly_walk'
+                self.player.secondary_state = 'walk'
         self.player.state = 'land'
         self.next_state = 'idle'
         self.player.is_on_ground = True
-        self.already_dashed = False        
-    
+        self.already_dashed = False
+
     def jump(self):
         if self.player.state in ('walk', 'run'):
             self.player.secondary_state = self.player.state
-            self.player.state = 'prejump'
+            self.player.state = 'jump'
         else:
-            self.next_state = 'prejump'
+            self.next_state = 'jump'
             
     def dash(self):
         if not self.already_dashed:
             if self.player.state == 'fall' or self.player.state == 'jump':
                 self.player.state = 'dash'
                 self.already_dashed = True
-    
+
     def run(self):
         self.still_running = True
         if self.player.state == 'walk':
@@ -465,23 +463,12 @@ class GameActionManager(ActionManager):
             else:
                 self.next_state = 'fall'        
         
-        if self.player.state == 'prejump' and self.player.is_on_ground:
+        if self.player.state == 'jump' and self.player.is_on_ground:
             self.next_state = 'jump'
-            self.player.secondary_state = ''
-            self.player.thrust.y = 1_250_000
         self.player.direction = self.next_direction
         if self.player.air_control:
             self.player.air_control = self.player.direction
 
-        if self.next_state == 'prejump':
-            if self.still_walking:
-                if self.still_running:
-                    self.player.secondary_state = 'run'
-                else:
-                    self.player.secondary_state = 'walk'
-            else:
-                self.player.secondary_state = ''
-        
         self.player.state = self.next_state
         
         if self.player.is_on_ground:

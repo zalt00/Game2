@@ -14,6 +14,7 @@ class BaseEventManager:
 
 INACTIVE_EVENT_MANAGER = BaseEventManager()
 
+
 class EventManager(BaseEventManager):
     
     def __init__(self, action_manager):
@@ -24,6 +25,7 @@ class EventManager(BaseEventManager):
         f = self.handlers.get(event.type, None)
         if f is not None:
             f(event)
+
 
 class GameEventManager(EventManager):
     def __init__(self, action_manager, controls, deadzones):
@@ -60,8 +62,7 @@ class GameEventManager(EventManager):
         else:
             action2 = self.controls.get((12, event.value[1]), None)
             if action2 is not None:
-                self.action_manager.do(action2)        
-
+                self.action_manager.do(action2)
 
     def joybuttondown(self, event):
         action = self.controls.get((10, event.button), None)

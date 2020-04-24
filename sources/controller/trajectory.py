@@ -34,18 +34,22 @@ class CameraMovementTrajectory:
             
         self.dxl = self.dx - self.dxin - self.dxout  # distance parcourue en equation lineaire (vt + x0)
         self.dyl = self.dy - self.dyin - self.dyout
-        
+
     def __call__(self, t):
         if t <= self.fade_in:
-            x = 0.5 * self.axin * t ** 2 + self.base_point[0]
-            y = 0.5 * self.ayin * t ** 2 + self.base_point[1]
+            t_squared = t * t
+            x = 0.5 * self.axin * t_squared + self.base_point[0]
+            y = 0.5 * self.ayin * t_squared + self.base_point[1]
         elif self.fade_in < t <= (self.fade_in + self.dtl):
             t2 = t - self.fade_in
             x = self.vxl * t2 + self.base_point[0] + self.dxin
             y = self.vyl * t2 + self.base_point[1] + self.dyin
         elif (self.fade_in + self.dtl) < t <= self.duration:
             t3 = t - self.fade_in - self.dtl
-            x = 0.5 * -self.axout * t3 ** 2 + self.vxl * t3 + self.base_point[0] + self.dxin + self.dxl
-            y = 0.5 * -self.ayout * t3 ** 2 + self.vyl * t3 + self.base_point[1] + self.dyin + self.dyl
+            t3_squared = t3 * t3
+            x = 0.5 * -self.axout * t3_squared + self.vxl * t3 + self.base_point[0] + self.dxin + self.dxl
+            y = 0.5 * -self.ayout * t3_squared + self.vyl * t3 + self.base_point[1] + self.dyin + self.dyl
+        else:
+            x, y = self.base_point
         return x, y
-        
+

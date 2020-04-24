@@ -44,10 +44,10 @@ class Data(DataContainer):
         (12, -1): 'DPADY-',
         (20, 20): '/'
     }
-        
-    
+
     class Options(DataContainer):
         option_types = ('Video', 'Gameplay', 'Controls')
+
         class Video(DataContainer):
             display_mode = Save(3)
             width = Save(4)
@@ -77,6 +77,7 @@ class Data(DataContainer):
         class MainMenu(DataContainer):
             bg_res = 'black_forest'
             bg_pos = (0, 0)
+
             class Objects(DataContainer):
                 objects = ('PlayButton', 'OptionsButton', 'QuitButton',
                            'MainPanel', 'ControlsPanel', 'VideoPanel', 'GameplayPanel', 'ControlsButton', 'GameplayButton', 'VideoButton',
@@ -98,12 +99,14 @@ class Data(DataContainer):
                     action = 'play'
                     pos = (40, 360)
                     button_name = 'play_button'
+
                 class QuitButton:
                     typ = 'button'
                     res = 'buttons/quit_button'
                     action = 'quit'
                     pos = (40, 190)
                     button_name = 'quit_button'
+
                 class OptionsButton:
                     typ = 'button'
                     res = 'buttons/open_options_button'
@@ -115,6 +118,7 @@ class Data(DataContainer):
                     typ = 'structure'
                     res = 'panels/options_main_panel'
                     pos = (50, 120 * 1000)
+
                 class ControlsPanel:
                     typ = 'structure'
                     res = 'panels/options_controls_panel'
@@ -148,6 +152,7 @@ class Data(DataContainer):
 
                     )
                     panel_name = 'Controls'
+
                 class VideoPanel:
                     typ = 'structure'
                     res = 'panels/options_video_panel'
@@ -163,16 +168,17 @@ class Data(DataContainer):
                                           arg=[0, ('buttons/fullscreen', 1), ('buttons/windowed', 0), 'display_mode'],
                                           action='change_option', res='buttons/fullscreen'),
                         resolution=dict(pos=(320, 489 * 1000),
-                                          arg=[0, ('buttons/resolutions/1280 x 720', (1280, 720)), ('buttons/resolutions/1280 x 960', (1280, 960)), 'resolution'],
-                                          action='change_option', res='buttons/resolutions/1280 x 720'),      
+                                        arg=[0, ('buttons/resolutions/1280 x 720', (1280, 800)), ('buttons/resolutions/1280 x 960', (1280, 960)), 'resolution'],
+                                        action='change_option', res='buttons/resolutions/1280 x 720'),
                         luminosity=dict(pos=(320, 411 * 1000),
-                                          arg=[0, ('buttons/luminosity/normal', 0), 'luminosity'],
-                                          action='change_option', res='buttons/luminosity/normal'),                             
+                                        arg=[0, ('buttons/luminosity/normal', 0), 'luminosity'],
+                                        action='change_option', res='buttons/luminosity/normal'),
                     )
                     options_save = dict(display_mode={0: 1, 1: 0},
-                                        resolution={(1280, 720): 0, (1280, 960): 1},
+                                        resolution={(1280, 800): 0, (1280, 960): 1},
                                         luminosity={0: 0})  # permet de passer de la valeur de la save a l'indice du bouton a afficher
                     panel_name = 'Video'
+
                 class GameplayPanel:
                     typ = 'structure'
                     res = 'panels/options_gameplay_panel'
@@ -188,11 +194,13 @@ class Data(DataContainer):
                     res = 'buttons/controls_button'
                     action = 'set_panel_to_controls'
                     pos = (521, 690 * 1000)
+
                 class GameplayButton:
                     typ = 'button'
                     res = 'buttons/gameplay_button'
                     action = 'set_panel_to_gameplay'
                     pos = (280, 682 * 1000)
+
                 class VideoButton:
                     typ = 'button'
                     res = 'buttons/video_button'
@@ -205,12 +213,14 @@ class Data(DataContainer):
                     action = 'apply'
                     button_name = 'apply_button'
                     pos = (80, 142 * 1000)
+
                 class CancelButton:
                     typ = 'button'
                     res = 'buttons/cancel_button'
                     action = 'cancel'
                     button_name = 'cancel_button'
                     pos = (220, 150 * 1000)
+
                 class ResetButton:
                     typ = 'button'
                     res = 'buttons/reset_button'
@@ -220,8 +230,9 @@ class Data(DataContainer):
                     
                     
 ######################################################################################################
-                    
+
     class Game(DataContainer):
+
         current_map_id = Save(2)
         maps = ('BlackForest',)
         
@@ -237,8 +248,9 @@ class Data(DataContainer):
             ground_length = 10000
             
             class Objects(DataContainer):
-                objects = ('Player', 'S1')
+                objects = ('Player', 'S1', 'PlayerValues')
                 player = 'Player'
+
                 class Player:
                     typ = 'entity'
                     res = 'player/white_guy'
@@ -257,15 +269,29 @@ class Data(DataContainer):
                     state = 'base'
                     poly = [(Vec2d(-39, 0), Vec2d(-39, 110), Vec2d(39, 110), Vec2d(39, 0))]
                     ground = [(Vec2d(38, 111), Vec2d(-38, 111))]
-            
+
+                class PlayerValues:
+                    typ = 'text'
+                    pos = 20, 680
+                    text = 'x velocity: {}\ny velocity: {}\nx coordinate: {}\ny coordinate: {}'
+                    values = (('player', 'position_handler', 'body', 'velocity', 'x'),
+                              ('player', 'position_handler', 'body', 'velocity', 'y'),
+                              ('player', 'position_handler', 'body', 'position', 'x'),
+                              ('player', 'position_handler', 'body', 'position', 'y'))
+                    color = '#ffffff'
+                    size = 30
+
             class Triggers(DataContainer):
                 triggers = ('LeftBorderTrigger', 'RightBorderTrigger', 'BottomOfWorldTrigger')
+
                 class RightBorderTrigger(Trigger, DataContainer):
                     id_ = 0
                     left = 1255
                     enabled = True
+
                     class Actions(DataContainer):
                         actions = ('MoveCamera', 'EnableLBT', 'SelfDisable')
+
                         class MoveCamera:
                             typ = 'AbsoluteMovecam'
                             kwargs = dict(
@@ -274,9 +300,11 @@ class Data(DataContainer):
                                 total_duration=80,  # in frames
                                 fade_in=30,
                                 fade_out=30)
+
                         class EnableLBT:
                             typ = 'EnableTrigger'
                             kwargs = dict(target=1)
+
                         class SelfDisable:
                             typ = 'DisableTrigger'
                             kwargs = dict(target=0)
@@ -284,8 +312,10 @@ class Data(DataContainer):
                 class LeftBorderTrigger(Trigger, DataContainer):
                     id_ = 1
                     right = 1242
+
                     class Actions(DataContainer):
                         actions = ('MoveCamera', 'EnableRBT', 'SelfDisable')
+
                         class MoveCamera:
                             typ = 'AbsoluteMovecam'
                             kwargs = dict(
@@ -294,9 +324,11 @@ class Data(DataContainer):
                                 total_duration=80,  # in frames
                                 fade_in=30,
                                 fade_out=30)
+
                         class EnableRBT:
                             typ = 'EnableTrigger'
                             kwargs = dict(target=0)
+
                         class SelfDisable:
                             typ = 'DisableTrigger'
                             kwargs = dict(target=1)           
@@ -305,8 +337,10 @@ class Data(DataContainer):
                     id_ = 2
                     top = -100
                     enabled = True
+
                     class Actions(DataContainer):
                         actions = ('TP',)
+
                         class TP:
                             typ = 'TPEntity'
                             kwargs = dict(

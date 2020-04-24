@@ -165,7 +165,7 @@ class App:
                         stop = False
                         while not stop:
                             try:
-                                os.rename('StructureBuilder/save/save.png', f'StructureBuilder/save/save{i}.png')
+                                os.rename('sources/StructureBuilder/save/save.png', f'sources/StructureBuilder/save/save{i}.png')
                             except FileExistsError:
                                 i += 1
                             except FileNotFoundError:
@@ -173,13 +173,13 @@ class App:
                             else:
                                 stop = True
                         
-                        pygame.image.save(self.bg.subsurface(r), "StructureBuilder/save/save.png")
+                        pygame.image.save(self.bg.subsurface(r), "sources/StructureBuilder/save/save.png")
                         print('image saved')
                     
                     elif event.key == K_SPACE:
                         top = self.sepos[1] * self.th
                         left = self.sepos[0] * self.tw
-                        img = pygame.image.load('StructureBuilder/save/save.png').convert()
+                        img = pygame.image.load('sources/StructureBuilder/save/save.png').convert()
                         self.bg.blit(img, (left, top))
                     
                 elif event.type == KEYUP:

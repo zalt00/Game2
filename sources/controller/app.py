@@ -4,6 +4,7 @@ from .position_handler import StaticPositionHandler, PlayerPositionHandler, BgLa
 from .action_manager import GameActionManager, MenuActionManager
 from .physics_updater import PhysicsUpdater
 from .particles_handler import ParticleHandler
+from .res_getter import TextResGetter
 from pygame.locals import *
 import pygame.mouse
 from .space import GameSpace
@@ -102,8 +103,9 @@ class Menu:
                 obj = self.window.add_structure(data.res, spos_hdlr, 'idle')
                 if hasattr(data, 'panel_name'):
                     additional_buttons = self.init_panel_buttons(data)
-                    self.panels[data.panel_name] = dict(structure=obj, buttons=additional_buttons, buttons_order=data.buttons_order, data=data)
-                    
+                    self.panels[data.panel_name] = dict(structure=obj,
+                                                        buttons=additional_buttons,
+                                                        buttons_order=data.buttons_order, data=data)
             if obj is not None:
                 if oname in self.page.Objects.main_menu_objects:
                     self.main_menu_objects.append(obj)
@@ -275,13 +277,14 @@ class Game:
         self.state = 'in_game'
         
         self.t1 = perf_counter()
-        self.number_of_updates = 0
+        self.count = 0  # every 4 space update ticks the position handler, the image handler
+        # and the physic state updater must be updated
         self.number_of_space_updates = 0
         
-        self.window.fps = 130
+        self.window.fps = 60
 
         self.window.init_joys()
-        #self.draw_options = pymunk.pygame_util.DrawOptions(self.window.screen)
+        # self.draw_options = pymunk.pygame_util.DrawOptions(self.window.screen)
         
         pygame.mouse.set_visible(False)
         
@@ -337,9 +340,11 @@ class Game:
                 self.init_player(data)
             elif data.typ == 'structure':
                 self.init_structure(data)
+            elif data.typ == 'text':
+                self.init_text(data)
         #####
         
-        ### EVENT MANAGER ###             
+        ### EVENT MANAGER ###
         ctrls = {}
         for action in self.model.Options.Controls.actions:
             kb, controller = self.model.Options.Controls.get(action)
@@ -348,7 +353,7 @@ class Game:
             ctrls[kb.get()] = action_id
             ctrls[controller.get_shorts()] = action_id
         
-        self.window.set_game_event_manager(action_manager, ctrls, [0.35, 0.35, 0.3, 0.15, 0.15])
+        self.window.set_game_event_manager(action_manager, ctrls, [0.35, 0.35, 0.3, 0.15, 0.15, 0.15])
         #####
         
         self.window.on_draw = self.update
@@ -367,7 +372,8 @@ class Game:
     def init_player(self, player_data):
         name = player_data.name
         
-        self.space.add_humanoid_entity(player_data.height, player_data.width, (player_data.pos_x.get(), player_data.pos_y.get()), name)
+        self.space.add_humanoid_entity(player_data.height,
+                                       player_data.width, (player_data.pos_x.get(), player_data.pos_y.get()), name)
         
         self.player = self.window.add_entity(
             player_data.res,
@@ -378,7 +384,12 @@ class Game:
         self.action_manager.player = self.player
         
         self.entities[name] = self.player
-        
+
+    def init_text(self, data):
+        res_getter = TextResGetter(data.text, data.values, self, self.window.render_text, data.color, data.size)
+        poshdlr = StaticPositionHandler(data.pos)
+        self.window.add_text(res_getter, poshdlr)
+
     @staticmethod
     def dump_save():
         Save.dump()
@@ -391,21 +402,21 @@ class Game:
         self.dump_save()
     
     def update(self, dt):
-        #  pygame.display.set_caption(str(self.window.clock.get_fps()))      
-        pygame.display.set_caption(str(1/dt)) 
+        pygame.display.set_caption(str(1/dt))
         self.update_space(dt)
     
     def update_space(self, dt):
-        #self.space.debug_draw(self.draw_options)
+        # self.space.debug_draw(self.draw_options)
         n1 = round((perf_counter() - self.t1) * 60 * 4) - self.number_of_space_updates
-        n2 = round((perf_counter() - self.t1) * 60) - self.number_of_updates
-        self.window.global_group.update(n2)
-        
-        
+
         for i in range(n1):
             self.space.step(1/60/4)
+            if self.count == 3:
+                self.count = 0
+                self.window.global_group.update(1)
+            else:
+                self.count += 1
         self.number_of_space_updates += n1
-        self.number_of_updates += n2
-        
+
 
 

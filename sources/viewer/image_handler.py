@@ -54,7 +54,6 @@ class FBEntityImageHandler(EntityImageHandler):
 class TBEntityImageHandler(EntityImageHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-            
     
     def update_image(self, entity, n=1):
         
@@ -63,7 +62,7 @@ class TBEntityImageHandler(EntityImageHandler):
             self.advance = 0
         
         self.advance += n
-        a = self.advance // 6
+        a = self.advance // 5
         sheet = self.res.sheets[entity.state]
         if a * self.res.width >= sheet.get_width():
             self.advance = 0
@@ -73,7 +72,7 @@ class TBEntityImageHandler(EntityImageHandler):
         else:
             rect = pygame.Rect(a * self.res.width, 0, self.res.width, self.res.height)
             
-            img = pygame.transform.scale2x(sheet.subsurface(rect))
+            img = pygame.transform.scale2x(sheet.subsurface(rect))  # TODO: mettre ça en cache
     
             if entity.direction == -1:
                 return pygame.transform.flip(img, True, False)
@@ -99,3 +98,18 @@ class ButtonImageHandler(ImageHandler):
             img = self.res.sheets['idle']
         return img
 
+
+class TextImageHandler(ImageHandler):
+    def __init__(self, res_getter):
+        res = res_getter()
+        self.res_getter = res_getter
+        self.count = 0
+        super(TextImageHandler, self).__init__(res)
+
+    def update_image(self, text_object, n=1):
+        if self.count == 0:
+            self.res = self.res_getter()
+            self.count = 0
+        else:
+            self.count -= 1
+        return self.res.sheets['idle']
