@@ -78,7 +78,7 @@ class EntityPositionHandler:
 
         m = max(self.mapping.get(entity.state, -1),
                 self.mapping.get(entity.secondary_state, -1))
-        if abs(self.body.velocity.x) <= m:
+        if abs(self.body.velocity.x) <= m and entity.is_on_ground:
             entity.thrust.x = 200000 * entity.direction / max(abs(self.body.velocity.x * 5 / m), 1)
 
         if entity.state == 'jump' and entity.is_on_ground and not self.jumped:
@@ -87,14 +87,15 @@ class EntityPositionHandler:
 
         elif entity.state == 'dash':
             entity.thrust = Vec2d(0, 0)
-            self.body.velocity = Vec2d(3000 * entity.direction, 0)
+            self.body.velocity = Vec2d(2000 * entity.direction, 0)
 
         elif entity.air_control:
-            if (abs(self.body.velocity.x) < 60 or
+            if (abs(self.body.velocity.x) < 100 or
                     (entity.direction == -1 and self.body.velocity.x > 0) or
                     (entity.direction == 1 and self.body.velocity.x < 0)):
 
-                entity.thrust.x = 100000 * entity.air_control
+                v = max(min(100 * entity.air_control - self.body.velocity.x, 50), -50)
+                self.body.velocity += Vec2d(v, 0)
             entity.air_control = 0
 
         self.body.apply_force_at_local_point(entity.thrust, (0, 0))

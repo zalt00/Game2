@@ -18,11 +18,7 @@ def main():
         m.Options.Video.height.get(),
         (FULLSCREEN | HWSURFACE | DOUBLEBUF) * m.Options.Video.display_mode.get() | SCALED)
     a = app.App(w, m)
-    if m.Options.Video.display_mode.get():
-        with ExceptionWrapper(w, logger):
-            w.run()
-    else:
-        w.run()
+    w.run()
 
 
 if __name__ == '__main__':

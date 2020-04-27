@@ -3,7 +3,6 @@
 from utils.save_modifier import Save
 from utils.types import Trigger, DataContainer
 from pymunk import Vec2d
-from pygame.color import THECOLORS
 from pygame.constants import *
 
 
@@ -24,10 +23,10 @@ class Data(DataContainer):
         (1, 1): 'LY-',
         (2, 1): 'LT',
         (2, -1): 'RT',
-        (4, -1): 'RX-',
-        (4, 1): 'RX+',
-        (3, -1): 'RY+',
-        (3, 1): 'RY-',
+        (3, 1): 'RX+',
+        (3, -1): 'RX-',
+        (4, -1): 'RY+',
+        (4, 1): 'RY-',
         (10, 0): 'A',
         (10, 1): 'B',
         (10, 2): 'X',
@@ -54,7 +53,7 @@ class Data(DataContainer):
             height = Save(5)
             resolution = width + height
             luminosity = Save(6)
-        
+
         class Gameplay(DataContainer):
             deadzones = Save(7)
             invert_axis = Save(8)
@@ -81,7 +80,7 @@ class Data(DataContainer):
             class Objects(DataContainer):
                 objects = ('PlayButton', 'OptionsButton', 'QuitButton',
                            'MainPanel', 'ControlsPanel', 'VideoPanel', 'GameplayPanel', 'ControlsButton', 'GameplayButton', 'VideoButton',
-                           'ApplyButton', 'CancelButton', 'ResetButton')
+                           'ApplyButton', 'CancelButton', 'ResetButton', 'ResetConfirmationText')
                 
                 options_objects = {'MainPanel', 'ControlsButton', 'GameplayButton', 'VideoButton', 'ApplyButton', 'CancelButton', 'ResetButton'}
                 main_menu_objects = {'PlayButton', 'OptionsButton', 'QuitButton'}
@@ -113,7 +112,16 @@ class Data(DataContainer):
                     action = 'open_options_menu'
                     pos = (40, 270)
                     button_name = 'options_button'
-                    
+
+                class ResetConfirmationText:
+                    typ = 'text'
+                    name = 'reset_confirmation_message'
+                    font = 'm3x6.ttf'
+                    text = 'Are you sure you want to reset the options?'
+                    color = '#ffffff'
+                    size = 40
+                    pos = (605, 127 * 1000)
+
                 class MainPanel:
                     typ = 'structure'
                     res = 'panels/options_main_panel'
@@ -168,14 +176,17 @@ class Data(DataContainer):
                                           arg=[0, ('buttons/fullscreen', 1), ('buttons/windowed', 0), 'display_mode'],
                                           action='change_option', res='buttons/fullscreen'),
                         resolution=dict(pos=(320, 489 * 1000),
-                                        arg=[0, ('buttons/resolutions/1280 x 720', (1280, 800)), ('buttons/resolutions/1280 x 960', (1280, 960)), 'resolution'],
+                                        arg=[0, ('buttons/resolutions/1280 x 720', (1280, 720)),
+                                             ('buttons/resolutions/1280 x 800', (1280, 800)),
+                                             ('buttons/resolutions/1280 x 960', (1280, 960)),
+                                             'resolution'],
                                         action='change_option', res='buttons/resolutions/1280 x 720'),
                         luminosity=dict(pos=(320, 411 * 1000),
                                         arg=[0, ('buttons/luminosity/normal', 0), 'luminosity'],
                                         action='change_option', res='buttons/luminosity/normal'),
                     )
                     options_save = dict(display_mode={0: 1, 1: 0},
-                                        resolution={(1280, 800): 0, (1280, 960): 1},
+                                        resolution={(1280, 720): 0, (1280, 800): 1, (1280, 960): 2},
                                         luminosity={0: 0})  # permet de passer de la valeur de la save a l'indice du bouton a afficher
                     panel_name = 'Video'
 
@@ -184,7 +195,7 @@ class Data(DataContainer):
                     res = 'panels/options_gameplay_panel'
                     pos = (70, 336 * 1000)
                     buttons_order = (
-                        ('apply_button', 'cancel_button', 'reset_button'),
+                        ('apply_button', 'cancel_button', None, 'reset_button'),
                     )
                     additional_buttons = dict()
                     panel_name = 'Gameplay'
@@ -272,14 +283,15 @@ class Data(DataContainer):
 
                 class PlayerValues:
                     typ = 'text'
-                    pos = 20, 680
-                    text = 'x velocity: {}\ny velocity: {}\nx coordinate: {}\ny coordinate: {}'
+                    pos = 20, 670
+                    text = 'x velocity: {}\ny velocity: {}\nx coordinate: {}\ny coordinate: {}\nframerate: {}'
                     values = (('player', 'position_handler', 'body', 'velocity', 'x'),
                               ('player', 'position_handler', 'body', 'velocity', 'y'),
                               ('player', 'position_handler', 'body', 'position', 'x'),
-                              ('player', 'position_handler', 'body', 'position', 'y'))
+                              ('player', 'position_handler', 'body', 'position', 'y'),
+                              ('window', 'current_framerate'))
                     color = '#ffffff'
-                    size = 30
+                    size = 28
 
             class Triggers(DataContainer):
                 triggers = ('LeftBorderTrigger', 'RightBorderTrigger', 'BottomOfWorldTrigger')

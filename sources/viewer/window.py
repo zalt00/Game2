@@ -26,8 +26,9 @@ class Window:
         self.loop_running = False
         
         # CLOCK
-        self.fps = 130
+        self.fps = 60
         self.clock = pygame.time.Clock()
+        self.current_framerate = 60
         
         # EVENTS
         self.event_manager = INACTIVE_EVENT_MANAGER
@@ -63,6 +64,8 @@ class Window:
         self.loop_running = True
         while self.loop_running:
             dt = self.clock.tick(self.fps)
+
+            self.current_framerate = self.clock.get_fps()
 
             for event in pygame.event.get():
                 if event.type == QUIT or (event.type == KEYDOWN and event.key == K_DELETE):
@@ -172,6 +175,8 @@ class Window:
         self.everything_but_bgfg_group.add(sprite)
         self.text_group.add(sprite)
 
+        return sprite
+
     def spawn_particle(self, res, position_handler, state, dec, direction):
         img_hdlr = TBEntityImageHandler(res, None)
         particle = Particle(img_hdlr, position_handler, dec, self.screen_dec, state, direction)
@@ -217,13 +222,13 @@ class Window:
         sheets = dict(idle=pimg, activated=aimg)
         return EntityResource(sheets, r.width, r.height, (0, 0))
 
-    def render_text(self, txt, color, size):
+    def render_text(self, txt, color, size, font='m3x6.ttf'):
         """render a text"""
         if isinstance(color, str):
             color = self.convert_color(color)
 
         max_width = 0
-        font = pygame.freetype.Font('m5x7.ttf', size)
+        font = pygame.freetype.Font(font, size)
         imgs = []
         for line in txt.split('\n'):
             img, r = font.render(line, fgcolor=color)

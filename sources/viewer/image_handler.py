@@ -12,9 +12,11 @@ class ImageHandler:
     def update_image(self, _, n=1):
         raise NotImplementedError
 
+
 class BgLayerImageHandler(ImageHandler):
     def update_image(self, sprite, n=1):
         return self.res.layers[sprite.layer]
+
 
 class EntityImageHandler(ImageHandler):
     def __init__(self, res, end_animation_callback):
@@ -25,7 +27,8 @@ class EntityImageHandler(ImageHandler):
     
     def update_image(self, _):
         raise NotImplementedError
-    
+
+
 class FBEntityImageHandler(EntityImageHandler):
     def update_image(self, entity, n=1):
         
@@ -62,7 +65,7 @@ class TBEntityImageHandler(EntityImageHandler):
             self.advance = 0
         
         self.advance += n
-        a = self.advance // 5
+        a = self.advance // 6
         sheet = self.res.sheets[entity.state]
         if a * self.res.width >= sheet.get_width():
             self.advance = 0

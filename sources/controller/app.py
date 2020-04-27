@@ -4,7 +4,7 @@ from .position_handler import StaticPositionHandler, PlayerPositionHandler, BgLa
 from .action_manager import GameActionManager, MenuActionManager
 from .physics_updater import PhysicsUpdater
 from .particles_handler import ParticleHandler
-from .res_getter import TextResGetter
+from .res_getter import FormatTextResGetter, SimpleTextResGetter
 from pygame.locals import *
 import pygame.mouse
 from .space import GameSpace
@@ -91,7 +91,9 @@ class Menu:
         
         self.mainmenu_classic_buttons = {}
         self.options_classic_buttons = {}
-        
+
+        self.texts = {}
+
         for oname in self.page.Objects.objects:
             data = self.page.Objects.get(oname)
             obj = None
@@ -106,6 +108,14 @@ class Menu:
                     self.panels[data.panel_name] = dict(structure=obj,
                                                         buttons=additional_buttons,
                                                         buttons_order=data.buttons_order, data=data)
+
+            elif data.typ == 'text':
+                tpos_hdlr = StaticPositionHandler(data.pos)
+                obj = self.window.add_text(
+                    SimpleTextResGetter(data.text, self.window.render_text,
+                                        data.color, data.size, data.font), tpos_hdlr)
+                self.texts[data.name] = obj
+
             if obj is not None:
                 if oname in self.page.Objects.main_menu_objects:
                     self.main_menu_objects.append(obj)
@@ -130,7 +140,8 @@ class Menu:
             self.model.Options,
             self.change_kb_ctrls,
             self.change_con_ctrls,
-            self.set_ctrl
+            self.set_ctrl,
+            self.texts
         )
         self.window.set_menu_event_manager(actionmanager)
         self.action_manager = actionmanager
@@ -215,8 +226,9 @@ class Menu:
             x, y = obj.position_handler.pos
             y //= 1000
             obj.position_handler.pos = x, y
+        self.action_manager.focus = [0, 0]
         self.action_manager.set_panel_to_video()
-    
+
     def close_options(self):
         for obj in self.main_menu_objects:
             x, y = obj.position_handler.pos
@@ -248,8 +260,7 @@ class Menu:
         
         button.image_handler.res = self.window.render_font(name, 40, '#eeeeee', '#888888', 100, 35, 5)
         self.window.set_menu_event_manager(self.action_manager)
-        
-    
+
     def reverse_trajectory(self, t):
         if int(t.target[0]) == 0:
             for p in self.pos_hdlrs:
@@ -386,7 +397,7 @@ class Game:
         self.entities[name] = self.player
 
     def init_text(self, data):
-        res_getter = TextResGetter(data.text, data.values, self, self.window.render_text, data.color, data.size)
+        res_getter = FormatTextResGetter(data.text, data.values, self, self.window.render_text, data.color, data.size)
         poshdlr = StaticPositionHandler(data.pos)
         self.window.add_text(res_getter, poshdlr)
 
