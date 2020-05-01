@@ -21,7 +21,9 @@ class Window:
         self.is_bg_updated = False
         
         self.init_joys()
-        
+
+        self.bg_pos = [0, 0]
+
         # LOOP
         self.loop_running = False
         

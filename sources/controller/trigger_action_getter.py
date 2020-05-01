@@ -8,13 +8,14 @@ class ActionGetter:
     def __call__(self, action_type, kwargs):
         return getattr(self, action_type)(ag=self, **kwargs)
 
+
 class GameActionGetter(ActionGetter):
     def __init__(self, triggers, window, pos_handlers, entities):
         self.triggers = triggers
         self.window = window
         self.pos_hdlrs = pos_handlers
         self.entities = entities
-        
+
     @dataclass
     class AbsoluteMovecam:
         ag: Any
@@ -23,14 +24,17 @@ class GameActionGetter(ActionGetter):
         total_duration: int
         fade_in: int
         fade_out: int
+
         def __call__(self):
             for p in self.ag.pos_hdlrs:
                 p.add_trajectory((self.x, self.y), self.total_duration, self.fade_in, self.fade_out)
+            self.ag.window.bg_pos[:] = self.x, self.y
     
     @dataclass
     class EnableTrigger:
         ag: Any
         target: int
+
         def __call__(self):
             try:
                 self.ag.triggers[self.target].enabled = True
@@ -41,6 +45,7 @@ class GameActionGetter(ActionGetter):
     class DisableTrigger:
         ag: Any
         target: int
+
         def __call__(self):
             try:
                 self.ag.triggers[self.target].enabled = False
@@ -52,6 +57,7 @@ class GameActionGetter(ActionGetter):
         ag: Any
         entity_name: str
         npos: int
+
         def __call__(self):
             try:
                 entity = self.ag.entities[self.entity_name]

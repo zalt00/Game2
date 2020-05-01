@@ -349,7 +349,13 @@ class MenuActionManager(BaseMenuActionManager):
         txto = self.additional_texts['reset_confirmation_message']
         if txto.position_handler.pos[1] < 2000:
             self.remove_confirmation_messages('reset')
-            print('reset')
+            for save, value in self.options_data.default_values:
+                if isinstance(value, tuple):
+                    save.set_shorts(*value)
+                else:
+                    save.set(value)
+            self.close_options()
+            self.open_options_menu()
         else:
             self.add_confirmation_message('reset_confirmation_message', 'reset')
 

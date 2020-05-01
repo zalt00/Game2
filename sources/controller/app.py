@@ -339,10 +339,21 @@ class Game:
             trigdata = self.level.Triggers.get(trig_name)
             self.triggers[trigdata.id_] = Trigger(trigdata, self.ag)          
         #####
-        
+
+        ### CAMERA ###
+
+        self.ag('AbsoluteMovecam', dict(
+            x=self.level.camera_pos_x.get(),
+            y=self.level.camera_pos_y.get(),
+            total_duration=1,
+            fade_in=0,
+            fade_out=0
+        ))()
+        #####
+
         action_manager = GameActionManager(None, return_to_main_menu, self.save_position)
         self.action_manager = action_manager
-        
+
         ### OBJECTS ###
         for object_name in self.level.Objects.objects:
             
@@ -354,7 +365,8 @@ class Game:
             elif data.typ == 'text':
                 self.init_text(data)
         #####
-        
+
+
         ### EVENT MANAGER ###
         ctrls = {}
         for action in self.model.Options.Controls.actions:
@@ -366,7 +378,7 @@ class Game:
         
         self.window.set_game_event_manager(action_manager, ctrls, [0.35, 0.35, 0.3, 0.15, 0.15, 0.15])
         #####
-        
+
         self.window.on_draw = self.update
         self.window.quit = self.dump_save
     
@@ -408,7 +420,9 @@ class Game:
     def save_position(self):
         self.level.Objects.Player.pos_x.set(round(self.player.position_handler.body.position.x))
         self.level.Objects.Player.pos_y.set(round(self.player.position_handler.body.position.y))
-    
+        self.level.camera_pos_x.set(round(self.window.bg_pos[0]))
+        self.level.camera_pos_y.set(round(self.window.bg_pos[1]))
+
     def quit(self):
         self.dump_save()
     

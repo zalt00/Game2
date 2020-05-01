@@ -174,7 +174,7 @@ class ChangeCtrlsEventManager(EventManager):
             self.action_manager.do(self.action_manager.SET_CTRL, (11, event.value[0]))
         
         elif event.value[1] != 0:
-            self.action_manager.do(self.action_manager.SET_CTRL, (12, event.value[0]))  
+            self.action_manager.do(self.action_manager.SET_CTRL, (12, event.value[1]))
 
     def joybuttondown(self, event):
         self.action_manager.do(self.action_manager.SET_CTRL, (10, event.button))

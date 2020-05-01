@@ -3,6 +3,7 @@
 from pymunk.vec2d import Vec2d
 from .trajectory import CameraMovementTrajectory
 from time import perf_counter
+from queue import Queue
 
 
 class StaticPositionHandler:
@@ -22,13 +23,21 @@ class BgLayerPositionHandler:
         self.trajectory_duration = 0
         self.advance = 0
         self.end_trajectory = end_trajectory_callback
-        
+        self.trajectory_queue = Queue()
+
     def add_trajectory(self, target, total_duration, fade_in, fade_out):
-        npos = target[0] + self.base_pos[0], target[1] + self.base_pos[1]
-        self.trajectory = CameraMovementTrajectory(tuple(self.pos), npos, total_duration, fade_in, fade_out)
-        self.trajectory_duration = total_duration
-        self.advance = 0
-        
+        if self.trajectory is None:
+            npos = target[0] + self.base_pos[0], target[1] + self.base_pos[1]
+            self.trajectory = CameraMovementTrajectory(tuple(self.pos), npos, total_duration, fade_in, fade_out)
+            self.trajectory_duration = total_duration
+            self.advance = 0
+        else:
+            self.trajectory_queue.put([target, total_duration, fade_in, fade_out])
+
+    def cancel_trajectory(self):
+        self.trajectory = None
+        self.trajectory_queue = Queue()
+
     def update_position(self, entity, n=1):
         if self.trajectory is not None:
             end = False
@@ -47,6 +56,10 @@ class BgLayerPositionHandler:
                 self.advance = 0
                 if self.end_trajectory is not None:
                     self.end_trajectory(t)
+                if self.trajectory_queue.empty():
+                    self.trajectory = None
+                else:
+                    self.add_trajectory(*self.trajectory_queue.get())
 
         self.sdr[0] = self.pos[0] - self.base_pos[0]
         self.sdr[1] = self.pos[1] - self.base_pos[1]

@@ -3,6 +3,7 @@
 from utils.save_modifier import Save
 from utils.types import Trigger, DataContainer
 from pymunk import Vec2d
+from utils.event import Event
 from pygame.constants import *
 
 
@@ -46,6 +47,28 @@ class Data(DataContainer):
 
     class Options(DataContainer):
         option_types = ('Video', 'Gameplay', 'Controls')
+        default_values = (
+            (Save(3), 1),
+            (Save(4), 1280),
+            (Save(5), 720),
+            (Save(6), 0),
+            (Save(7), (50, 50)),
+            (Save(8), (0, 0)),
+            (Save(9), 113),
+            (Save(10), 100),
+            (Save(11), 1073742049),
+            (Save(12), 122),
+            (Save(13), 32),
+            (Save(14), 27),
+            (Save(15), 101),
+            (Save(16), (0, -1)),
+            (Save(17), (0, 1)),
+            (Save(18), (10, 5)),
+            (Save(19), (10, 2)),
+            (Save(20), (10, 0)),
+            (Save(21), (10, 7)),
+            (Save(22), (10, 1))
+        )
 
         class Video(DataContainer):
             display_mode = Save(3)
@@ -250,7 +273,10 @@ class Data(DataContainer):
         class BlackForest(DataContainer):
             res = 'black_forest'
             space = True
-            
+
+            camera_pos_x = Save(23)
+            camera_pos_y = Save(24)
+
             dynamic_layers = True
             animated_layers = False
             bg_pos = (0, 0)
@@ -324,6 +350,7 @@ class Data(DataContainer):
                 class LeftBorderTrigger(Trigger, DataContainer):
                     id_ = 1
                     right = 1242
+                    enabled = True
 
                     class Actions(DataContainer):
                         actions = ('MoveCamera', 'EnableRBT', 'SelfDisable')
