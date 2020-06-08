@@ -1,0 +1,29 @@
+{
+  "tile size": [16, 16],
+
+  "tile sets data": {
+    "CG": {"calibration_squares": false, "filename": "classic_ground.png"},
+    "CN": {"calibration_squares": false, "filename": "connectors.png"},
+    "DH": {"calibration_squares": true, "filename": "dirty_grass.png"},
+    "DG": {"calibration_squares": false, "filename": "dirty_ground.png"},
+    "FH": {"calibration_squares": true, "filename": "fluffy_grass.png"},
+    "FG": {"calibration_squares": false, "filename": "fluffy_ground.png"},
+    "CH": {"calibration_squares": true, "filename": "grass.png"},
+    "HG": {"calibration_squares": false, "filename": "htree_ground.png"},
+    "HM": {"calibration_squares": false, "filename": "htree_middle.png"},
+    "HT": {"calibration_squares": true, "filename": "htree_top.png"},
+    "TH": {"calibration_squares": true, "filename": "platform_top_grass.png"},
+    "TG": {"calibration_squares": false, "filename": "platform_top_ground.png"},
+    "HR": {"calibration_squares": true, "filename": "reversed_htree_top.png"},
+    "SK": {"calibration_squares": true, "filename": "spikes.png"},
+    "CU": {"calibration_squares": false, "filename": "underground.png"},
+    "VT": {"calibration_squares": true, "filename": "vtree.png"},
+    "VG": {"calibration_squares": false, "filename": "vtree_ground.png"},
+    "CW": {"calibration_squares": false, "filename": "wall.png"},
+    "WG": {"calibration_squares": true, "filename": "wood_ground.png"},
+    "WP": {"calibration_squares": false, "filename": "wooden_platform.png"},
+    "WU": {"calibration_squares": false, "filename": "wall_underground.png"},
+    "LU": {"calibration_squares": false, "filename": "deep_underground.png"},
+    "WW": {"calibration_squares": false, "filename": "wood_wall.png"}
+  }
+}

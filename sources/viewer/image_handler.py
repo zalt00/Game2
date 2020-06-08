@@ -15,7 +15,7 @@ class ImageHandler:
 
 class BgLayerImageHandler(ImageHandler):
     def update_image(self, sprite, n=1):
-        return self.res.layers[sprite.layer]
+        return self.res.layers[sprite.get_layer()]
 
 
 class EntityImageHandler(ImageHandler):
@@ -47,7 +47,7 @@ class FBEntityImageHandler(EntityImageHandler):
             rect = pygame.Rect(a * self.res.width, 0, self.res.width, self.res.height)
             self.advance += 1
             
-            img = pygame.transform.scale2x(sheet.subsurface(rect))
+            img = sheet.subsurface(rect)
     
             if entity.direction == -1:
                 return pygame.transform.flip(img, True, False)
@@ -75,8 +75,8 @@ class TBEntityImageHandler(EntityImageHandler):
         else:
             rect = pygame.Rect(a * self.res.width, 0, self.res.width, self.res.height)
             
-            img = pygame.transform.scale2x(sheet.subsurface(rect))  # TODO: mettre ça en cache
-    
+            img = sheet.subsurface(rect)
+
             if entity.direction == -1:
                 return pygame.transform.flip(img, True, False)
             return img

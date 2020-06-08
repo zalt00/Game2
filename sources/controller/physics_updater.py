@@ -11,39 +11,50 @@ class PhysicsUpdater:
         self.a = 11
         self.x1 = 0
         self.x2 = 0
+        self.xb = 0
        
     def is_on_ground(self, arbiter):
         shapes = arbiter.shapes
         for shape in shapes:
+            points = arbiter.contact_point_set.points
             if getattr(shape, 'is_solid_ground', False):
-                self.on_ground = True
-                points = arbiter.contact_point_set.points
+                for contact_point in points:
+                    if (round(contact_point.point_a.y) == round(self.body.position.y - 1)
+                            or round(contact_point.point_b.y) == round(self.body.position.y - 1)):
+                        self.on_ground = True
                 if len(points) == 2:
                     self.x1, self.x2 = points[0].point_a.x, points[1].point_a.x
                 self.collide = True
             elif getattr(shape, 'is_structure', False):
                 self.collide = True
+            if self.collide:
+                self.xb = points[0].point_a.x
     
     def update(self, entity, n=1):
         for _ in range(n):
+            entity.can_air_control = True
             self.on_ground = False
             self.collide = False
             self.body.each_arbiter(self.is_on_ground)
-                    
+
+            # bug fix (prevents the player to keep his/her speed during the dash if he or she hits a structure)
             if self.collide and entity.state == 'dash':
                 self.body.velocity /= 20
                 entity.state = 'fall'
-            
+
+            # the player should not be able to air control against a wall because the wall can get him/her stuck
+            # this code tests if the direction of the player is in the same direction as the direction of the object
+            # he/she is colliding with
+            if self.collide and ((entity.direction == 1 and self.xb > self.body.position.x)
+                                 or (entity.direction == -1 and self.xb < self.body.position.x)):
+                entity.can_air_control = False
+
+            # prevents saving an unstable position (at least half of the body must be on a stable structure)
             if self.on_ground:
-                if self.x1 < self.body.position.x - 10 and self.x2 < self.body.position.x - 10:
-                    if abs(self.body.velocity.x) < 70:
-                        entity.thrust.x += 110000
-                elif self.x1 > self.body.position.x + 10 and self.x2 > self.body.position.x + 10:
-                    if abs(self.body.velocity.x) < 70:
-                        entity.thrust.x += -110000
-                elif self.body.width // 2 < round(abs(self.x1 - self.x2)):
+                if self.body.width // 2 < round(abs(self.x1 - self.x2)):
                     self.save_position()
-                        
+
+            # animation util
             else:
                 if self.body.velocity.y < 0:
                     if entity.state == 'jump':
@@ -51,13 +62,16 @@ class PhysicsUpdater:
                 else:
                     if entity.state == 'fall':
                         entity.state = 'jump'
+
             self.body.angle = 0
             self.body.angular_velocity = 0
             self.body.space.reindex_shapes_for_body(self.body)
             
             if not entity.is_on_ground and entity.state in ('walk', 'run'):
                 entity.state = 'fall'
-            
+
+            # prevents a "flicker" effect when the player leaves the ground for 1 or 2 ticks (it sometimes happens
+            # when the player simply runs on a structure after a weird landing)
             if not self.on_ground:
                 if self.a > 2:
                     on_ground = False
@@ -67,7 +81,7 @@ class PhysicsUpdater:
             else:
                 self.a = 0
                 on_ground = True
-            
+
             landed = (not entity.is_on_ground) and on_ground
             entity.is_on_ground = on_ground
             if landed:

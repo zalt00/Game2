@@ -72,7 +72,7 @@ class Menu:
             pos_hdlrs,
             True,
             False,
-            False
+            True
         )
         
         pos2 = pos[0] + self.window.get_length(self.page_res) * 2, pos[1]
@@ -286,7 +286,9 @@ class Game:
         self.window = window
         self.model = model
         self.state = 'in_game'
-        
+
+        # self.window.res_loader.cache.clear()
+
         self.t1 = perf_counter()
         self.count = 0  # every 4 space update ticks the position handler, the image handler
         # and the physic state updater must be updated
@@ -295,7 +297,10 @@ class Game:
         self.window.fps = 60
 
         self.window.init_joys()
-        # self.draw_options = pymunk.pygame_util.DrawOptions(self.window.screen)
+        self.debug_draw = False
+
+        if self.debug_draw:
+            self.draw_options = pymunk.pygame_util.DrawOptions(self.window.screen)
         
         pygame.mouse.set_visible(False)
         
@@ -305,14 +310,16 @@ class Game:
         self.level_res = self.level.res      
          
         self.space = GameSpace(self.level.ground_height, self.level.ground_length)
-        
+
+        self.player = None
+
         ### BG ###
         dynamic = self.level.dynamic_layers
         n_layers = self.window.get_number_of_layers(self.level_res)
         pos = self.level.bg_pos
         if not dynamic:
             position_handler = StaticPositionHandler(pos)
-            pos_hdlrs = (position_handler for _ in range(n_layers))
+            pos_hdlrs = [position_handler for _ in range(n_layers)]
         else:
             pos_hdlrs = [BgLayerPositionHandler(pos, self.window.screen_dec) for _ in range(n_layers)]
         
@@ -323,15 +330,15 @@ class Game:
             self.level.animated_layers
         )
         
-        pos2 = pos[0] + self.window.get_length(self.level_res) * 2, pos[1]
-        ph = BgLayerPositionHandler(pos2, self.window.screen_dec)
-        pos_hdlrs.append(ph)
-        self.window.add_bg_layer(self.level_res, 4, ph, foreground=True)
+        # pos2 = pos[0] + self.window.get_length(self.level_res) * 2, pos[1]
+        # ph = BgLayerPositionHandler(pos2, self.window.screen_dec)
+        # pos_hdlrs.append(ph)
+        # self.window.add_bg_layer(self.level_res, 4, ph, foreground=True)
         ######
         
         self.entities = dict()
         self.structures = dict()
-        
+
         ### TRIGGERS ###
         self.triggers = [None] * len(self.level.Triggers.triggers)
         self.ag = GameActionGetter(self.triggers, self.window, pos_hdlrs, self.entities)
@@ -355,6 +362,7 @@ class Game:
         self.action_manager = action_manager
 
         ### OBJECTS ###
+
         for object_name in self.level.Objects.objects:
             
             data = self.level.Objects.get(object_name)
@@ -386,7 +394,10 @@ class Game:
         
         name = data.name
         pos_handler = StaticPositionHandler((data.pos_x, data.pos_y))
-        struct = self.window.add_structure(data.res, pos_handler, data.state)
+        if data.is_built:
+            struct = self.window.add_structure(data.res, pos_handler, data.state)
+        else:
+            struct = self.window.build_structure(data.res, self.level.structure_palette, pos_handler, data.state)
         
         self.space.add_structure((data.pos_x, data.pos_y), data.poly, data.ground, name)
         
@@ -431,7 +442,8 @@ class Game:
         self.update_space(dt)
     
     def update_space(self, dt):
-        # self.space.debug_draw(self.draw_options)
+        if self.debug_draw:
+            self.space.debug_draw(self.draw_options)
         n1 = round((perf_counter() - self.t1) * 60 * 4) - self.number_of_space_updates
 
         for i in range(n1):

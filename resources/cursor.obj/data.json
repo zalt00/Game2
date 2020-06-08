@@ -1,0 +1,11 @@
+{
+  "dec": [16, 0],
+  "dimensions": [32, 32],
+  "scale2x": 0,
+  "animations": {
+    "green": {"filename":  "green.png"},
+    "nw": {"filename":  "nw.png"},
+    "red": {"filename":  "red.png"},
+    "se": {"filename":  "se.png"}
+  }
+}

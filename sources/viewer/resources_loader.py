@@ -5,7 +5,10 @@ import os
 from glob import glob
 import configparser
 from dataclasses import dataclass
+import json
 from typing import Any
+from pygame.locals import SRCALPHA
+from random import randint
 
 pygame.init()
 
@@ -69,7 +72,7 @@ class ResourceLoader:
         sheets = {}
         for sheet_path in glob(os.path.join(directory, '*.png').replace('\\', '/')):
             name = os.path.basename(sheet_path)[:-4]
-            img = pygame.image.load(sheet_path).convert()
+            img = pygame.image.load(sheet_path).convert_alpha()
             
             th = cfg['dimensions'].getint('tile_height')
             width = cfg['dimensions'].getint('width')
@@ -79,7 +82,7 @@ class ResourceLoader:
             
             n = n_w * n_h
             
-            surf = pygame.Surface((n * cfg['dimensions'].getint('tile_width'), th)).convert()
+            surf = pygame.Surface((n * cfg['dimensions'].getint('tile_width'), th), SRCALPHA)
             for i in range(n_h):
                 r = pygame.Rect(0, i * th, width, th)
                 surf.blit(img, (i * width, 0), r)
@@ -94,26 +97,174 @@ class ResourceLoader:
     def clear_cache(self):
         self.cache = {}
 
-@dataclass
+
+class ResourcesLoader2:
+    def __init__(self, resources_directory):
+        self.dir_ = resources_directory
+        self.cache = {}
+
+    def load(self, res_name):
+        try:
+            return self.cache[res_name]
+        except KeyError:
+            pass
+
+        local_dir = os.path.normpath(self.dir_ + '\\' + res_name + '\\').replace('\\', '/')
+        res = None
+
+        if res_name.endswith('st'):
+            res = Structure(local_dir)  # only resource type which is stored in a single file
+
+        else:
+            datafile_path = os.path.join(local_dir, 'data.json').replace('\\', '/')
+            with open(datafile_path, encoding='utf8') as datafile:
+                data = json.load(datafile, encoding='utf8')
+
+            if res_name.endswith('stsp'):
+                res = StructTSPalette(data, local_dir)
+            elif res_name.endswith('obj'):
+                res = Object(data, local_dir)
+            elif res_name.endswith('bg'):
+                res = Background(data, local_dir)
+            elif res_name.endswith('ts'):
+                res = Tileset(data, local_dir)
+
+        if res is None:
+            raise ValueError('invalid extension')
+        self.cache[res_name] = res
+
+        return res
+
+
+class StructTSPalette:
+    def __init__(self, data, directory):
+        print('structure palette')
+        self.data = data
+        tilesets_data = self.data['tile sets data']
+        self.tilesets_data = tilesets_data
+        tw, th = self.data['tile size']
+        self.tw, self.th = tw, th
+        for k, v in tilesets_data.items():
+            filename = v['filename']
+            cs = v['calibration_squares']
+            path = os.path.join(directory, filename).replace('\\', '/')
+            img = pygame.image.load(path).convert_alpha()
+            if cs:
+                r = img.get_rect()
+                r.width -= 2 * tw
+                r.x = tw
+                img = img.subsurface(r).copy()
+            size = img.get_width() // tw
+            tilesets_data[k] = img, size
+
+    def parse(self, s):
+        key = s[:2]
+        flip_x = int(s[2])
+        flip_y = int(s[3])
+        tile_id = s[4:]
+        tileset, size = self.tilesets_data.get(key, (None, None))
+        if tile_id == 'RD':
+            tile_id = randint(0, size - 1)
+        else:
+            tile_id = int(tile_id)
+            if tile_id >= size:
+                raise ValueError(f'invalid tile id for tileset of size {size}: {tile_id}')
+        if tileset is None:
+            raise ValueError('invalid key: ' + key)
+        tw, th = self.data['tile size']
+        r = pygame.Rect(tile_id * tw, 0, tw, th)
+        return pygame.transform.flip(tileset.subsurface(r), flip_x, flip_y)
+
+
+class Object:
+    def __init__(self, data, directory):
+        self.data = data
+        self.sheets = {}
+        for name, v in self.data['animations'].items():
+            fn = v['filename']
+            path = os.path.join(directory, fn).replace('\\', '/')
+            img = pygame.image.load(path).convert_alpha()
+            for i in range(self.data['scale2x']):
+                img = pygame.transform.scale2x(img)
+            self.sheets[name] = img
+
+        scale = 2 ** self.data['scale2x']
+        self.width = self.data['dimensions'][0] * scale
+        self.height = self.data['dimensions'][1] * scale
+        self.dec = self.data['dec'][0] * scale, self.data['dec'][1] * scale
+
+
 class Background:
-    layers: list
-    width: int
-    height: int
-    foreground: int
+    def __init__(self, data, directory):
+        self.data = data
+        self.bg = self.data['background']
+        self.fg = self.data['foreground']
+
+        self.layers = {}
+        scale = self.data['scale']
+
+        for s in ('background', 'foreground'):
+            for v in self.data[s]:
+                fn = v['filename']
+                path = os.path.join(directory, fn).replace('\\', '/')
+                img = pygame.image.load(path).convert_alpha()
+                if scale >= 2:
+                    img = pygame.transform.scale2x(img)
+                    img = pygame.transform.scale(
+                        img, (round(img.get_width() * (scale / 2)), round(img.get_height() * (scale / 2))))
+                else:
+                    img = pygame.transform.scale(img, (img.get_width() * scale, img.get_height() * scale))
+                v['img'] = img
+                self.layers[v['layer']] = img
+
+        self.width = self.data['max_dimensions'][0] * scale
+        self.height = self.data['max_dimensions'][1] * scale
+
+
+class Structure:
+    def __init__(self, path):
+        with open(path, 'r', encoding='utf8') as file:
+            s = file.read()
+
+        lines = s.splitlines()
+
+        self.sheets = None
+
+        try:
+            self.dimensions = tuple(map(int, lines[0].split('=')[1].split(' ')))
+            self.width, self.height = self.dimensions
+            self.dec = list(map(int, lines[1].split('=')[1].split(' ')))
+
+            self.scale = int(lines[2].split('=')[1])
+            length = int(lines[3].split('=')[1])
+        except IndexError:
+            raise ValueError('invalid syntax')
+        except ValueError:
+            raise ValueError('invalid values')
+        else:
+            self.dec[0] *= self.scale
+            self.dec[1] *= self.scale
+
+        try:
+            self.string_buffer = '\n'.join(lines[5:5 + length])
+        except IndexError:
+            raise ValueError('invalid string buffer length')
+
+    def build(self, sheets):
+        self.sheets = sheets
+
+
+class Tileset:
+    def __init__(self, data, directory):
+        path = os.path.join(directory, data['filename']).replace('\\', '/')
+        self.img = pygame.image.load(path).convert_alpha()
+        self.tile_data = data['tile data']
 
 
 @dataclass
-class Entity:
+class OtherObjectsResource:
     sheets: dict
     width: int
     height: int
     dec: tuple
 
-
-@dataclass
-class Tileset:
-    sheets: dict
-    width: int
-    tile_width: int
-    height: int
-    

@@ -3,30 +3,36 @@
 
 import pygame
 from pygame.locals import *
-from viewer.resources_loader import ResourceLoader
+from viewer.resources_loader import ResourcesLoader2
 import os
 pygame.init()
+
+#  24x37
 
 
 class App:
     def __init__(self, width, height, res_directory):
         self.screen = pygame.display.set_mode((width, height))
-        self.rl = ResourceLoader(res_directory)
+        self.rl = ResourcesLoader2(res_directory)
         
         self.width = width
+
+        self.tab = [['NA0000'] * 24 for _ in range(37)]
+
+        self.bg = self.screen.copy().convert_alpha()
+        self.bg.fill((255, 255, 255, 0))
         
-        self.bg = self.screen.copy()
-        
-        self.tileset = self.rl.load('base_tileset')
+        self.tileset = self.rl.load('forest/basetileset.ts')
         #self.img = pygame.transform.scale2x(pygame.transform.scale2x(self.tileset.sheets['base']))
-        self.img = pygame.transform.scale(self.tileset.sheets['base2'], (self.tileset.width * 2, self.tileset.height * 2))
-        self.img = pygame.transform.scale2x(self.img)
+        self.img = pygame.transform.scale2x(self.tileset.img)
+
+        self.tile_data = self.tileset.tile_data
         
-        self.gcursor_img = self.rl.load('cursor').sheets['green']
-        self.rcursor_img = self.rl.load('cursor').sheets['red']
+        self.gcursor_img = self.rl.load('cursor.obj').sheets['green']
+        self.rcursor_img = self.rl.load('cursor.obj').sheets['red']
         
-        self.secursor_img = self.rl.load('cursor').sheets['se']
-        self.nwcursor_img = self.rl.load('cursor').sheets['nw']
+        self.secursor_img = self.rl.load('cursor.obj').sheets['se']
+        self.nwcursor_img = self.rl.load('cursor.obj').sheets['nw']
         
         self.button1down = False
         self.holded_b = 0
@@ -37,6 +43,7 @@ class App:
         self.gc_dec = 0
         
         self.copied_image = None
+        self.copied_subtab = None
         
         self.fps = 200
         self.stop = False
@@ -59,7 +66,11 @@ class App:
             pos = coords[0] * self.tw, coords[1] * self.th
             sub_img = self.img.subsurface(self.tile_rect)
             img = pygame.transform.flip(pygame.transform.rotate(sub_img, rotate), x_flip, y_flip)
-            self.bg.blit(img, pos)
+            r = Rect(*pos, self.tile_rect.width, self.tile_rect.height)
+            self.bg.fill((255, 255, 255, 0), r)
+            self.bg.blit(img, r)
+            s = self.tile_data[self.i]
+            self.tab[coords[1]][coords[0]] = s.format(int(x_flip), int(y_flip))
         except ValueError:
             pass
         
@@ -99,12 +110,24 @@ class App:
         height = (self.nwpos[1] + 1) * self.th - top
         r = pygame.Rect(left, top, width, height)
         self.copied_image = self.bg.subsurface(r).copy()
-        
+
+        lines = self.tab[self.sepos[1]:self.nwpos[1] + 1]
+        sub_tab = []
+        for line in lines:
+            sub_tab.append(line[self.sepos[0]:self.nwpos[0] + 1])
+        self.copied_subtab = sub_tab
+        print(sub_tab)
+
     def paste(self):
-        if self.copied_image is not None:
+        if self.copied_image is not None and self.copied_subtab is not None:
             top = self.sepos[1] * self.th
             left = self.sepos[0] * self.tw
             self.bg.blit(self.copied_image, (left, top))
+
+            lines = self.tab[self.sepos[1]:self.nwpos[1] + 1]
+            width = len(self.copied_subtab[0])
+            for i, line in enumerate(lines):
+                line[self.sepos[0]:self.sepos[0] + width] = self.copied_subtab[i]
         
     def run(self):
         while not self.stop:
@@ -179,7 +202,7 @@ class App:
                     elif event.key == K_SPACE:
                         top = self.sepos[1] * self.th
                         left = self.sepos[0] * self.tw
-                        img = pygame.image.load('sources/StructureBuilder/save/save.png').convert()
+                        img = pygame.image.load('sources/StructureBuilder/save/save.png').convert_alpha()
                         self.bg.blit(img, (left, top))
                     
                 elif event.type == KEYUP:
@@ -210,7 +233,7 @@ class App:
                             if self.nwpos[1] < self.sepos[1]:
                                 self.nwpos[1] = self.sepos[1]
                             
-                elif event.type ==  MOUSEBUTTONUP:
+                elif event.type == MOUSEBUTTONUP:
                     if event.button == 1:
                         self.button1down = False
                 
@@ -220,7 +243,8 @@ class App:
                         self.cursor[:] = coords
                         if self.holded_b:
                             self.draw_buttons(self.holded_b, x, y)
-                    
+
+            self.screen.fill((190, 190, 190))
             self.screen.blit(self.bg, (0, 0))
             
             if self.i > self.nw:
@@ -236,4 +260,4 @@ class App:
             self.clock.tick(self.fps)
             
             pygame.display.flip()
-    
+

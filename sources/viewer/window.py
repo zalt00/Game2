@@ -7,7 +7,7 @@ from pygame.locals import *
 from .event_manager import INACTIVE_EVENT_MANAGER, GameEventManager, MenuEventManager, ChangeCtrlsEventManager
 from .sprites import BgLayer, DBgLayer, Entity, Button, Particle, Structure, Text
 from .image_handler import BgLayerImageHandler, TBEntityImageHandler, ButtonImageHandler, StructureImageHandler, TextImageHandler
-from .resources_loader import ResourceLoader, Entity as EntityResource
+from .resources_loader import ResourcesLoader2, OtherObjectsResource
 
 pygame.joystick.init()
 
@@ -36,7 +36,7 @@ class Window:
         self.event_manager = INACTIVE_EVENT_MANAGER
         
         # RESOURCES
-        self.res_loader = ResourceLoader('resources')
+        self.res_loader = ResourcesLoader2('resources')
         
         # SPRITES
         self.global_group = pygame.sprite.RenderUpdates()
@@ -56,7 +56,8 @@ class Window:
         self.i = 0
         self.previous = Rect(0, 0, 0, 0)
 
-    def init_joys(self):
+    @staticmethod
+    def init_joys():
         joysticks = [pygame.joystick.Joystick(x) for x in range(pygame.joystick.get_count())]
         for j in joysticks:
             j.init()        
@@ -76,7 +77,7 @@ class Window:
             
             self.on_draw(dt / 1000)
 
-            sprite_rect = self.bg_group.get_top_sprite().rect
+            sprite_rect = self.bg_group.get_top_sprite().subsurface_rect
 
             if not self.is_bg_updated:
                 self.bg_group.draw(self.current_bg)
@@ -108,16 +109,24 @@ class Window:
     def get_length(self, res_name):
         return self.res_loader.load(res_name).width
     
-    def add_bg(self, res_name, position_handlers, all_dynamic=True, all_animated=False, foreground=True):
+    def add_bg(self, res_name, position_handlers, all_dynamic=True, all_animated=False, ignore_fg=False):
         res = self.res_loader.load(res_name)
-        for i, pos_hdlr in enumerate(position_handlers):
-            self.add_bg_layer(res, i, pos_hdlr, all_dynamic, all_animated)
+        i = 0
+        for layer in res.bg:
+            layer_id = layer['layer']
+            self.add_bg_layer(res, layer_id, position_handlers[i], all_dynamic, all_animated)
+            position_handlers[i].pos[0] += layer['relative_pos'][0]
+            position_handlers[i].pos[1] += layer['relative_pos'][1]
+            position_handlers[i].base_pos = tuple(position_handlers[i].pos)
+            i += 1
         
-        if foreground:
-            for i in range(res.foreground):
-                ts = self.bg_group.get_top_sprite()
-                self.bg_group.remove(ts)
-                self.fg_group.add(ts)
+        for layer in res.fg:
+            layer_id = layer['layer']
+            self.add_bg_layer(res, layer_id, position_handlers[i], all_dynamic, all_animated, not ignore_fg)
+            position_handlers[i].pos[0] += layer['relative_pos'][0]
+            position_handlers[i].pos[1] += layer['relative_pos'][1]
+            position_handlers[i].base_pos = tuple(position_handlers[i].pos)
+            i += 1
             
     def add_bg_layer(self, res, layer_id, position_handler, dynamic=True, animated=False, foreground=False):
         if isinstance(res, str):
@@ -130,13 +139,15 @@ class Window:
         if dynamic:
             sprite = DBgLayer(imghdlr, position_handler, layer_id)
         else:
-            sprite = BgLayer(imghdlr, position_handler, layer_id)
-        
+            raise NotImplemented
+
         self.global_group.add(sprite)
         if foreground:
             self.fg_group.add(sprite)
         else:
             self.bg_group.add(sprite)
+
+        return sprite
 
     def add_entity(self, res_name, position_handler, physics_updater, particles_handler, end_animation_callback):
         res = self.res_loader.load(res_name)
@@ -149,7 +160,10 @@ class Window:
         return entity
     
     def add_structure(self, res_name, position_handler, state):
-        res = self.res_loader.load(res_name)
+        if isinstance(res_name, str):
+            res = self.res_loader.load(res_name)
+        else:
+            res = res_name
         img_handler = StructureImageHandler(res)
         struct = Structure(img_handler, position_handler, res.dec, self.screen_dec, state)
         self.global_group.add(struct)
@@ -157,7 +171,37 @@ class Window:
         self.entity_group.add(struct)
         
         return struct
-    
+
+    def build_structure(self, res_name, palette_name, position_handler, state):
+        """builds and add a structure from a palette and a string buffer"""
+
+        palette = self.res_loader.load(palette_name)
+        if isinstance(res_name, str):
+            res = self.res_loader.load(res_name)
+        else:
+            res = res_name
+
+        string_buffer = res.string_buffer
+        w, h = res.dimensions
+        s = pygame.Surface((w, h), SRCALPHA)
+        s.fill((255, 255, 255, 0))
+        tw, th = palette.tw, palette.th
+        for y, line in enumerate(string_buffer.splitlines()):
+            if line:
+                for x, tile in enumerate(line.split(';')):
+                    if not tile.startswith('NA'):
+                        tile_img = palette.parse(tile)
+                        s.blit(tile_img, (x * tw, y * th))
+        if res.scale >= 2:
+            s = pygame.transform.scale2x(s)
+            s = pygame.transform.scale(s, (round(w * res.scale), round(h * res.scale)))
+        else:
+            s = pygame.transform.scale(s, (w * res.scale, h * res.scale))
+
+        sheets = {state: s}
+        res.build(sheets)
+        return self.add_structure(res, position_handler, state)
+
     def add_button(self, res, position_handler, action_name):
         if isinstance(res, str):
             res = self.res_loader.load(res)
@@ -222,7 +266,7 @@ class Window:
             pygame.draw.rect(aimg, active_color, r, rectangle)  
             
         sheets = dict(idle=pimg, activated=aimg)
-        return EntityResource(sheets, r.width, r.height, (0, 0))
+        return OtherObjectsResource(sheets, r.width, r.height, (0, 0))
 
     def render_text(self, txt, color, size, font='m3x6.ttf'):
         """render a text"""
@@ -241,7 +285,7 @@ class Window:
         for i, img in enumerate(imgs):
             surf.blit(img, (0, i * height))
         r = surf.get_rect()
-        return EntityResource(dict(idle=surf), r.width, r.height, (0, 0))
+        return OtherObjectsResource(dict(idle=surf), r.width, r.height, (0, 0))
 
     @staticmethod
     def convert_color(hexcolor):

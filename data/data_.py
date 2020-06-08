@@ -3,8 +3,8 @@
 from utils.save_modifier import Save
 from utils.types import Trigger, DataContainer
 from pymunk import Vec2d
-from utils.event import Event
 from pygame.constants import *
+from data.black_forest import Objects
 
 
 class Data(DataContainer):
@@ -97,7 +97,7 @@ class Data(DataContainer):
         pages = ('MainMenu',)
         
         class MainMenu(DataContainer):
-            bg_res = 'black_forest'
+            bg_res = 'black_forest.bg'
             bg_pos = (0, 0)
 
             class Objects(DataContainer):
@@ -117,21 +117,22 @@ class Data(DataContainer):
                 
                 class PlayButton:
                     typ = 'button'
-                    res = 'buttons/play_button'
+                    res = 'buttons/play_button.obj'
                     action = 'play'
                     pos = (40, 360)
                     button_name = 'play_button'
 
                 class QuitButton:
                     typ = 'button'
-                    res = 'buttons/quit_button'
+
+                    res = 'buttons/quit_button.obj'
                     action = 'quit'
                     pos = (40, 190)
                     button_name = 'quit_button'
 
                 class OptionsButton:
                     typ = 'button'
-                    res = 'buttons/open_options_button'
+                    res = 'buttons/open_options_button.obj'
                     action = 'open_options_menu'
                     pos = (40, 270)
                     button_name = 'options_button'
@@ -147,12 +148,12 @@ class Data(DataContainer):
 
                 class MainPanel:
                     typ = 'structure'
-                    res = 'panels/options_main_panel'
+                    res = 'panels/options_main_panel.obj'
                     pos = (50, 120 * 1000)
 
                 class ControlsPanel:
                     typ = 'structure'
-                    res = 'panels/options_controls_panel'
+                    res = 'panels/options_controls_panel.obj'
                     pos = (70, 220 * 1000)
                     buttons_order = (
                         ('kb_left', 'con_left', 'kb_menu', 'con_menu'),
@@ -186,7 +187,7 @@ class Data(DataContainer):
 
                 class VideoPanel:
                     typ = 'structure'
-                    res = 'panels/options_video_panel'
+                    res = 'panels/options_video_panel.obj'
                     pos = (70, 404 * 1000)
                     buttons_order = (
                         ('display_mode', 'display_mode', None),
@@ -196,17 +197,17 @@ class Data(DataContainer):
                     )                    
                     additional_buttons = dict(
                         display_mode=dict(pos=(320, 567 * 1000),
-                                          arg=[0, ('buttons/fullscreen', 1), ('buttons/windowed', 0), 'display_mode'],
-                                          action='change_option', res='buttons/fullscreen'),
+                                          arg=[0, ('buttons/fullscreen.obj', 1), ('buttons/windowed.obj', 0), 'display_mode'],
+                                          action='change_option', res='buttons/fullscreen.obj'),
                         resolution=dict(pos=(320, 489 * 1000),
-                                        arg=[0, ('buttons/resolutions/1280 x 720', (1280, 720)),
-                                             ('buttons/resolutions/1280 x 800', (1280, 800)),
-                                             ('buttons/resolutions/1280 x 960', (1280, 960)),
+                                        arg=[0, ('buttons/resolutions/1280 x 720.obj', (1280, 720)),
+                                             ('buttons/resolutions/1280 x 800.obj', (1280, 800)),
+                                             ('buttons/resolutions/1280 x 960.obj', (1280, 960)),
                                              'resolution'],
-                                        action='change_option', res='buttons/resolutions/1280 x 720'),
+                                        action='change_option', res='buttons/resolutions/1280 x 720.obj'),
                         luminosity=dict(pos=(320, 411 * 1000),
-                                        arg=[0, ('buttons/luminosity/normal', 0), 'luminosity'],
-                                        action='change_option', res='buttons/luminosity/normal'),
+                                        arg=[0, ('buttons/luminosity/normal.obj', 0), 'luminosity'],
+                                        action='change_option', res='buttons/luminosity/normal.obj'),
                     )
                     options_save = dict(display_mode={0: 1, 1: 0},
                                         resolution={(1280, 720): 0, (1280, 800): 1, (1280, 960): 2},
@@ -215,7 +216,7 @@ class Data(DataContainer):
 
                 class GameplayPanel:
                     typ = 'structure'
-                    res = 'panels/options_gameplay_panel'
+                    res = 'panels/options_gameplay_panel.obj'
                     pos = (70, 336 * 1000)
                     buttons_order = (
                         ('apply_button', 'cancel_button', None, 'reset_button'),
@@ -225,39 +226,39 @@ class Data(DataContainer):
                     
                 class ControlsButton:
                     typ = 'button'
-                    res = 'buttons/controls_button'
+                    res = 'buttons/controls_button.obj'
                     action = 'set_panel_to_controls'
                     pos = (521, 690 * 1000)
 
                 class GameplayButton:
                     typ = 'button'
-                    res = 'buttons/gameplay_button'
+                    res = 'buttons/gameplay_button.obj'
                     action = 'set_panel_to_gameplay'
                     pos = (280, 682 * 1000)
 
                 class VideoButton:
                     typ = 'button'
-                    res = 'buttons/video_button'
+                    res = 'buttons/video_button.obj'
                     action = 'set_panel_to_video'
                     pos = (115, 690 * 1000)
                     
                 class ApplyButton:
                     typ = 'button'
-                    res = 'buttons/apply_button'
+                    res = 'buttons/apply_button.obj'
                     action = 'apply'
                     button_name = 'apply_button'
                     pos = (80, 142 * 1000)
 
                 class CancelButton:
                     typ = 'button'
-                    res = 'buttons/cancel_button'
+                    res = 'buttons/cancel_button.obj'
                     action = 'cancel'
                     button_name = 'cancel_button'
                     pos = (220, 150 * 1000)
 
                 class ResetButton:
                     typ = 'button'
-                    res = 'buttons/reset_button'
+                    res = 'buttons/reset_button.obj'
                     action = 'reset'
                     button_name = 'reset_button'
                     pos = (1092, 150 * 1000)                    
@@ -271,26 +272,28 @@ class Data(DataContainer):
         maps = ('BlackForest',)
         
         class BlackForest(DataContainer):
-            res = 'black_forest'
+            res = 'forest/forest.bg'
             space = True
+
+            structure_palette = 'forest/forest_structure_tilesets.stsp'
 
             camera_pos_x = Save(23)
             camera_pos_y = Save(24)
 
             dynamic_layers = True
             animated_layers = False
-            bg_pos = (0, 0)
+            bg_pos = (0, -550)
             
             ground_height = 122
             ground_length = 10000
             
             class Objects(DataContainer):
-                objects = ('Player', 'S1', 'PlayerValues')
+                objects = ('Player', 'S1', 'PlayerValues')  # + Objects.objects
                 player = 'Player'
 
                 class Player:
                     typ = 'entity'
-                    res = 'player/white_guy'
+                    res = 'player/white_guy.obj'
                     height = 50
                     width = 30
                     name = 'player'
@@ -299,13 +302,14 @@ class Data(DataContainer):
                     
                 class S1:
                     typ = 'structure'
-                    res = 'structures/s1'
+                    is_built = False
+                    res = 'forest/structure.st'
                     name = 's1'
                     pos_x = 600
                     pos_y = 122
                     state = 'base'
                     poly = [(Vec2d(-39, 0), Vec2d(-39, 110), Vec2d(39, 110), Vec2d(39, 0))]
-                    ground = [(Vec2d(38, 111), Vec2d(-38, 111))]
+                    ground = [(Vec2d(39, 111), Vec2d(-39, 111))]
 
                 class PlayerValues:
                     typ = 'text'

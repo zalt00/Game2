@@ -2,6 +2,7 @@
 
 from pymunk import Vec2d
 import pygame
+from pygame.locals import SRCALPHA
 pygame.init()
 
 
@@ -44,20 +45,30 @@ class AnimatedDynamicSprite(DynamicSprite, AnimatedSprite):
 # BG
 class BgLayer(Sprite):
     def __init__(self, image_handler, position_handler, layer):
-        self.layer = layer
+        self._layer = layer
         super().__init__(image_handler, position_handler)
 
-
-class ABgLayer(AnimatedSprite, BgLayer):
-    pass
-
-
-class DBgLayer(DynamicSprite, BgLayer):
-    pass
+    def get_layer(self):
+        return self._layer
 
 
-class ADBgLayer(AnimatedDynamicSprite, BgLayer):
-    pass
+class DBgLayer(BgLayer):
+    def __init__(self, image_handler, position_handler, layer):
+        super(DBgLayer, self).__init__(image_handler, position_handler, layer)
+        self.bi_rect = self.image.get_rect()
+        self.bi_rect.width *= 2
+        self.base_image = pygame.Surface((self.bi_rect.width, self.bi_rect.height), SRCALPHA)
+        self.base_image.blit(self.image, (0, 0))
+        self.width = self.bi_rect.width // 2
+        self.base_image.blit(self.image, (self.width, 0))
+        self.subsurface_rect = self.image.get_rect()
+
+    def update(self, n=1):
+        x, y = self.position_handler.update_position(self, n)
+        self.rect.y = y
+        x %= self.width
+        self.subsurface_rect.x = self.width - x
+        self.image = self.base_image.subsurface(self.subsurface_rect)
 
 
 # ENTITY
@@ -66,6 +77,7 @@ class Entity(AnimatedDynamicSprite):
         self.state = 'idle'
         self.secondary_state = ''
         self.air_control = 0
+        self.can_air_control = True
         self.direction = 1
         self.thrust = Vec2d(0, 0)
         self.is_on_ground = False

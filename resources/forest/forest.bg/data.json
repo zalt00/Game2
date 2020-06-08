@@ -1,0 +1,12 @@
+{
+  "max_dimensions": [640, 368],
+  "scale": 4,
+
+  "background": [
+    {"filename": "Layer_00.png", "relative_pos":  [0, 0], "layer":  3},
+    {"filename": "Layer_01.png", "relative_pos":  [0, 0], "layer":  2},
+    {"filename": "Layer_02.png", "relative_pos":  [0, 0], "layer":  1}
+  ],
+
+  "foreground": []
+}

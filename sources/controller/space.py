@@ -16,13 +16,18 @@ class GameSpace(pymunk.Space):
         self.objects = {}
         
     def add_humanoid_entity(self, height, width, pos, name):
-        points = ((-width/2, 0), (width/2, 0), (width/2, height), (-width/2, height))
+        points = ((-round(width/4), 0),
+                  (round(width/4), 0),
+                  (width/2, height / 5),
+                  (width/2, height),
+                  (-width/2, height),
+                  (-width/2, height / 5))
         radius = 1
         mass = 10
         moment = pymunk.moment_for_poly(mass, points, radius=radius)
         body = pymunk.Body(mass, moment, pymunk.Body.DYNAMIC)
+        body.center_of_gravity = (0, height / 4)
         body.position = pos
-        body.center_of_gravity = (0, 0)
         shape = pymunk.Poly(body=body, vertices=points, radius=radius)
         shape.friction = 1
         
@@ -52,4 +57,4 @@ class GameSpace(pymunk.Space):
         self.add(body, shapes)
         
         self.objects[name] = (body, shapes)
-    
+

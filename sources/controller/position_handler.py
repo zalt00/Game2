@@ -65,7 +65,7 @@ class BgLayerPositionHandler:
         self.sdr[1] = self.pos[1] - self.base_pos[1]
         
         n_layers = len(entity.image_handler.res.layers)
-        i = (n_layers - entity.layer) ** 2
+        i = (n_layers + 1 - entity.get_layer()) ** 2
 
         return self.base_pos[0] + self.sdr[0] / i + entity.dec[0], -self.base_pos[1] - self.sdr[1] / i + entity.dec[1]
                 
@@ -91,7 +91,7 @@ class EntityPositionHandler:
 
         m = max(self.mapping.get(entity.state, -1),
                 self.mapping.get(entity.secondary_state, -1))
-        if abs(self.body.velocity.x) <= m and entity.is_on_ground:
+        if abs(round(self.body.velocity.x)) <= m and entity.is_on_ground:
             entity.thrust.x = 200000 * entity.direction / max(abs(self.body.velocity.x * 5 / m), 1)
 
         if entity.state == 'jump' and entity.is_on_ground and not self.jumped:
@@ -102,7 +102,7 @@ class EntityPositionHandler:
             entity.thrust = Vec2d(0, 0)
             self.body.velocity = Vec2d(2000 * entity.direction, 0)
 
-        elif entity.air_control:
+        elif entity.air_control and entity.can_air_control:
             if (abs(self.body.velocity.x) < 100 or
                     (entity.direction == -1 and self.body.velocity.x > 0) or
                     (entity.direction == 1 and self.body.velocity.x < 0)):
@@ -111,7 +111,7 @@ class EntityPositionHandler:
                 self.body.velocity += Vec2d(v, 0)
             entity.air_control = 0
 
-        self.body.apply_force_at_local_point(entity.thrust, (0, 0))
+        self.body.apply_force_at_local_point(entity.thrust, self.body.center_of_gravity)
         entity.thrust = Vec2d(0, 0)
 
         self.pos = self.body.position
