@@ -181,22 +181,7 @@ class Window:
         else:
             res = res_name
 
-        string_buffer = res.string_buffer
-        w, h = res.dimensions
-        s = pygame.Surface((w, h), SRCALPHA)
-        s.fill((255, 255, 255, 0))
-        tw, th = palette.tw, palette.th
-        for y, line in enumerate(string_buffer.splitlines()):
-            if line:
-                for x, tile in enumerate(line.split(';')):
-                    if not tile.startswith('NA'):
-                        tile_img = palette.parse(tile)
-                        s.blit(tile_img, (x * tw, y * th))
-        if res.scale >= 2:
-            s = pygame.transform.scale2x(s)
-            s = pygame.transform.scale(s, (round(w * res.scale), round(h * res.scale)))
-        else:
-            s = pygame.transform.scale(s, (w * res.scale, h * res.scale))
+        s = palette.build(res)
 
         sheets = {state: s}
         res.build(sheets)

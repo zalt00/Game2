@@ -110,10 +110,18 @@ class ResourcesLoader2:
             pass
 
         local_dir = os.path.normpath(self.dir_ + '\\' + res_name + '\\').replace('\\', '/')
-        res = None
+        return self.load_from_path(local_dir, res_name)
 
+    def load_from_path(self, local_dir, res_name=None):
+
+        if res_name is None:
+            res_name = local_dir.split('/')[-1]
+
+        res = None
         if res_name.endswith('st'):
-            res = Structure(local_dir)  # only resource type which is stored in a single file
+            with open(local_dir, 'r', encoding='utf8') as file:
+                s = file.read()
+            res = Structure(s)  # only resource type which is stored in a single file
 
         else:
             datafile_path = os.path.join(local_dir, 'data.json').replace('\\', '/')
@@ -134,6 +142,10 @@ class ResourcesLoader2:
         self.cache[res_name] = res
 
         return res
+
+    @staticmethod
+    def load_structure_from_string(s):
+        return Structure(s)
 
 
 class StructTSPalette:
@@ -174,6 +186,26 @@ class StructTSPalette:
         tw, th = self.data['tile size']
         r = pygame.Rect(tile_id * tw, 0, tw, th)
         return pygame.transform.flip(tileset.subsurface(r), flip_x, flip_y)
+
+    def build(self, res):
+        string_buffer = res.string_buffer
+        w, h = res.dimensions
+        surf = pygame.Surface((w, h), SRCALPHA)
+        surf.fill((255, 255, 255, 0))
+        tw, th = self.tw, self.th
+        for y, line in enumerate(string_buffer.splitlines()):
+            if line:
+                for x, tile in enumerate(line.split(';')):
+                    if not tile.startswith('NA'):
+                        tile_img = self.parse(tile)
+                        surf.blit(tile_img, (x * tw, y * th))
+        if res.scale >= 2:
+            surf = pygame.transform.scale2x(surf)
+            surf = pygame.transform.scale(surf, (round(w * res.scale), round(h * res.scale)))
+        else:
+            surf = pygame.transform.scale(surf, (w * res.scale, h * res.scale))
+
+        return surf
 
 
 class Object:
@@ -222,9 +254,7 @@ class Background:
 
 
 class Structure:
-    def __init__(self, path):
-        with open(path, 'r', encoding='utf8') as file:
-            s = file.read()
+    def __init__(self, s):
 
         lines = s.splitlines()
 
@@ -259,6 +289,7 @@ class Tileset:
         path = os.path.join(directory, data['filename']).replace('\\', '/')
         self.img = pygame.image.load(path).convert_alpha()
         self.tile_data = data['tile data']
+        self.tile_size = data['tile size']
 
 
 @dataclass

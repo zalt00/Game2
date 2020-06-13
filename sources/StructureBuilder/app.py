@@ -5,6 +5,8 @@ import pygame
 from pygame.locals import *
 from viewer.resources_loader import ResourcesLoader2
 import os
+import tkinter as tk
+from tkinter.filedialog import asksaveasfilename, askopenfilename
 pygame.init()
 
 #  24x37
@@ -17,11 +19,13 @@ class App:
         
         self.width = width
 
-        self.tab = [['NA0000'] * 24 for _ in range(37)]
+        self.tab = [['NA0000'] * 50 for _ in range(50)]
 
         self.bg = self.screen.copy().convert_alpha()
         self.bg.fill((255, 255, 255, 0))
-        
+
+        self.palette = self.rl.load('forest/forest_structure_tilesets.stsp')
+
         self.tileset = self.rl.load('forest/basetileset.ts')
         #self.img = pygame.transform.scale2x(pygame.transform.scale2x(self.tileset.sheets['base']))
         self.img = pygame.transform.scale2x(self.tileset.img)
@@ -89,20 +93,10 @@ class App:
         self.screen.blit(self.nwcursor_img, pos2)
         
     def draw_buttons(self, key, x, y):
-        a = False
         if key == K_a:
             self.draw_tile(self.cursor, x, y, 0)
             self.holded_b = K_a
-            a = True
-        elif key == K_s:
-            self.draw_tile(self.cursor, x, y, 90)
-            self.holded_b = K_s
-            a = True
-        elif key == K_d:
-            self.draw_tile(self.cursor, x, y, -90)
-            self.holded_b = K_d
-            a = True
-        
+
     def copy(self):
         top = self.sepos[1] * self.th
         left = self.sepos[0] * self.tw
@@ -128,32 +122,97 @@ class App:
             width = len(self.copied_subtab[0])
             for i, line in enumerate(lines):
                 line[self.sepos[0]:self.sepos[0] + width] = self.copied_subtab[i]
-        
+
+    def save(self):
+        lines = self.tab[self.sepos[1]:self.nwpos[1] + 1]
+        sub_tab = []
+        for line in lines:
+            sub_tab.append(line[self.sepos[0]:self.nwpos[0] + 1])
+
+        root = tk.Tk()
+        filename = asksaveasfilename(parent=root, filetypes=[("structure", "*.st"), ("all files", "*")])
+        root.destroy()
+
+        if filename:
+            if not filename.endswith('.st'):
+                filename += '.st'
+            txt = self.generate_structure_file_content(sub_tab)
+            with open(filename, 'w') as file:
+                file.write(txt)
+
+    def load(self):
+        root = tk.Tk()
+        path = askopenfilename(parent=root, filetypes=[("structure", "*.st"), ("all files", "*")])
+        root.destroy()
+
+        if path:
+            res = self.rl.load_from_path(path)
+            sb = res.string_buffer
+            subtab = [line.split(';') for line in sb.splitlines()]
+            img = self.palette.build(res)
+
+            top = self.sepos[1] * self.th
+            left = self.sepos[0] * self.tw
+            self.bg.blit(img, (left, top))
+
+            width = len(subtab[0])
+            height = len(subtab)
+            lines = self.tab[self.sepos[1]:self.sepos[1] + height]
+            for i, line in enumerate(lines):
+                line[self.sepos[0]:self.sepos[0] + width] = subtab[i]
+
+    def rebuild(self):
+        top = self.sepos[1] * self.th
+        left = self.sepos[0] * self.tw
+        width = (self.nwpos[0] + 1) * self.tw - left
+        height = (self.nwpos[1] + 1) * self.th - top
+        r = pygame.Rect(left, top, width, height)
+
+        lines = self.tab[self.sepos[1]:self.nwpos[1] + 1]
+        subtab = []
+        for line in lines:
+            subtab.append(line[self.sepos[0]:self.nwpos[0] + 1])
+
+        txt = self.generate_structure_file_content(subtab)
+        res = self.rl.load_structure_from_string(txt)
+        img = self.palette.build(res)
+        self.bg.fill((190, 190, 190), r)
+        self.bg.blit(img, r)
+
+    def generate_structure_file_content(self, sub_tab):
+        s = '\n'.join((';'.join(line) for line in sub_tab))
+        tw, th = self.tileset.tile_size
+        w = len(sub_tab[0])
+        h = len(sub_tab)
+        txt = "dimensions={} {}\ndec={} {}\nscale={}\nlength={}\nstring-buffer:\n{}".format(
+            tw * w, th * h, tw * w // 2, 0, 2, h, s)
+        return txt
+
     def run(self):
         while not self.stop:
             for event in pygame.event.get():
                 mods = pygame.key.get_mods()
-                y = x = False
+                shift = ctrl = False
                 if mods & KMOD_SHIFT:
-                    x = True
+                    shift = True
                 if mods & KMOD_CTRL:
-                    y = True
+                    ctrl = True
                     
                 if event.type == QUIT:
                     self.stop = True
                 elif event.type == KEYDOWN:
-                    if self.draw_buttons(event.key, x, y):
+                    if self.draw_buttons(event.key, shift, ctrl):
                         pass
-                    elif event.key == K_q:
+                    elif event.key == K_u:
                         self.i -= 1
                         self.change_tile(self.i)
-                    elif event.key == K_r:
+                    elif event.key == K_p:
                         self.i += 5
                         self.change_tile(self.i)
-                    elif event.key == K_e:
+                    elif event.key == K_o:
                         self.i -= 5
                         self.change_tile(self.i)
-                    elif event.key == K_w:
+                    elif event.key == K_i:
                         self.i += 1
                         self.change_tile(self.i)
                         
@@ -165,14 +224,19 @@ class App:
                         self.cursor[0] -= 1
                     elif event.key == K_RIGHT:
                         self.cursor[0] += 1
-                        
-                    elif event.key == K_c:
-                        if y:
+
+                    elif ctrl:
+                        if event.key == K_c:
                             self.copy()
-                    elif event.key == K_v:
-                        if y:
+                        elif event.key == K_v:
                             self.paste()
-                        
+                        elif event.key == K_s:
+                            self.save()
+                        elif event.key == K_l:
+                            self.load()
+                        elif event.key == K_b:
+                            self.rebuild()
+
                     elif event.key == K_0:
                         self.i = 0
                         self.change_tile(self.i)
@@ -195,7 +259,7 @@ class App:
                                 stop = True
                             else:
                                 stop = True
-                        
+
                         pygame.image.save(self.bg.subsurface(r), "sources/StructureBuilder/save/save.png")
                         print('image saved')
                     
@@ -223,15 +287,15 @@ class App:
                         if mods & KMOD_SHIFT:
                             self.nwpos[:] = coords
                             if self.nwpos[0] < self.sepos[0]:
-                                self.sepos[0] = self.nwpos[0]
+                                self.sepos[0], self.nwpos[0] = self.nwpos[0], self.sepos[0]
                             if self.nwpos[1] < self.sepos[1]:
-                                self.sepos[1] = self.nwpos[1]
+                                self.sepos[1], self.nwpos[1] = self.nwpos[1], self.sepos[1]
                         else:
                             self.sepos[:] = coords
                             if self.nwpos[0] < self.sepos[0]:
-                                self.nwpos[0] = self.sepos[0]
+                                self.sepos[0], self.nwpos[0] = self.nwpos[0], self.sepos[0]
                             if self.nwpos[1] < self.sepos[1]:
-                                self.nwpos[1] = self.sepos[1]
+                                self.sepos[1], self.nwpos[1] = self.nwpos[1], self.sepos[1]
                             
                 elif event.type == MOUSEBUTTONUP:
                     if event.button == 1:
