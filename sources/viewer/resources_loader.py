@@ -290,6 +290,7 @@ class Tileset:
         self.img = pygame.image.load(path).convert_alpha()
         self.tile_data = data['tile data']
         self.tile_size = data['tile size']
+        self.eraser = data.get("eraser", None)
 
 
 @dataclass

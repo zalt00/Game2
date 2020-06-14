@@ -3,7 +3,7 @@
 
 from pymunk.vec2d import Vec2d
 import pygame.mouse
-from utils.save_modifier import Save
+from utils.save_modifier import SaveComponent
 
 
 class ActionManager:
@@ -25,26 +25,25 @@ class ActionManager:
 
 
 class BaseMenuActionManager(ActionManager):
-    def __init__(self, buttons, menu_classic_buttons, base_options_classic_buttons, classic_buttons_order, panels,
-                 panel_order, options_data, additional_texts):
+    def __init__(self, buttons, classic_buttons, classic_buttons_order, panels,
+                 panel_order, additional_texts, additional_structures):
         
         super().__init__()
 
         self.additional_texts = additional_texts
+        self.additional_structures = additional_structures
 
         self.panels = panels
         self.panel_order = panel_order
         self.current_panel = ""
-        
-        self.options_data = options_data
-                
-        self.classic_buttons_order = classic_buttons_order
-        self.classic_buttons = menu_classic_buttons
-        self.base_options_classic_buttons = base_options_classic_buttons
-        self.buttons = buttons
-        self.additional_buttons = {}
 
-        self.confirmation_messages = {}
+        self.base_classic_buttons = classic_buttons.copy()  # base
+        self.classic_buttons_order = classic_buttons_order  # current
+        self.classic_buttons = classic_buttons  # current
+        self.buttons_sprite_group = buttons  # base
+        self.additional_buttons = {}  # current
+
+        self.confirmation_messages = {}  # current
 
         self.count = 0
         self.last_pos = (0, 0)
@@ -54,7 +53,7 @@ class BaseMenuActionManager(ActionManager):
     def update_buttons(self, mouse_pos):
         if not self.controller:
             self.count = 0
-            for button in self.buttons.sprites():
+            for button in self.buttons_sprite_group.sprites():
                 if button.rect.collidepoint(mouse_pos):
                     button.state = 'activated'
                 else:
@@ -154,8 +153,8 @@ class BaseMenuActionManager(ActionManager):
             else:
                 getattr(self, button.action)()
                 
-    def right_click(self, mouse_pos):
-        for button in self.buttons.sprites():
+    def left_click(self, mouse_pos):
+        for button in self.buttons_sprite_group.sprites():
             if button.rect.collidepoint(mouse_pos):
                 if hasattr(button, 'arg'):
                     getattr(self, button.action)(button.arg)
@@ -190,7 +189,9 @@ class BaseMenuActionManager(ActionManager):
         self.classic_buttons_order = self.panels[panel_name]['buttons_order']
         self.additional_buttons = self.panels[panel_name]['buttons']
         self.classic_buttons = self.additional_buttons.copy()
-        self.classic_buttons.update(self.base_options_classic_buttons)
+
+        self.classic_buttons.update(self.base_classic_buttons)
+
         for button in self.additional_buttons.values():
             x, y = button.position_handler.pos
             y //= 1000
@@ -202,7 +203,8 @@ class BaseMenuActionManager(ActionManager):
             self.move_focus_down()
         if self.classic_buttons_order[self.focus[1]][self.focus[0]] is None:
             self.move_focus_right()
-        self.update_buttons2()
+        if self.controller:
+            self.update_buttons2()
 
     def next_panel(self):
         if self.current_panel:
@@ -229,15 +231,6 @@ class BaseMenuActionManager(ActionManager):
                 
             npanel = self.panel_order[i - 1]
             self._set_panel_to(npanel)
-       
-    def change_option(self, arg):
-        if len(arg) == arg[0] + 3:
-            arg[0] = 0
-        else:
-            arg[0] += 1
-        res, value = arg[arg[0] + 1]
-        self.classic_buttons[arg[-1]].image_handler.change_res(res)
-        self.options_data.get(self.current_panel).get(arg[-1]).set(value)        
         
     def add_confirmation_message(self, name, associated_button_action):
         msg = self.additional_texts[name]
@@ -251,10 +244,42 @@ class BaseMenuActionManager(ActionManager):
             msg.position_handler.pos = x, y
 
 
-class MenuActionManager(BaseMenuActionManager):
+class MainMenuActionManager(BaseMenuActionManager):
     MOUSEMOTION = 0
-    RIGHT_CLICK = 1
-    LEFT_CLICK = 2
+    LEFT_CLICK = 1
+
+    DOWN = 3
+    UP = 4
+    LEFT = 8
+    RIGHT = 9
+
+    ACTIVATE = 5
+
+    def __init__(self, buttons, classic_buttons, classic_buttons_order, panels,
+                 panel_order, additional_texts, additional_structures, start_game_callback,
+                 quit_game_callback, open_options_callback):
+
+        super(MainMenuActionManager, self).__init__(buttons, classic_buttons, classic_buttons_order, panels,
+                                                    panel_order, additional_texts, additional_structures)
+
+        self.play = start_game_callback
+        self.quit = quit_game_callback
+        self.open_options_menu = open_options_callback
+
+        self.do_handlers[self.MOUSEMOTION] = self.update_buttons
+        self.do_handlers[self.LEFT_CLICK] = self.left_click
+
+        self.do_handlers[self.DOWN] = self.move_focus_down
+        self.do_handlers[self.UP] = self.move_focus_up
+
+        self.do_handlers[self.ACTIVATE] = self.button_activation
+
+        self.update_buttons2()
+
+
+class OptionsActionManager(BaseMenuActionManager):
+    MOUSEMOTION = 0
+    LEFT_CLICK = 1
 
     DOWN = 3
     UP = 4
@@ -269,46 +294,23 @@ class MenuActionManager(BaseMenuActionManager):
 
     SET_CTRL = 10
 
-    def __init__(self, buttons, menu_classic_buttons, base_options_classic_buttons, classic_buttons_order,
-                 start_game_callback, quit_game_callback, open_options_callback, close_options_callback,
-                 panels, panel_order, options_data, change_kb_ctrls_callback, change_con_ctrls_callback,
-                 set_ctrl_callback, additional_texts):
-        """Constructor of the class
+    def __init__(self, buttons, classic_buttons, classic_buttons_order, panels,
+                 panel_order, additional_texts, additional_structures,
+                 close_options_callback, change_kb_ctrls_callback, change_con_ctrls_callback,
+                 set_ctrl_callback, options_data, reinit_page_callback):
 
-        :param buttons: all the buttons
-        :param menu_classic_buttons: buttons that we can change the focus with the directional cross on the main menu
-        :param base_options_classic_buttons: buttons by default that we can change the focus with the directional cross in the options
-        :param classic_buttons_order: order of the buttons
-        :param start_game_callback: start game callback
-        :param quit_game_callback: quit game callback
-        :param open_options_callback: open options callback
-        :param panels: panels of the page that we can change by pressing L1 or R1
-        :param panel_order: order of the panels
-        :param options_data: Data.Options
-        :param change_kb_ctrls_callback: change keyboard controls callback (effect of clicking on it in the controls panel)
-        :param change_con_ctrls_callback: change controller controls callback
-        :param set_ctrl_callback: set a control callback (save into the temporary save array)
-        :param additional_texts: messages for confirmation prompt for example
+        super(OptionsActionManager, self).__init__(buttons, classic_buttons, classic_buttons_order, panels,
+                                                   panel_order, additional_texts, additional_structures)
 
-        """
-
-        super().__init__(buttons, menu_classic_buttons, base_options_classic_buttons,
-                         classic_buttons_order, panels, panel_order, options_data, additional_texts)
-
-        self.changing_ctrl = ''
-        self.changing_ctrl_button = None
-
-        self.play = start_game_callback
-        self.quit = quit_game_callback
-        self.open_options_menu = open_options_callback
         self._close_options = close_options_callback
+        self.reinit_page = reinit_page_callback
 
         self.change_kb_ctrls = change_kb_ctrls_callback
         self.change_con_ctrls = change_con_ctrls_callback
         self._set_ctrl = set_ctrl_callback
 
         self.do_handlers[self.MOUSEMOTION] = self.update_buttons
-        self.do_handlers[self.RIGHT_CLICK] = self.right_click
+        self.do_handlers[self.LEFT_CLICK] = self.left_click
 
         self.do_handlers[self.DOWN] = self.move_focus_down
         self.do_handlers[self.UP] = self.move_focus_up
@@ -321,6 +323,23 @@ class MenuActionManager(BaseMenuActionManager):
         self.do_handlers[self.PREVIOUS] = self.previous_panel
 
         self.do_handlers[self.SET_CTRL] = self.set_ctrl
+
+        self.options_data = options_data
+
+        self.changing_ctrl = ''
+        self.changing_ctrl_button = None
+
+        self.set_panel_to_video()
+        self.update_buttons2()
+
+    def change_option(self, arg):
+        if len(arg) == arg[0] + 3:
+            arg[0] = 0
+        else:
+            arg[0] += 1
+        res, value = arg[arg[0] + 1]
+        self.classic_buttons[arg[-1]].image_handler.change_res(res)
+        self.options_data.get(self.current_panel).get(arg[-1]).set(value)
 
     def close_options(self):
         for b in self.classic_buttons.values():
@@ -337,12 +356,12 @@ class MenuActionManager(BaseMenuActionManager):
         self._set_panel_to('Video')
 
     def apply(self):
-        Save.dump()
+        SaveComponent.dump()
         self.close_options()
 
     def cancel(self):
         if self.current_panel:
-            Save.load()
+            SaveComponent.load()
             self.close_options()
 
     def reset(self):
@@ -354,8 +373,7 @@ class MenuActionManager(BaseMenuActionManager):
                     save.set_shorts(*value)
                 else:
                     save.set(value)
-            self.close_options()
-            self.open_options_menu()
+            self.reinit_page()
         else:
             self.add_confirmation_message('reset_confirmation_message', 'reset')
 

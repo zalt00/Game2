@@ -1,7 +1,7 @@
 # -*- coding:Utf-8 -*-
 
 from .position_handler import StaticPositionHandler, PlayerPositionHandler, BgLayerPositionHandler
-from .action_manager import GameActionManager, MenuActionManager
+from .action_manager import GameActionManager, MainMenuActionManager, OptionsActionManager
 from .physics_updater import PhysicsUpdater
 from .particles_handler import ParticleHandler
 from .res_getter import FormatTextResGetter, SimpleTextResGetter
@@ -9,7 +9,7 @@ from pygame.locals import *
 import pygame.mouse
 from .space import GameSpace
 import pymunk.pygame_util
-from utils.save_modifier import Save
+from utils.save_modifier import SaveComponent
 from .triggers import Trigger
 from .trigger_action_getter import GameActionGetter
 from time import perf_counter
@@ -48,25 +48,49 @@ class Menu:
         self.model = model
         self.state = 'menu'
         
-        Save.load()
-        
+        SaveComponent.load()
+
+        self.start_game_callback = start_game_callback
+
         self.empty_button_res = self.window.render_font('', 40, '#eeeeee', '#eeeeee', 100, 35, 5)
         
         self.window.screen_dec[:] = (0, 0)
         self.window.init_joys()
         self.window.fps = 25
-        
+
+        self.page_name = None
+        self.page = None
+        self.page_res = None
+        self.pos_hdlrs = None
+        self.panels = None
+        self.menu_objects = None
+        self.action_manager = None
+        self.classic_buttons = None
+
+        self.texts = None
+
+        self.init_page('MainMenu')
+
         pygame.mouse.set_visible(True)
-                
-        self.page = self.model.Menu.MainMenu
-        self.page_res = self.page.bg_res
         
+        self.window.on_draw = self.update
+
+    def delete_current_page(self):
+        self.page_name = None
+        for sprite in self.window.global_group.sprites():
+            sprite.kill()
+
+    def init_page(self, page_name):
+        self.page_name = page_name
+        self.page = self.model.Menu.get(page_name)
+        self.page_res = self.page.bg_res
+
         n_layers = self.window.get_number_of_layers(self.page_res)
         pos = self.page.bg_pos
-        
+
         position_handler = StaticPositionHandler(pos)
         pos_hdlrs = [BgLayerPositionHandler(pos, [0, 0]) for _ in range(n_layers)]
-        
+
         self.window.add_bg(
             self.page_res,
             pos_hdlrs,
@@ -74,23 +98,21 @@ class Menu:
             False,
             True
         )
-        
+
         pos2 = pos[0] + self.window.get_length(self.page_res) * 2, pos[1]
         ph = BgLayerPositionHandler(pos2, [0, 0], self.reverse_trajectory)
         pos_hdlrs.append(ph)
-        self.window.add_bg_layer(self.page_res, 4, ph, foreground=True)        
+        self.window.add_bg_layer(self.page_res, 4, ph, foreground=True)
         """
         for p in pos_hdlrs:
             p.add_trajectory((-2300, 0), 1500, 1, 100)
         """
         self.pos_hdlrs = pos_hdlrs
-        
+
         self.panels = {}
-        self.main_menu_objects = []
-        self.options_menu_objects = []
-        
-        self.mainmenu_classic_buttons = {}
-        self.options_classic_buttons = {}
+        self.menu_objects = []
+
+        self.classic_buttons = {}
 
         self.texts = {}
 
@@ -117,37 +139,47 @@ class Menu:
                 self.texts[data.name] = obj
 
             if obj is not None:
-                if oname in self.page.Objects.main_menu_objects:
-                    self.main_menu_objects.append(obj)
-                    if hasattr(data, 'button_name'):
-                        self.mainmenu_classic_buttons[data.button_name] = obj                    
-                elif oname in self.page.Objects.options_objects:
-                    self.options_menu_objects.append(obj)
-                    if hasattr(data, 'button_name'):
-                        self.options_classic_buttons[data.button_name] = obj                     
-                
-        actionmanager = MenuActionManager(
-            self.window.button_group,
-            self.mainmenu_classic_buttons,
-            self.options_classic_buttons,
-            self.page.Objects.menu_classic_buttons_order,
-            start_game_callback,
-            self.quit_game,
-            self.open_options,
-            self.close_options,
-            self.panels,
-            self.page.Objects.panel_order,
-            self.model.Options,
-            self.change_kb_ctrls,
-            self.change_con_ctrls,
-            self.set_ctrl,
-            self.texts
-        )
+                self.menu_objects.append(obj)
+                if hasattr(data, 'button_name'):
+                    self.classic_buttons[data.button_name] = obj
+
+        actionmanager = None
+        if self.page.action_manager == 'MainMenuActionManager':
+            actionmanager = MainMenuActionManager(
+                self.window.button_group,
+                self.classic_buttons,
+                self.page.Objects.classic_buttons_order,
+                self.panels,
+                self.page.Objects.panel_order,
+                self.texts,
+                (),
+                self.start_game_callback,
+                self.quit_game,
+                self.open_options
+            )
+
+        elif self.page.action_manager == 'OptionsActionManager':
+            actionmanager = OptionsActionManager(
+                self.window.button_group,
+                self.classic_buttons,
+                self.page.Objects.classic_buttons_order,
+                self.panels,
+                self.page.Objects.panel_order,
+                self.texts,
+                (),
+                self.close_options,
+                self.change_kb_ctrls,
+                self.change_con_ctrls,
+                self.set_ctrl,
+                self.model.Options,
+                self.reinit_page
+            )
+
+        if actionmanager is None:
+            raise ValueError(f'invalid action manager name: {self.page.action_manager}')
         self.window.set_menu_event_manager(actionmanager)
         self.action_manager = actionmanager
-        
-        self.window.on_draw = self.update
-        
+
     def update(self, *_, **__):
         self.window.global_group.update()
     
@@ -177,7 +209,13 @@ class Menu:
               
             ndict[bname] = button
         return ndict
-    
+
+    def reinit_page(self):
+        if self.page_name is not None:
+            page_name = self.page_name
+            self.delete_current_page()
+            self.init_page(page_name)
+
     def get_key_name(self, nkey):
         name = self.model.key_names.get(nkey, None)
         if name is None:
@@ -206,7 +244,8 @@ class Menu:
                         
                         elif font_data[0] == 'txt':
                             txt = font_data[2]
-                        res = self.window.render_font(txt, font_data[1], font_data[3], font_data[4], font_data[5], font_data[6], font_data[7])
+                        res = self.window.render_font(
+                            txt, font_data[1], font_data[3], font_data[4], font_data[5], font_data[6], font_data[7])
                     else:
                         res = self.window.res_loader.load(res_name)
                     p['buttons'][bname].image_handler.res = res
@@ -217,32 +256,12 @@ class Menu:
         button.image_handler.change_res(res)  
         
     def open_options(self):
-        self.reinit_panel_buttons()
-        for obj in self.main_menu_objects:
-            x, y = obj.position_handler.pos
-            y *= 1000
-            obj.position_handler.pos = x, y
-        for obj in self.options_menu_objects:
-            x, y = obj.position_handler.pos
-            y //= 1000
-            obj.position_handler.pos = x, y
-        self.action_manager.focus = [0, 0]
-        self.action_manager.set_panel_to_video()
+        self.delete_current_page()
+        self.init_page('Options')
 
     def close_options(self):
-        for obj in self.main_menu_objects:
-            x, y = obj.position_handler.pos
-            y /= 1000
-            obj.position_handler.pos = x, y
-        for obj in self.options_menu_objects:
-            x, y = obj.position_handler.pos
-            y *= 1000
-            obj.position_handler.pos = x, y
-        self.action_manager.classic_buttons = self.mainmenu_classic_buttons
-        self.action_manager.classic_buttons_order = self.page.Objects.menu_classic_buttons_order
-        self.action_manager.focus = [0, 0]
-        self.action_manager.remove_current_panel()
-        self.action_manager.update_buttons2()
+        self.delete_current_page()
+        self.init_page('MainMenu')
     
     def change_kb_ctrls(self, button):
         button.image_handler.res = self.empty_button_res
@@ -271,7 +290,7 @@ class Menu:
     
     @staticmethod
     def dump_save():
-        Save.dump()    
+        SaveComponent.dump()    
     
     def quit_game(self):
         self.dump_save()
@@ -304,9 +323,9 @@ class Game:
         
         pygame.mouse.set_visible(False)
         
-        Save.load()
+        SaveComponent.load()
         
-        self.level = self.model.Game.get(self.model.Game.maps[self.model.Game.current_map_id.get()])
+        self.level = self.model.Game.get(self.model.Game.maps[self.model.Game.current_map_id.get(1)])
         self.level_res = self.level.res      
          
         self.space = GameSpace(self.level.ground_height, self.level.ground_length)
@@ -350,8 +369,8 @@ class Game:
         ### CAMERA ###
 
         self.ag('AbsoluteMovecam', dict(
-            x=self.level.camera_pos_x.get(),
-            y=self.level.camera_pos_y.get(),
+            x=self.level.camera_pos_x.get(1),
+            y=self.level.camera_pos_y.get(1),
             total_duration=1,
             fade_in=0,
             fade_out=0
@@ -407,7 +426,7 @@ class Game:
         name = player_data.name
         
         self.space.add_humanoid_entity(player_data.height,
-                                       player_data.width, (player_data.pos_x.get(), player_data.pos_y.get()), name)
+                                       player_data.width, (player_data.pos_x.get(1), player_data.pos_y.get(1)), name)
         
         self.player = self.window.add_entity(
             player_data.res,
@@ -426,13 +445,13 @@ class Game:
 
     @staticmethod
     def dump_save():
-        Save.dump()
+        SaveComponent.dump()
     
     def save_position(self):
-        self.level.Objects.Player.pos_x.set(round(self.player.position_handler.body.position.x))
-        self.level.Objects.Player.pos_y.set(round(self.player.position_handler.body.position.y))
-        self.level.camera_pos_x.set(round(self.window.bg_pos[0]))
-        self.level.camera_pos_y.set(round(self.window.bg_pos[1]))
+        self.level.Objects.Player.pos_x.set(round(self.player.position_handler.body.position.x), 1)
+        self.level.Objects.Player.pos_y.set(round(self.player.position_handler.body.position.y), 1)
+        self.level.camera_pos_x.set(round(self.window.bg_pos[0]), 1)
+        self.level.camera_pos_y.set(round(self.window.bg_pos[1]), 1)
 
     def quit(self):
         self.dump_save()
@@ -441,7 +460,7 @@ class Game:
         pygame.display.set_caption(str(1/dt))
         self.update_space(dt)
     
-    def update_space(self, dt):
+    def update_space(self, _):
         if self.debug_draw:
             self.space.debug_draw(self.draw_options)
         n1 = round((perf_counter() - self.t1) * 60 * 4) - self.number_of_space_updates

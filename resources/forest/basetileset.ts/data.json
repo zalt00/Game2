@@ -1,6 +1,7 @@
 {
   "filename": "tileset.png",
   "tile size": [16, 16],
+  "eraser": 1,
   "tile data": [
     "LU{}{}00",
     "NA{}{}00",

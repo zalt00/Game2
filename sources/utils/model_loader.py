@@ -2,13 +2,13 @@
 
 import sys
 import os
-from utils.save_modifier import Save
+from utils.save_modifier import SaveComponent
 
 
 def get_model(path):
     sys.path.append(path)
     from data.data_ import Data
-    Save.init(os.path.join(path, 'save.data'))
-    Save.load()
+    SaveComponent.init(os.path.join(path, 'save.data'), Data.menu_save_length, Data.game_save_length)
+    SaveComponent.load()
     return Data
 

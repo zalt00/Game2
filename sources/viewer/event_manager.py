@@ -135,20 +135,32 @@ class MenuEventManager(EventManager):
         
     def joybuttondown(self, event):
         if event.button == 0:
-            self.action_manager.do(self.action_manager.ACTIVATE)
+            try:
+                self.action_manager.do(self.action_manager.ACTIVATE)
+            except AttributeError:
+                pass
         elif event.button == 1:
-            self.action_manager.do(self.action_manager.CANCEL)
+            try:
+                self.action_manager.do(self.action_manager.CANCEL)
+            except AttributeError:
+                pass
         elif event.button == 5:
-            self.action_manager.do(self.action_manager.NEXT)
+            try:
+                self.action_manager.do(self.action_manager.NEXT)
+            except AttributeError:
+                pass
         elif event.button == 4:
-            self.action_manager.do(self.action_manager.PREVIOUS)
-            
+            try:
+                self.action_manager.do(self.action_manager.PREVIOUS)
+            except AttributeError:
+                pass
+
     def mousemotion(self, event):
         self.action_manager.do(self.action_manager.MOUSEMOTION, event.pos)
 
     def click(self, event):
         if event.button == 1:
-            self.action_manager.do(self.action_manager.RIGHT_CLICK, event.pos)
+            self.action_manager.do(self.action_manager.LEFT_CLICK, event.pos)
     
 
 class ChangeCtrlsEventManager(EventManager):

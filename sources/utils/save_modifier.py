@@ -6,38 +6,49 @@ import os
 import sys
 
 
-class Save:
+class SaveComponent:
     data = None
     path = ""
+    menu_save_length = 0
+    game_save_length = 0
     
     def __init__(self, i):
         self.i = i
+
+    def _get_index(self, save_id):
+        if save_id == 0:
+            return self.i
+        else:
+            return self.menu_save_length + (save_id - 1) * self.game_save_length + self.i
+
+    def get(self, save_id=0):
+        return self.data[self._get_index(save_id)]
     
-    def get(self):
-        return self.data[self.i]
-    
-    def get_chars(self):
-        a, b = self.get_shorts()
+    def get_chars(self, save_id=0):
+        a, b = self.get_shorts(save_id)
         return chr(a) + chr(b)
     
-    def get_shorts(self):
-        a = self.data[self.i] % 256
-        b = self.data[self.i] >> 8
+    def get_shorts(self, save_id=0):
+        index_ = self._get_index(save_id)
+        a = self.data[index_] % 256
+        b = self.data[index_] >> 8
         return a, b
         
-    def set(self, value):
-        self.data[self.i] = value
+    def set(self, value, save_id=0):
+        self.data[self._get_index(save_id)] = value
         
-    def set_shorts(self, a, b):
+    def set_shorts(self, a, b, save_id=0):
         value = a | (b << 8)
-        self.data[self.i] = value
+        self.data[self._get_index(save_id)] = value
         
-    def set_chars(self, s):
-        self.set_shorts(ord(s[0]), ord(s[1]))
+    def set_chars(self, s, save_id=0):
+        self.set_shorts(ord(s[0]), ord(s[1]), save_id)
     
     @classmethod
-    def init(cls, path):
+    def init(cls, path, menu_save_length=0, game_save_length=0):
         cls.path = path
+        cls.menu_save_length = menu_save_length
+        cls.game_save_length = game_save_length
     
     @classmethod
     def load(cls):
@@ -55,7 +66,7 @@ class Save:
             file.write(b)
     
     def __repr__(self):
-        return 'Save({})'.format(self.i)
+        return 'SaveComponent({})'.format(self.i)
     
     def __add__(self, value):
         a = SaveCombination()
@@ -65,12 +76,12 @@ class Save:
 
 
 class SaveCombination(list):
-    def get(self):
-        return tuple((save.get() for save in self))
+    def get(self, save_id=0):
+        return tuple((save.get(save_id) for save in self))
     
-    def set(self, iterable):
+    def set(self, iterable, save_id=0):
         for value, save in zip(iterable, self):
-            save.set(value)
+            save.set(value, save_id)
             
     def get_long(self):
         if len(self) == 2:
@@ -80,19 +91,14 @@ class SaveCombination(list):
             
     def __repr__(self):
         return 'SaveCombination({})'.format(super().__repr__())
-            
-
-def set_to_default(path):
-    Save.data = array('i', [200, 500, 0])
-    Save.dump(path)
 
 
 def main():
     path = input('Please write the path the save.date file: ')
     if path == 'd':
         path = '.\\..\\..\\data\\save.data'
-    Save.init(path)
-    Save.load()
+    SaveComponent.init(path)
+    SaveComponent.load()
     labels = []
     with open('save_labels.cfg', 'r') as file:
         for line in file:
@@ -103,9 +109,9 @@ def main():
     while not stop:
         for i, (l, t) in enumerate(labels):
             if t == 'shorts':
-                value = Save(i).get_shorts()
+                value = SaveComponent(i).get_shorts()
             else:
-                value = Save(i).get()
+                value = SaveComponent(i).get()
             print(f'{i}-{l}: {value}')
         print('\nm: modify a value')
         print('a: add a new value')
@@ -116,7 +122,7 @@ def main():
         command = input()
         if command == 's':
             stop = True
-            Save.dump()
+            SaveComponent.dump()
             txt = '\n'.join((':'.join(l) for l in labels))
             with open('save_labels.cfg', 'w') as file:
                 file.write(txt)
@@ -128,10 +134,10 @@ def main():
                 t = labels[i][1]
             if t == 'int':
                 value = int(input('enter the new value: '))
-                Save(i).set(value)
+                SaveComponent(i).set(value)
             elif t == 'shorts':
                 value = map(int, input('enter the new value: ').split(' '))
-                Save(i).set_shorts(*value)
+                SaveComponent(i).set_shorts(*value)
             labels[i][1] = t
             
         elif command == 'a':
@@ -139,13 +145,13 @@ def main():
             label = input('enter the label of the value: ')
             t = input('enter the type of the value: ')
             labels.insert(i, [label, t])
-            Save.data.insert(i, 0)
-            Save(i).set(0)
+            SaveComponent.data.insert(i, 0)
+            SaveComponent(i).set(0)
             
         elif command == 'r':
             i = int(input('enter the id of the value you want to delete: '))
             labels.pop(i)
-            Save.data.pop(i)
+            SaveComponent.data.pop(i)
         
         elif command == 'p':
             print('enter your python code: ')
@@ -160,7 +166,7 @@ def main():
                 
         elif command == 'gs':
             i = int(input('enter the id of the shorts you want to get: '))
-            print(Save(i).get_shorts())
+            print(SaveComponent(i).get_shorts())
             input()
             
         os.system('cls')

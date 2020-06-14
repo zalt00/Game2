@@ -65,9 +65,8 @@ class Window:
     def run(self):
         """Starts the main loop"""
         self.loop_running = True
+        dt = 8
         while self.loop_running:
-            dt = self.clock.tick(self.fps)
-
             self.current_framerate = self.clock.get_fps()
 
             for event in pygame.event.get():
@@ -94,9 +93,8 @@ class Window:
                 self.is_bg_updated = False
                 self.previous = sprite_rect.copy()
 
-            # self.on_draw(dt / 1000)
-
             pygame.display.flip()
+            dt = self.clock.tick(self.fps)
 
         self.quit()
     
