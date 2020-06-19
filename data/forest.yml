@@ -1,0 +1,97 @@
+space: true
+palette: forest/forest_structure_tilesets.stsp
+
+
+background_data:
+    res: forest/forest.bg
+    pos: [0, -550]
+
+objects_data:
+    player:
+        type: player
+        res: player/white_guy.obj
+
+    ground_struct:
+        type: structure
+        res: forest/structure.st
+        is_built: false
+        name: ground
+        pos: [600, 0]
+        state: base
+        poly:
+            - [[]]
+        ground:
+            - [[1000, 120], [-1000, 120]]
+
+    test_struct:
+        type: structure
+        res: forest/smurf.st
+        is_built: false
+        name: ground
+        pos: [600, 50]
+        state: base
+        poly:
+            - [[-64, 0], [64, 0], [64, 127], [-64, 127]]
+        ground:
+            - [[-64, 128], [64, 128]]
+
+    player_debug_values:
+        type: text
+        pos: [20, 640]
+        text: |
+            x velocity: {}
+            y velocity: {}
+            x coordinate: {}
+            y coordinate: {}
+            framerate: {}
+        values:
+            - [player, position_handler, body, velocity, x]
+            - [player, position_handler, body, velocity, y]
+            - [player, position_handler, body, position, x]
+            - [player, position_handler, body, position, y]
+            - [window, current_framerate]
+        color: "#ffffff"
+        size: 28
+
+triggers_data:
+    right_border_trigger:
+        id: 0
+        left: 1255
+        enabled: true
+        actions:
+            - type_: AbsoluteMovecam
+              x: -1216
+              y: 0
+              total_duration: 80
+              fade_in: 30
+              fade_out: 30
+            - type_: EnableTrigger
+              target: 1
+            - type_: DisableTrigger
+              target: 0
+
+    left_border_trigger:
+        id: 1
+        right: 1242
+        enabled: true
+        actions:
+            - type_: AbsoluteMovecam
+              x: 0
+              y: 0
+              total_duration: 80
+              fade_in: 30
+              fade_out: 30
+            - type_: EnableTrigger
+              target: 0
+            - type_: DisableTrigger
+              target: 1
+
+    bottom_of_world:
+        id: 2
+        top: -100
+        enabled: true
+        actions:
+            - type_: TPEntity
+              npos: [500, 300]
+              entity_name: player
+

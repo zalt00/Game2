@@ -3,16 +3,15 @@
 
 class Trigger:
     def __init__(self, data, action_getter):
-        self.top = data.top
-        self.bottom = data.bottom
-        self.right = data.right
-        self.left = data.left
-        self.enabled = data.enabled
+        self.top = data.get('top', None)
+        self.bottom = data.get('bottom', None)
+        self.right = data.get('right', None)
+        self.left = data.get('left', None)
+        self.enabled = data['enabled']
         
         self.actions = []
-        for action_name in data.Actions.actions:
-            action_data = getattr(data.Actions, action_name)
-            action = action_getter(action_data.typ, action_data.kwargs)
+        for action_data in data['actions']:
+            action = action_getter(**action_data)
             self.actions.append(action)
     
     def update(self, x, y):

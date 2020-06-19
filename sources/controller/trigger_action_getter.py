@@ -5,8 +5,8 @@ from typing import Any
 
 
 class ActionGetter:
-    def __call__(self, action_type, kwargs):
-        return getattr(self, action_type)(ag=self, **kwargs)
+    def __call__(self, type_, **kwargs):
+        return getattr(self, type_)(ag=self, **kwargs)
 
 
 class GameActionGetter(ActionGetter):

@@ -13,6 +13,7 @@ from utils.save_modifier import SaveComponent
 from .triggers import Trigger
 from .trigger_action_getter import GameActionGetter
 from time import perf_counter
+import yaml
 
 
 class App:
@@ -324,18 +325,18 @@ class Game:
         pygame.mouse.set_visible(False)
         
         SaveComponent.load()
-        
-        self.level = self.model.Game.get(self.model.Game.maps[self.model.Game.current_map_id.get(1)])
-        self.level_res = self.level.res      
+        with open(self.model.Game.maps[self.model.Game.current_map_id.get(1)]) as datafile:
+            self.level = yaml.safe_load(datafile)
+        self.level_res = self.level['background_data']['res']
          
-        self.space = GameSpace(self.level.ground_height, self.level.ground_length)
+        self.space = GameSpace(0, 0)
 
         self.player = None
 
         ### BG ###
-        dynamic = self.level.dynamic_layers
+        dynamic = True
         n_layers = self.window.get_number_of_layers(self.level_res)
-        pos = self.level.bg_pos
+        pos = self.level['background_data']['pos']
         if not dynamic:
             position_handler = StaticPositionHandler(pos)
             pos_hdlrs = [position_handler for _ in range(n_layers)]
@@ -346,7 +347,7 @@ class Game:
             self.level_res,
             pos_hdlrs,
             dynamic,
-            self.level.animated_layers
+            False
         )
         
         # pos2 = pos[0] + self.window.get_length(self.level_res) * 2, pos[1]
@@ -359,22 +360,21 @@ class Game:
         self.structures = dict()
 
         ### TRIGGERS ###
-        self.triggers = [None] * len(self.level.Triggers.triggers)
+        self.triggers = [None] * len(self.level['triggers_data'])
         self.ag = GameActionGetter(self.triggers, self.window, pos_hdlrs, self.entities)
-        for trig_name in self.level.Triggers.triggers:
-            trigdata = self.level.Triggers.get(trig_name)
-            self.triggers[trigdata.id_] = Trigger(trigdata, self.ag)          
+        for trigdata in self.level['triggers_data'].values():
+            self.triggers[trigdata['id']] = Trigger(trigdata, self.ag)
         #####
 
         ### CAMERA ###
 
-        self.ag('AbsoluteMovecam', dict(
-            x=self.level.camera_pos_x.get(1),
-            y=self.level.camera_pos_y.get(1),
-            total_duration=1,
-            fade_in=0,
-            fade_out=0
-        ))()
+        self.ag('AbsoluteMovecam',
+                x=self.model.Game.BaseBGData.camera_pos_x.get(1),
+                y=self.model.Game.BaseBGData.camera_pos_y.get(1),
+                total_duration=1,
+                fade_in=0,
+                fade_out=0
+                )()
         #####
 
         action_manager = GameActionManager(None, return_to_main_menu, self.save_position)
@@ -382,14 +382,13 @@ class Game:
 
         ### OBJECTS ###
 
-        for object_name in self.level.Objects.objects:
+        for object_name, data in self.level['objects_data'].items():
             
-            data = self.level.Objects.get(object_name)
-            if object_name == self.level.Objects.player:
+            if data['type'] == 'player':
                 self.init_player(data)
-            elif data.typ == 'structure':
+            elif data['type'] == 'structure':
                 self.init_structure(data)
-            elif data.typ == 'text':
+            elif data['type'] == 'text':
                 self.init_text(data)
         #####
 
@@ -411,25 +410,26 @@ class Game:
     
     def init_structure(self, data):
         
-        name = data.name
-        pos_handler = StaticPositionHandler((data.pos_x, data.pos_y))
-        if data.is_built:
-            struct = self.window.add_structure(data.res, pos_handler, data.state)
+        name = data['name']
+        pos_handler = StaticPositionHandler(data['pos'])
+        if data['is_built']:
+            struct = self.window.add_structure(data['res'], pos_handler, data['state'])
         else:
-            struct = self.window.build_structure(data.res, self.level.structure_palette, pos_handler, data.state)
+            struct = self.window.build_structure(data['res'], self.level['palette'], pos_handler, data['state'])
         
-        self.space.add_structure((data.pos_x, data.pos_y), data.poly, data.ground, name)
+        self.space.add_structure(data['pos'], data['poly'], data['ground'], name)
         
         self.structures[name] = struct
     
-    def init_player(self, player_data):
+    def init_player(self, additional_data):
+        player_data = self.model.Game.BasePlayerData
         name = player_data.name
         
         self.space.add_humanoid_entity(player_data.height,
                                        player_data.width, (player_data.pos_x.get(1), player_data.pos_y.get(1)), name)
         
         self.player = self.window.add_entity(
-            player_data.res,
+            additional_data['res'],
             PlayerPositionHandler(self.space.objects[name][0], self.triggers),
             PhysicsUpdater(self.space.objects[name][0], self.action_manager.land, self.save_position),
             ParticleHandler(self.window.spawn_particle),
@@ -439,8 +439,9 @@ class Game:
         self.entities[name] = self.player
 
     def init_text(self, data):
-        res_getter = FormatTextResGetter(data.text, data.values, self, self.window.render_text, data.color, data.size)
-        poshdlr = StaticPositionHandler(data.pos)
+        res_getter = FormatTextResGetter(
+            data['text'], data['values'], self, self.window.render_text, data['color'], data['size'])
+        poshdlr = StaticPositionHandler(data['pos'])
         self.window.add_text(res_getter, poshdlr)
 
     @staticmethod
@@ -448,10 +449,10 @@ class Game:
         SaveComponent.dump()
     
     def save_position(self):
-        self.level.Objects.Player.pos_x.set(round(self.player.position_handler.body.position.x), 1)
-        self.level.Objects.Player.pos_y.set(round(self.player.position_handler.body.position.y), 1)
-        self.level.camera_pos_x.set(round(self.window.bg_pos[0]), 1)
-        self.level.camera_pos_y.set(round(self.window.bg_pos[1]), 1)
+        self.model.Game.BasePlayerData.pos_x.set(round(self.player.position_handler.body.position.x), 1)
+        self.model.Game.BasePlayerData.pos_y.set(round(self.player.position_handler.body.position.y), 1)
+        self.model.Game.BaseBGData.camera_pos_x.set(round(self.window.bg_pos[0]), 1)
+        self.model.Game.BaseBGData.camera_pos_y.set(round(self.window.bg_pos[1]), 1)
 
     def quit(self):
         self.dump_save()

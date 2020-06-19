@@ -299,8 +299,19 @@ class Data(DataContainer):
     class Game(DataContainer):
 
         current_map_id = SaveComponent(4)
-        maps = ('BlackForest',)
-        
+        maps = ('data/forest.yml',)
+
+        class BasePlayerData:
+            height = 80
+            width = 30
+            name = "player"
+            pos_x = SaveComponent(2)
+            pos_y = SaveComponent(3)
+
+        class BaseBGData:
+            camera_pos_x = SaveComponent(0)
+            camera_pos_y = SaveComponent(1)
+
         class BlackForest(DataContainer):
             res = 'forest/forest.bg'
             space = True

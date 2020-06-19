@@ -6,10 +6,16 @@ from tkinter.filedialog import askopenfilename, asksaveasfilename
 from dataclasses import dataclass
 from typing import Any
 import sys
+import json
 import os
 import importlib.util
 from configparser import ConfigParser
+from viewer.resources_loader import ResourcesLoader2
 from pymunk.vec2d import Vec2d
+from PIL import Image, ImageTk
+import pygame
+import yaml
+pygame.init()
 
 
 @dataclass()
@@ -18,7 +24,9 @@ class Structure:
     img: Any
     pos: list
     state: str
+    pilimage: Any
     name: str = ''
+    scale: int = 1
 
 
 class App(tk.Frame):
@@ -26,6 +34,9 @@ class App(tk.Frame):
         self.root = root
         super(App, self).__init__(root, *args, **kwargs)
         self.pack(fill='both', expand=True)
+
+        self.rl = ResourcesLoader2('./../resources')
+        self.palette = self.rl.load('forest/forest_structure_tilesets.stsp')
 
         self.canvas = tk.Canvas(self, width=1280, height=750, scrollregion=(0, 0, 5000, 2000), bg='#e4e4e4')
         self.canvas.grid(row=0, column=1, sticky='nesw')
@@ -77,11 +88,20 @@ class App(tk.Frame):
         self.preview_label = tk.Label(self.focus_object_frame)
         # self.preview_label.grid(row=0, column=0, sticky='nw')
 
-        self.preview_canvas = tk.Canvas(self.focus_object_frame, width=0, height=0)
+        self.preview_canvas = tk.Canvas(self.focus_object_frame, width=0, height=0, scrollregion=(0, 0, 1200, 1200))
         self.preview_canvas.grid(row=0, column=0, sticky='nw')
 
+        self.defilXpreview = tk.Scrollbar(
+            self.focus_object_frame, orient='horizontal', command=self.preview_canvas.xview)
+
+        self.defilYpreview = tk.Scrollbar(
+            self.focus_object_frame, orient='vertical', command=self.preview_canvas.yview)
+
+        self.preview_canvas['xscrollcommand'] = self.defilXpreview.set
+        self.preview_canvas['yscrollcommand'] = self.defilYpreview.set
+
         self.struct_label = tk.Label(self.focus_object_frame, justify='left')
-        self.struct_label.grid(row=1, column=0, sticky='nw')
+        self.struct_label.grid(row=2, column=0, sticky='nw')
 
         self.focus_object_frame.columnconfigure(0, weight=1)
 
@@ -89,11 +109,11 @@ class App(tk.Frame):
         self.listbox_elements = []
         self.structure_list = tk.Listbox(self.info_label_frame, selectmode='single',
                                          listvariable=self.structure_list_var)
-        self.structure_list.grid(row=3, column=0, sticky='sew')
+        self.structure_list.grid(row=4, column=0, sticky='sew')
 
         self.txt_var = tk.StringVar()
         self.name_entry = tk.Entry(self.focus_object_frame, state='disabled', textvariable=self.txt_var)
-        self.name_entry.grid(row=2, column=0, sticky='ew')
+        self.name_entry.grid(row=3, column=0, columnspan=2, sticky='ew')
 
         self.show_collision_var = tk.IntVar()
         self.show_collision_cbutton = ttk.Checkbutton(self.focus_object_frame,
@@ -163,10 +183,12 @@ class App(tk.Frame):
             s = self.canvas.find_overlapping(*self.cursor_pos, *self.cursor_pos)
             if len(s) > 0:
                 s = set(s)
-                try:
-                    s.remove(self.bg_id)
-                except KeyError:
-                    pass
+                if self.bg_id is not None:
+                    for id_ in self.bg_id:
+                        try:
+                            s.remove(id_)
+                        except KeyError:
+                            pass
                 try:
                     s.remove(self.selection_rect_id)
                 except KeyError:
@@ -201,11 +223,12 @@ class App(tk.Frame):
         if self.copied is not None:
             res_path = self.copied.res_path
             img = self.copied.img.copy()
+            pilimage = self.copied.pilimage.copy()
             state = self.copied.state
             self.i += 1
             name = 'structure' + str(self.i)
             pos = list(self.copied.pos)
-            struct = Structure(res_path, img, pos, state, name)
+            struct = Structure(res_path, img, pos, state, pilimage, name)
             struct_id = self.canvas.create_image(*pos, image=img)
             self.structures[struct_id] = struct
             self.update_listvar()
@@ -214,14 +237,22 @@ class App(tk.Frame):
 
     def select_structure(self, struct, struct_id):
         self.focus_on = struct, struct_id
-        self.preview_image = struct.img.copy()
-        width, height = int(self.preview_image.width() * 1.4), int(self.preview_image.height() * 1.4)
+        preview_pilimage = struct.pilimage
+        struct.scale = 1
+        while preview_pilimage.width > 1000 or preview_pilimage.height > 1000:
+            preview_pilimage = preview_pilimage.resize((preview_pilimage.width // 2, preview_pilimage.height // 2))
+            struct.scale *= 2
+        self.preview_image = ImageTk.PhotoImage(preview_pilimage)
+        width, height = int(self.preview_image.width() + 10), int(self.preview_image.height() + 10)
+
         self.preview_canvas['width'] = width
         self.preview_canvas['height'] = height
         self.preview_canvas.create_image(width // 2, height // 2, image=self.preview_image)
         self.txt_var.set(struct.name)
         self.name_entry['state'] = 'normal'
-        self.show_collision_cbutton.grid(row=3, column=0, sticky='ew')
+        self.show_collision_cbutton.grid(row=4, column=0, sticky='ew')
+        self.defilXpreview.grid(row=1, column=0, sticky='ew')
+        self.defilYpreview.grid(row=0, column=1, sticky='ns')
         self.update_listbox_selection()
 
     def mouse_motion(self, evt):
@@ -266,12 +297,19 @@ class App(tk.Frame):
     def add_structure(self):
         filename = askopenfilename()
         if filename:
-            name = filename[filename.find('resources') + 10:]
-            res_name = '/'.join(name.split('/')[:-1])
-            state = name.split('/')[-1].replace('.png', '')
-            img = tk.PhotoImage(file=filename)
+            res = self.rl.load_from_path(filename)
+            res.build({'base': self.palette.build(res)})
+            res_name = filename[filename.find('resources') + 10:]
+
+            # awful, but no choice. Tkinter images are crap.
+            pgimg = res.sheets['base']
+            strimg = pygame.image.tostring(pgimg, 'RGBA')
+            pilimage = Image.frombytes('RGBA', pgimg.get_size(), strimg)
+            pilimage.save('temp.png')
+            img = tk.PhotoImage(file='temp.png')
+
             pos = [0, 0]
-            self.cache_structure = Structure(res_name, img, pos, state)
+            self.cache_structure = Structure(res_name, img, pos, 'base', pilimage)
             self.state = 'placing structure'
             self.canvas['cursor'] = 'crosshair'
 
@@ -283,9 +321,25 @@ class App(tk.Frame):
         filename = askopenfilename()
         if filename:
             if self.bg_id is not None:
-                self.canvas.delete(self.bg_id)
-            self.bg = tk.PhotoImage(file=filename)
-            self.bg_id = self.canvas.create_image(self.bg.width() / 2, self.bg.height() / 2, image=self.bg, tag='bg')
+                for id_ in self.bg_id:
+                    self.canvas.delete(id_)
+
+            dir_name = os.path.dirname(filename)
+            with open(filename) as file:
+                data = json.load(file)
+
+            self.bg = []
+            self.bg_id = []
+            for layer_data in data['background']:
+                img = tk.PhotoImage(file=os.path.join(dir_name, layer_data['filename']))
+                img = img.zoom(data['scale'])
+                self.bg.append(img)
+                self.bg_id.append(self.canvas.create_image(img.width() / 2, img.height() / 2, image=img, tag='bg'))
+                layer_data['id'] = self.bg_id[-1]
+
+            layers = sorted(data['background'], key=lambda d: d['layer'])
+            for ld in layers:
+                self.canvas.tag_raise(ld['id'])
 
     def remove_focus(self, evt):
         self.focus_on = None
@@ -297,6 +351,10 @@ class App(tk.Frame):
         self.txt_var.set('')
         self.name_entry['state'] = 'disabled'
         self.show_collision_cbutton.grid_forget()
+        self.preview_canvas['width'] = 1
+        self.preview_canvas['height'] = 1
+        self.defilXpreview.grid_forget()
+        self.defilYpreview.grid_forget()
         self.show_collision_var.set(0)
         self.show_collision_trigger()
         self.structure_list.selection_clear(0, len(self.listbox_elements))
@@ -397,37 +455,38 @@ class App(tk.Frame):
 
     @staticmethod
     def get_collision_infos(struct):
-        cfg = ConfigParser()
-        cfg.read('config.ini', encoding="utf-8")
-        resources_base_dir = cfg['env']['resources_base_dir']
-        full_res_path = os.path.normpath(os.path.join(resources_base_dir, struct.res_path))
-        struct_additional_data_path = os.path.normpath(os.path.join(full_res_path, 'data.ini'))
-        scfg = ConfigParser()
-        scfg.read(struct_additional_data_path)
-        poly = scfg['default physics']['default_poly']
-        ground = scfg['default physics']['default_ground']
-        return poly, ground
+        with open('default_collisions.yaml') as datafile:
+            data = yaml.safe_load(datafile)
+        struct_data = data.get(struct.res_path, None)
+        if struct_data is not None:
+            return struct_data['poly'], struct_data['ground']
+        return
 
     def show_collision_trigger(self):
         if self.show_collision_var.get():
             if self.focus_on is not None:
                 self.ground_visualisations = []
                 self.poly_visualisations = []
-                poly, ground = self.get_collision_infos(self.focus_on[0])
-                poly_ = eval(poly)
-                segments = eval(ground)
-                x = int(self.preview_canvas['width']) // 2
-                y = int(self.preview_canvas['height']) // 2 + self.preview_image.height() // 2
-                for points in poly_:
-                    p = [(int(dx + x), int(y - dy)) for dx, dy in points]
-                    poly_visu_id = self.preview_canvas.create_polygon(*p, fill='',
-                                                                      width=2, outline='#32b5fc', tag='fg2')
-                    self.poly_visualisations.append(poly_visu_id)
-                for a, b in segments:
-                    xa, ya = int(a[0] + x), int(y - a[1])
-                    xb, yb = int(b[0] + x), int(y - b[1])
-                    ground_visu_id = self.preview_canvas.create_line(xa, ya, xb, yb, fill='red', width=2, tag='fg1')
-                    self.ground_visualisations.append(ground_visu_id)
+                data = self.get_collision_infos(self.focus_on[0])
+                if data is not None:
+                    poly_ = data[0]
+                    segments = data[1]
+                    x = int(self.preview_canvas['width']) // 2
+                    y = int(self.preview_canvas['height']) // 2 + self.preview_image.height() // 2
+                    for points in poly_:
+                        if len(points) > 0 and len(points[0]) > 0:
+                            p = [
+                                (int((dx / self.focus_on[0].scale) + x),
+                                 int(y - (dy / self.focus_on[0].scale))) for dx, dy in points]
+
+                            poly_visu_id = self.preview_canvas.create_polygon(*p, fill='',
+                                                                              width=2, outline='#32b5fc', tag='fg2')
+                            self.poly_visualisations.append(poly_visu_id)
+                    for a, b in segments:
+                        xa, ya = int(a[0] / self.focus_on[0].scale + x), int(y - a[1] / self.focus_on[0].scale)
+                        xb, yb = int(b[0] / self.focus_on[0].scale + x), int(y - b[1] / self.focus_on[0].scale)
+                        ground_visu_id = self.preview_canvas.create_line(xa, ya, xb, yb, fill='red', width=2, tag='fg1')
+                        self.ground_visualisations.append(ground_visu_id)
 
         else:
             if self.poly_visualisations is not None:

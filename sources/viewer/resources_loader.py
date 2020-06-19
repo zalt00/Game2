@@ -160,7 +160,11 @@ class StructTSPalette:
             filename = v['filename']
             cs = v['calibration_squares']
             path = os.path.join(directory, filename).replace('\\', '/')
-            img = pygame.image.load(path).convert_alpha()
+            try:
+                img = pygame.image.load(path).convert_alpha()
+            except pygame.error:
+                img = pygame.image.load(path)
+
             if cs:
                 r = img.get_rect()
                 r.width -= 2 * tw
@@ -215,7 +219,11 @@ class Object:
         for name, v in self.data['animations'].items():
             fn = v['filename']
             path = os.path.join(directory, fn).replace('\\', '/')
-            img = pygame.image.load(path).convert_alpha()
+            try:
+                img = pygame.image.load(path).convert_alpha()
+            except pygame.error:
+                img = pygame.image.load(path)
+
             for i in range(self.data['scale2x']):
                 img = pygame.transform.scale2x(img)
             self.sheets[name] = img
@@ -239,7 +247,10 @@ class Background:
             for v in self.data[s]:
                 fn = v['filename']
                 path = os.path.join(directory, fn).replace('\\', '/')
-                img = pygame.image.load(path).convert_alpha()
+                try:
+                    img = pygame.image.load(path).convert_alpha()
+                except pygame.error:
+                    img = pygame.image.load(path)
                 if scale >= 2:
                     img = pygame.transform.scale2x(img)
                     img = pygame.transform.scale(
