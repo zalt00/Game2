@@ -1,0 +1,12 @@
+background_data:
+  pos:
+  - 0
+  - -718
+  res: forest/forest.bg
+objects_data:
+  player:
+    res: player/white_guy.obj
+    type: player
+palette: forest/forest_structure_tilesets.stsp
+space: true
+triggers_data: {}

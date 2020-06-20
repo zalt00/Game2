@@ -307,6 +307,8 @@ class Game:
         self.model = model
         self.state = 'in_game'
 
+        self.window.current_bg.fill((0, 0, 0))
+
         # self.window.res_loader.cache.clear()
 
         self.t1 = perf_counter()

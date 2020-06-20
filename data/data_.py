@@ -299,7 +299,7 @@ class Data(DataContainer):
     class Game(DataContainer):
 
         current_map_id = SaveComponent(4)
-        maps = ('data/forest.yml',)
+        maps = ('data/bouh.yml',)
 
         class BasePlayerData:
             height = 80

@@ -27,7 +27,7 @@ objects_data:
         type: structure
         res: forest/smurf.st
         is_built: false
-        name: ground
+        name: test
         pos: [600, 50]
         state: base
         poly:
