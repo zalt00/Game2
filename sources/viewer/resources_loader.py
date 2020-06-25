@@ -6,6 +6,7 @@ from glob import glob
 import configparser
 from dataclasses import dataclass
 import json
+import time
 from typing import Any
 from pygame.locals import SRCALPHA
 from random import randint
@@ -117,6 +118,7 @@ class ResourcesLoader2:
         if res_name is None:
             res_name = local_dir.split('/')[-1]
 
+        print(res_name)
         res = None
         if res_name.endswith('st'):
             with open(local_dir, 'r', encoding='utf8') as file:
@@ -150,7 +152,8 @@ class ResourcesLoader2:
 
 class StructTSPalette:
     def __init__(self, data, directory):
-        print('structure palette')
+        print('takes some time')
+        time.sleep(2)
         self.data = data
         tilesets_data = self.data['tile sets data']
         self.tilesets_data = tilesets_data
@@ -270,6 +273,7 @@ class Structure:
         lines = s.splitlines()
 
         self.sheets = None
+        self.built = False
 
         try:
             self.dimensions = tuple(map(int, lines[0].split('=')[1].split(' ')))
@@ -292,6 +296,7 @@ class Structure:
             raise ValueError('invalid string buffer length')
 
     def build(self, sheets):
+        self.built = True
         self.sheets = sheets
 
 

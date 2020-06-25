@@ -7,9 +7,11 @@ pygame.init()
 
 
 class Sprite(pygame.sprite.Sprite):
-    def __init__(self, image_handler, position_handler, dec=(0, 0), screen_dec=[0, 0]):
+    def __init__(self, image_handler, position_handler, dec=(0, 0), screen_dec=[0, 0], layer=0):
         super().__init__()
-        
+
+        self._layer = layer
+
         self.screen_dec = screen_dec
         self.image_handler = image_handler
         self.position_handler = position_handler
@@ -18,7 +20,7 @@ class Sprite(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.raw_dec = dec
         self.dec = (0 - dec[0], 800 - self.rect.height + dec[1])
-        
+
         self.rect.x, self.rect.y = position_handler.update_position(self)
 
     def update(self, n=1):
@@ -45,8 +47,7 @@ class AnimatedDynamicSprite(DynamicSprite, AnimatedSprite):
 # BG
 class BgLayer(Sprite):
     def __init__(self, image_handler, position_handler, layer):
-        self._layer = layer
-        super().__init__(image_handler, position_handler)
+        super().__init__(image_handler, position_handler, layer=layer)
 
     def get_layer(self):
         return self._layer
@@ -73,7 +74,7 @@ class DBgLayer(BgLayer):
 
 # ENTITY
 class Entity(AnimatedDynamicSprite):
-    def __init__(self, image_handler, position_handler, physics_updater, particles_handler, dec, screen_dec):
+    def __init__(self, image_handler, position_handler, physics_updater, particles_handler, dec, screen_dec, layer=0):
         self.state = 'idle'
         self.secondary_state = ''
         self.air_control = 0
@@ -83,7 +84,7 @@ class Entity(AnimatedDynamicSprite):
         self.is_on_ground = False
         self.physics_updater = physics_updater
         self.particles_handler = particles_handler
-        super().__init__(image_handler, position_handler, dec, screen_dec)
+        super().__init__(image_handler, position_handler, dec, screen_dec, layer=layer)
     
     def update(self, n=1):
         self.particles_handler.update(self)
@@ -105,9 +106,9 @@ class Particle(AnimatedSprite):
 
 
 class Structure(AnimatedDynamicSprite):
-    def __init__(self, image_handler, position_handler, dec, screen_dec, state):
+    def __init__(self, image_handler, position_handler, dec, screen_dec, state, layer=0):
         self.state = state
-        super().__init__(image_handler, position_handler, dec, screen_dec)
+        super().__init__(image_handler, position_handler, dec, screen_dec, layer=layer)
 
 
 class Text(AnimatedDynamicSprite):

@@ -14,6 +14,8 @@ from .triggers import Trigger
 from .trigger_action_getter import GameActionGetter
 from time import perf_counter
 import yaml
+import threading
+from viewer.transition import Transition
 
 
 class App:
@@ -21,27 +23,81 @@ class App:
         self.window = window
         self.model = model
         self.current = Menu(window, model, self.start_game)
-        
+
+        self.current_thread = None
+        self.transition_finished = False
+        self.transition = None
+
     def change_app_state(self, new_state):
         for sprite in self.window.global_group.sprites():
             sprite.kill()
         self.current.quit()
         self.window.on_draw = lambda *_, **__: None
         self.window.quit = lambda *_, **__: None
-        
+
         del self.current
-        
+
         if new_state == 'game':
-            self.current = Game(self.window, self.model, self.return_to_main_menu)
+            self.current = Game(self.window, self.model, self.return_to_main_menu, self.game_loading_finished_check)
         elif new_state == 'menu':
             self.current = Menu(self.window, self.model, self.start_game)
-    
+
+    def start_fade_in_transition(self):
+        self.transition_finished = False
+        self.transition = Transition(17, (0, 0, 0), (self.window.screen_rect.width, self.window.screen_rect.height),
+                                     self.fade_in_transition_finished, 'in', False)
+
+        self.window.add_transition(self.transition)
+
+    def fade_in_transition_finished(self):
+        self.transition_finished = True
+
+    def delayed_start_game(self):
+        self.current.start_game()
+        self.start_fade_out_transition()
+
+    def start_fade_out_transition(self):
+        if self.transition is not None:
+            self.transition.stop()
+        self.transition = Transition(17, (0, 0, 0), (self.window.screen_rect.width, self.window.screen_rect.height),
+                                     lambda: None, 'out', True)
+
+        self.window.add_transition(self.transition)
+
+    def game_to_menu_fade_in_transition(self):
+        self.transition = Transition(17, (0, 0, 0), (self.window.screen_rect.width, self.window.screen_rect.height),
+                                     self.game_to_menu_fade_out_transition, 'in', True)
+
+        self.window.add_transition(self.transition)
+
+    def game_to_menu_fade_out_transition(self):
+        self.change_app_state('menu')
+        self.transition = Transition(17, (0, 0, 0), (self.window.screen_rect.width, self.window.screen_rect.height),
+                                     lambda: None, 'out', True)
+
+        self.window.add_transition(self.transition)
+
     def start_game(self):
         self.change_app_state('game')
-        
+        self.start_fade_in_transition()
+        t = threading.Thread(target=self.current.load_resources)
+        t.start()
+        self.current_thread = t
+
+    def game_loading_finished_check(self):
+        if self.current_thread is not None:
+            if not self.current_thread.is_alive():
+                if self.transition_finished:
+                    self.current.start_game()
+                    self.transition.stop()
+                    self.start_fade_out_transition()
+                elif self.transition is not None:
+                    self.transition.on_transition_end = self.delayed_start_game
+                self.transition_finished = False
+
     def return_to_main_menu(self):
-        self.change_app_state('menu')
-    
+        self.game_to_menu_fade_in_transition()
+
 
 class Menu:
     def __init__(self, window, model, start_game_callback):
@@ -302,38 +358,47 @@ class Menu:
 
 
 class Game:
-    def __init__(self, window, model, return_to_main_menu):
+    def __init__(self, window, model, return_to_main_menu, loading_finished_check):
         self.window = window
         self.model = model
-        self.state = 'in_game'
+        self.state = 'idle'
+        self.return_to_main_menu = return_to_main_menu
+        self.loading_finished_check = loading_finished_check
+        self.debug_draw = False
 
-        self.window.current_bg.fill((0, 0, 0))
+        self.t1 = self.count = self.number_of_space_updates = self.space = \
+            self.player = self.entities = self.structures = self.triggers = self.ag = self.action_manager = None
 
+        SaveComponent.load()
+        with open(self.model.Game.maps[self.model.Game.current_map_id.get(1)]) as datafile:
+            self.level = yaml.safe_load(datafile)
+        self.level_res = self.level['background_data']['res']
+
+    def load_resources(self):
+        self.window.on_draw = self.loading_update
+        if 'resources' in self.level:
+            for res_name in self.level['resources']:
+                self.window.res_loader.load(res_name)
+
+    def start_game(self):
         # self.window.res_loader.cache.clear()
+        return_to_main_menu = self.return_to_main_menu
 
         self.t1 = perf_counter()
         self.count = 0  # every 4 space update ticks the position handler, the image handler
         # and the physic state updater must be updated
         self.number_of_space_updates = 0
-        
+
         self.window.fps = 60
 
         self.window.init_joys()
-        self.debug_draw = False
 
         if self.debug_draw:
             self.draw_options = pymunk.pygame_util.DrawOptions(self.window.screen)
-        
-        pygame.mouse.set_visible(False)
-        
-        SaveComponent.load()
-        with open(self.model.Game.maps[self.model.Game.current_map_id.get(1)]) as datafile:
-            self.level = yaml.safe_load(datafile)
-        self.level_res = self.level['background_data']['res']
-         
-        self.space = GameSpace(0, 0)
 
-        self.player = None
+        pygame.mouse.set_visible(False)
+
+        self.space = GameSpace(0, 0)
 
         ### BG ###
         dynamic = True
@@ -344,20 +409,20 @@ class Game:
             pos_hdlrs = [position_handler for _ in range(n_layers)]
         else:
             pos_hdlrs = [BgLayerPositionHandler(pos, self.window.screen_dec) for _ in range(n_layers)]
-        
+
         self.window.add_bg(
             self.level_res,
             pos_hdlrs,
             dynamic,
             False
         )
-        
+
         # pos2 = pos[0] + self.window.get_length(self.level_res) * 2, pos[1]
         # ph = BgLayerPositionHandler(pos2, self.window.screen_dec)
         # pos_hdlrs.append(ph)
         # self.window.add_bg_layer(self.level_res, 4, ph, foreground=True)
         ######
-        
+
         self.entities = dict()
         self.structures = dict()
 
@@ -385,7 +450,7 @@ class Game:
         ### OBJECTS ###
 
         for object_name, data in self.level['objects_data'].items():
-            
+
             if data['type'] == 'player':
                 self.init_player(data)
             elif data['type'] == 'structure':
@@ -400,36 +465,37 @@ class Game:
         for action in self.model.Options.Controls.actions:
             kb, controller = self.model.Options.Controls.get(action)
             action_id = getattr(GameActionManager, action.upper())
-            
+
             ctrls[kb.get()] = action_id
             ctrls[controller.get_shorts()] = action_id
-        
+
         self.window.set_game_event_manager(action_manager, ctrls, [0.35, 0.35, 0.3, 0.15, 0.15, 0.15])
         #####
 
         self.window.on_draw = self.update
         self.window.quit = self.dump_save
-    
+
     def init_structure(self, data):
-        
+
         name = data['name']
         pos_handler = StaticPositionHandler(data['pos'])
+        layer = data.get('layer', 0)
         if data['is_built']:
-            struct = self.window.add_structure(data['res'], pos_handler, data['state'])
+            struct = self.window.add_structure(data['res'], pos_handler, data['state'], layer)
         else:
-            struct = self.window.build_structure(data['res'], self.level['palette'], pos_handler, data['state'])
-        
+            struct = self.window.build_structure(data['res'], self.level['palette'], pos_handler, data['state'], layer)
+
         self.space.add_structure(data['pos'], data['poly'], data['ground'], name)
-        
+
         self.structures[name] = struct
-    
+
     def init_player(self, additional_data):
         player_data = self.model.Game.BasePlayerData
         name = player_data.name
-        
+
         self.space.add_humanoid_entity(player_data.height,
                                        player_data.width, (player_data.pos_x.get(1), player_data.pos_y.get(1)), name)
-        
+
         self.player = self.window.add_entity(
             additional_data['res'],
             PlayerPositionHandler(self.space.objects[name][0], self.triggers),
@@ -437,7 +503,7 @@ class Game:
             ParticleHandler(self.window.spawn_particle),
             self.action_manager.set_state)
         self.action_manager.player = self.player
-        
+
         self.entities[name] = self.player
 
     def init_text(self, data):
@@ -449,7 +515,7 @@ class Game:
     @staticmethod
     def dump_save():
         SaveComponent.dump()
-    
+
     def save_position(self):
         self.model.Game.BasePlayerData.pos_x.set(round(self.player.position_handler.body.position.x), 1)
         self.model.Game.BasePlayerData.pos_y.set(round(self.player.position_handler.body.position.y), 1)
@@ -458,11 +524,14 @@ class Game:
 
     def quit(self):
         self.dump_save()
-    
+
     def update(self, dt):
         pygame.display.set_caption(str(1/dt))
         self.update_space(dt)
-    
+
+    def loading_update(self, _):
+        self.loading_finished_check()
+
     def update_space(self, _):
         if self.debug_draw:
             self.space.debug_draw(self.draw_options)

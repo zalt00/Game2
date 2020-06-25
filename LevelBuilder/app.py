@@ -4,18 +4,17 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter.filedialog import askopenfilename, asksaveasfilename
 from tkinter.messagebox import askokcancel
+from tkinter.simpledialog import askstring
 from dataclasses import dataclass
 from typing import Any
-import sys
 import json
 import os
-import importlib.util
 from configparser import ConfigParser
 from viewer.resources_loader import ResourcesLoader2
-from pymunk.vec2d import Vec2d
 from PIL import Image, ImageTk
 import pygame
 import yaml
+import yaml.parser
 pygame.init()
 
 
@@ -28,6 +27,7 @@ class Structure:
     pilimage: Any
     name: str = ''
     scale: int = 1
+    layer: int = 0
 
 
 class App(tk.Frame):
@@ -80,21 +80,29 @@ class App(tk.Frame):
         self.import_button = ttk.Button(self.opt_frame, text='Import', command=self.import_level)
         self.import_button.grid(row=0, column=4)
 
+        self.update_layers_button = ttk.Button(self.opt_frame, text='Update layers', command=self.update_layers)
+        self.update_layers_button.grid(row=0, column=5)
+
         self.rowconfigure(2, weight=1)
         self.columnconfigure(2, weight=1)
 
-        self.info_label_frame = tk.Frame(self)
-        self.info_label_frame.columnconfigure(0, weight=1)
-        self.info_label_frame.rowconfigure(3, weight=1)
-        self.info_label_frame.grid(row=0, column=2, sticky='nsew')
+        self.notebook = ttk.Notebook(self)
+        self.notebook.grid(row=0, column=2, sticky='nsew')
 
-        self.xylabel = tk.Label(self.info_label_frame, justify='left')
+        self.structures_info_frame = tk.Frame(self.notebook)
+        self.structures_info_frame.columnconfigure(0, weight=1)
+        self.structures_info_frame.rowconfigure(3, weight=1)
+        # self.structures_info_frame.grid(row=0, column=2, sticky='nsew')
+
+        self.notebook.add(self.structures_info_frame, text='Main')
+
+        self.xylabel = tk.Label(self.structures_info_frame, justify='left')
         self.xylabel.grid(row=0, column=0, sticky='nw')
 
-        self.height_ref_label = tk.Label(self.info_label_frame, text='height ref: 0\n', justify='left')
+        self.height_ref_label = tk.Label(self.structures_info_frame, text='height ref: 0\n', justify='left')
         self.height_ref_label.grid(row=1, column=0, sticky='nw')
 
-        self.focus_object_frame = tk.LabelFrame(self.info_label_frame, text='Focused Object')
+        self.focus_object_frame = tk.LabelFrame(self.structures_info_frame, text='Focused Object')
         self.focus_object_frame.grid(row=2, column=0, sticky='nesw')
 
         self.preview_image = None
@@ -119,8 +127,8 @@ class App(tk.Frame):
         self.focus_object_frame.columnconfigure(0, weight=1)
 
         self.structure_list_var = tk.StringVar()
-        self.listbox_elements = []
-        self.structure_list = tk.Listbox(self.info_label_frame, selectmode='single',
+        self.structures_listbox_elements = []
+        self.structure_list = tk.Listbox(self.structures_info_frame, selectmode='single',
                                          listvariable=self.structure_list_var)
         self.structure_list.grid(row=4, column=0, sticky='sew')
 
@@ -128,11 +136,78 @@ class App(tk.Frame):
         self.name_entry = tk.Entry(self.focus_object_frame, state='disabled', textvariable=self.txt_var)
         self.name_entry.grid(row=3, column=0, columnspan=2, sticky='ew')
 
+        self.layer_info_frame = tk.Frame(self.focus_object_frame)
+        self.layer_spinbox = ttk.Spinbox(self.layer_info_frame,
+                                         from_=-20., to=20., state='readonly', command=self.change_layer)
+        self.layer_spinbox.grid(row=0, column=1, sticky='ew')
+        self.layer_label = tk.Label(self.layer_info_frame, text='layer: ')
+        self.layer_label.grid(row=0, column=0, sticky='e')
+
         self.show_collision_var = tk.IntVar()
         self.show_collision_cbutton = ttk.Checkbutton(self.focus_object_frame,
                                                       text='Show default collision',
                                                       variable=self.show_collision_var,
-                                                      command=self.show_collision_trigger)
+                                                      command=self.show_collision_command)
+
+        self.triggers_info_frame = tk.Frame(self.notebook)
+        self.notebook.add(self.triggers_info_frame, text='Triggers')
+
+        self.triggers_info_frame.columnconfigure(0, weight=1)
+        self.triggers_info_frame.rowconfigure(5, weight=1)
+
+        self.xylabel2 = tk.Label(self.triggers_info_frame, justify='left')
+        self.xylabel2.grid(row=0, column=0, sticky='nw')
+
+        self.show_triggers_var = tk.IntVar()
+        self.show_triggers_cbutton = ttk.Checkbutton(self.triggers_info_frame,
+                                                     text='Show triggers',
+                                                     variable=self.show_triggers_var,
+                                                     command=self.show_triggers_command)
+        self.show_triggers_cbutton.grid(row=5, column=0, sticky='sw')
+
+        self.selected_trigger = None
+
+        self.triggers_list_var = tk.StringVar()
+        self.triggers_listbox_elements = []
+        self.triggers_list = tk.Listbox(self.triggers_info_frame, selectmode='single',
+                                        listvariable=self.triggers_list_var)
+        self.triggers_list.grid(row=1, column=0, sticky='nsew')
+        self.tl_selection_save = 0
+
+        self.trigger_edition_frame = tk.Frame(self.triggers_info_frame)
+        self.trigger_edition_frame.grid(row=2, column=0, sticky='nsew')
+
+        self.add_trigger_button = ttk.Button(self.trigger_edition_frame, text='New', command=self.new_trigger)
+        self.add_trigger_button.grid(row=0, column=0)
+        self.rename_trigger_button = ttk.Button(self.trigger_edition_frame, text='Rename', command=self.rename_trigger)
+        self.rename_trigger_button.grid(row=0, column=1)
+        self.delete_trigger_button = ttk.Button(self.trigger_edition_frame, text='Delete', command=self.delete_trigger)
+        self.delete_trigger_button.grid(row=0, column=2)
+
+        self.trigger_data_text = tk.Text(self.triggers_info_frame, exportselection=0)
+        self.trigger_data_text.grid(row=3, column=0, sticky='nsew')
+        self.last_to_loose_focus = False
+
+        self.trigger_textvalue_edition_frame = tk.Frame(self.triggers_info_frame)
+        self.trigger_textvalue_edition_frame.grid(row=4, column=0, sticky='nwew')
+
+        self.save_trig_data_button = ttk.Button(self.trigger_textvalue_edition_frame,
+                                                text='Save trigger data', command=self.save_trig_data_command)
+        self.save_trig_data_button.grid(row=1, column=0, sticky='nw')
+
+        with open('action_model.yaml') as datafile:
+            self.action_models = yaml.safe_load(datafile)
+        self.trig_action_combobox = ttk.Combobox(self.trigger_textvalue_edition_frame,
+                                                 values=list(self.action_models.keys()),
+                                                 state='readonly',
+                                                 exportselection=False,
+                                                 width=18)
+        self.trig_action_combobox.current(0)
+        self.trig_action_combobox.grid(row=0, column=1, sticky='nsew')
+
+        self.add_trigger_action_button = ttk.Button(self.trigger_textvalue_edition_frame,
+                                                    text='Add action', command=self.add_trigger_action_command)
+        self.add_trigger_action_button.grid(row=0, column=0, sticky='ew')
 
         self.bind_all('<Motion>', self.mouse_motion)
         self.bind_all('<Button>', self.button_down)
@@ -143,6 +218,8 @@ class App(tk.Frame):
         self.bind_all('<Control-c>', self.copy_struct)
         self.bind_all('<Control-v>', self.paste_struct)
         self.bind_all('<Control-s>', self.save)
+        self.bind_all('<FocusIn>', self.widget_focusin_handler)
+        self.bind_all('<FocusOut>', self.widget_focusout_handler)
 
         self.selection_rect_id = self.canvas.create_rectangle(0, 0, 0, 0, outline='red', width=2, tag='fg')
 
@@ -172,7 +249,13 @@ class App(tk.Frame):
         self.poly_visualisations = None
         self.ground_visualisations = None
 
-    def button_up(self, evt):
+        self.triggers = {}
+        self.triggers_rectangles_id_from_name = {}
+        self.triggers_visualisation_rectangles = {}
+
+        self.mouse_pos = []
+
+    def button_up(self, _):
         if self.state == 'moving structure':
             self.state = 'idle'
 
@@ -197,7 +280,7 @@ class App(tk.Frame):
                 self._add_structure(self.cache_structure)
             self.state = 'idle'
             
-        elif evt.x_root <= 1280 and evt.y_root <= 750:
+        elif 16 < evt.x_root <= 1280 and evt.y_root <= 750:
             s = self.canvas.find_overlapping(*self.cursor_pos, *self.cursor_pos)
             if len(s) > 0:
                 s = set(s)
@@ -207,6 +290,13 @@ class App(tk.Frame):
                             s.remove(id_)
                         except KeyError:
                             pass
+
+                for id_ in self.triggers_visualisation_rectangles:
+                    try:
+                        s.remove(id_)
+                    except KeyError:
+                        pass
+
                 try:
                     s.remove(self.selection_rect_id)
                 except KeyError:
@@ -235,9 +325,16 @@ class App(tk.Frame):
             selection = self.structure_list.curselection()
             if len(selection) > 0:
                 i = selection[0]
-                struct_id = self.listbox_elements[i]
+                struct_id = self.structures_listbox_elements[i]
                 struct = self.structures[struct_id]
                 self.select_structure(struct, struct_id)
+
+            selection2 = self.triggers_list.curselection()
+            if len(selection2) > 0:
+                i2 = selection2[0]
+                trig_name = self.triggers_listbox_elements[i2]
+                trig = self.triggers[trig_name]
+                self.select_trigger(trig_name, trig)
 
         self.mouse_motion(evt)
 
@@ -248,7 +345,7 @@ class App(tk.Frame):
     def _add_structure(self, struct):
         id_ = self.canvas.create_image(struct.pos[0], struct.pos[1], image=struct.img)
         self.structures[id_] = struct
-        self.update_listvar()
+        self.update_structure_listvar()
 
     def copy_struct(self, _):
         if self.focus_on is not None:
@@ -265,10 +362,10 @@ class App(tk.Frame):
             self.i += 1
             name = 'structure' + str(self.i)
             pos = list(self.copied.pos)
-            struct = Structure(res_path, img, pos, state, pilimage, name)
+            struct = Structure(res_path, img, pos, state, pilimage, name, layer=self.copied.layer)
             struct_id = self.canvas.create_image(*pos, image=img)
             self.structures[struct_id] = struct
-            self.update_listvar()
+            self.update_structure_listvar()
             self.select_structure(struct, struct_id)
             self.mouse_motion(evt)
 
@@ -287,15 +384,51 @@ class App(tk.Frame):
         self.preview_canvas.create_image(width // 2, height // 2, image=self.preview_image)
         self.txt_var.set(struct.name)
         self.name_entry['state'] = 'normal'
-        self.show_collision_cbutton.grid(row=4, column=0, sticky='ew')
+
+        self.layer_info_frame.grid(row=4, column=0, columnspan=2, sticky='ew')
+        self.layer_spinbox.set(struct.layer)
+
+        self.show_collision_cbutton.grid(row=5, column=0, sticky='ew')
+
         self.defilXpreview.grid(row=1, column=0, sticky='ew')
         self.defilYpreview.grid(row=0, column=1, sticky='ns')
-        self.update_listbox_selection()
+        self.update_structure_listbox_selection()
+
+    def select_trigger(self, trig_name, _):
+        if len(self.triggers_rectangles_id_from_name) > 0:
+            if self.selected_trigger is not None:
+                id_ = self.triggers_rectangles_id_from_name[self.selected_trigger]
+                self.canvas.itemconfigure(id_, activefill='#22b74f', outline='#22b74f', width=2)
+            self.selected_trigger = trig_name
+            id_ = self.triggers_rectangles_id_from_name[trig_name]
+            self.canvas.itemconfigure(id_, activefill='#018779', outline='#018779', width=2)
+        else:
+            self.selected_trigger = trig_name
+
+        data = self.triggers[trig_name]
+        s = yaml.safe_dump(data)
+        self.trigger_data_text.delete("0.0", "end")
+        self.trigger_data_text.insert("0.0", s)
+
+    def save_trig_data_command(self):
+        if self.selected_trigger is not None:
+            s = self.trigger_data_text.get('0.0', 'end')
+            try:
+                data = yaml.safe_load(s)
+            except yaml.parser.ParserError:
+                pass
+            else:
+                self.triggers[self.selected_trigger] = data
+                if self.show_triggers_var.get():
+                    self._hide_triggers()
+                    self._show_triggers()
 
     def mouse_motion(self, evt):
         x, y = self.canvas.canvasx(evt.x), self.canvas.canvasy(evt.y)
         self.cursor_pos = x, y
+        self.mouse_pos = evt.x, evt.y
         self.xylabel['text'] = 'x = {}, y = {}'.format(x, -self.ref_height + 720 - y)
+        self.xylabel2['text'] = 'x = {}, y = {}'.format(x, -self.ref_height + 720 - y)
         if self.state == 'moving structure':
             self.root.title(self.document_name + '*')
 
@@ -342,7 +475,7 @@ class App(tk.Frame):
             self.state = 'placing structure'
             self.canvas['cursor'] = 'crosshair'
 
-    def create_structure_from_res(self, res_name):
+    def create_structure_from_res(self, res_name, layer=0):
         res = self.rl.load(res_name)
         res.build({'base': self.palette.build(res)})
 
@@ -354,7 +487,7 @@ class App(tk.Frame):
         img = tk.PhotoImage(file='temp.png')
 
         pos = [0, 0]
-        return Structure(res_name, img, pos, 'base', pilimage)
+        return Structure(res_name, img, pos, 'base', pilimage, layer=layer)
 
     def set_height_ref(self):
         self.state = 'set height ref'
@@ -399,14 +532,19 @@ class App(tk.Frame):
         self.mouse_motion(evt)
         self.txt_var.set('')
         self.name_entry['state'] = 'disabled'
+
+        self.layer_info_frame.grid_forget()
         self.show_collision_cbutton.grid_forget()
+
         self.preview_canvas['width'] = 1
         self.preview_canvas['height'] = 1
+
         self.defilXpreview.grid_forget()
         self.defilYpreview.grid_forget()
+
         self.show_collision_var.set(0)
-        self.show_collision_trigger()
-        self.structure_list.selection_clear(0, len(self.listbox_elements))
+        self.show_collision_command()
+        self.structure_list.selection_clear(0, len(self.structures_listbox_elements))
 
     def delete_structure(self, evt):
         if self.focus_on is not None:
@@ -414,7 +552,7 @@ class App(tk.Frame):
             self.canvas.delete(s_id)
             self.remove_focus(evt)
             self.structures.pop(s_id)
-            self.update_listvar()
+            self.update_structure_listvar()
 
     def change_name(self, _):
         if self.focus_on is not None:
@@ -423,16 +561,25 @@ class App(tk.Frame):
             self.focus_set()
             name = self.txt_var.get().replace(' ', '-')
             self.focus_on[0].name = name
-            self.update_listvar()
+            self.update_structure_listvar()
 
-    def update_listvar(self):
-        self.structure_list_var.set(' '.join((v.name for v in self.structures.values())))
-        self.listbox_elements[:] = list(self.structures.keys())
-
-    def update_listbox_selection(self):
+    def change_layer(self):
         if self.focus_on is not None:
-            i = self.listbox_elements.index(self.focus_on[1])
-            self.structure_list.selection_clear(0, len(self.listbox_elements))
+            self.focus_on[0].layer = int(self.layer_spinbox.get())
+
+    def update_triggers_listvar(self):
+        triggers = list(self.triggers.keys())
+        self.triggers_list_var.set(' '.join(triggers))
+        self.triggers_listbox_elements[:] = triggers
+
+    def update_structure_listvar(self):
+        self.structure_list_var.set(' '.join((v.name for v in self.structures.values())))
+        self.structures_listbox_elements[:] = list(self.structures.keys())
+
+    def update_structure_listbox_selection(self):
+        if self.focus_on is not None:
+            i = self.structures_listbox_elements.index(self.focus_on[1])
+            self.structure_list.selection_clear(0, len(self.structures_listbox_elements))
             self.structure_list.selection_set(i)
 
     def save(self, *_, **__):
@@ -469,6 +616,9 @@ class App(tk.Frame):
             struct_data['pos'] = [int(struct.pos[0]), int(-self.ref_height + 800 - self.canvas.bbox(struct_id)[3])]
             struct_data['poly'], struct_data['ground'] = self.get_collision_infos(struct)
             struct_data['state'] = 'base'
+            struct_data['layer'] = struct.layer
+
+        base['triggers_data'].update(self.triggers)
 
         with open(filename, 'w') as file:
             yaml.safe_dump(base, file)
@@ -484,7 +634,8 @@ class App(tk.Frame):
 
             for obj_data in data['objects_data'].values():
                 if obj_data['type'] == 'structure':
-                    struct = self.create_structure_from_res(obj_data['res'])
+                    layer = obj_data.get('layer', 0)
+                    struct = self.create_structure_from_res(obj_data['res'], layer)
                     struct.name = obj_data['name']
                     x = obj_data['pos'][0]
                     y = 800 - self.ref_height - obj_data['pos'][1] - struct.img.height() // 2
@@ -492,7 +643,15 @@ class App(tk.Frame):
                     struct.pos = [x, y]
                     self._add_structure(struct)
 
-            self.update_listvar()
+            self.triggers.update(data['triggers_data'])
+            self.update_triggers_listvar()
+
+            self.update_structure_listvar()
+
+    def update_layers(self):
+        sorted_structures = sorted(self.structures.items(), key=lambda i: i[1].layer)
+        for struct_id, _ in sorted_structures:
+            self.canvas.tag_raise(struct_id)
 
     @staticmethod
     def get_collision_infos(struct):
@@ -503,7 +662,7 @@ class App(tk.Frame):
             return struct_data['poly'], struct_data['ground']
         return
 
-    def show_collision_trigger(self):
+    def show_collision_command(self):
         if self.show_collision_var.get():
             if self.focus_on is not None:
                 self.ground_visualisations = []
@@ -538,12 +697,136 @@ class App(tk.Frame):
                 self.poly_visualisations = None
                 self.ground_visualisations = None
 
+    def show_triggers_command(self):
+
+        if self.show_triggers_var.get():
+            self._show_triggers()
+
+        else:
+            self._hide_triggers()
+            self.triggers_list.selection_clear(0, len(self.triggers_listbox_elements))
+            self.trigger_data_text.delete('0.0', 'end')
+
+    def _show_triggers(self):
+        for trig_name, trig_data in self.triggers.items():
+            left = trig_data.get('left', -5)
+            right = trig_data.get('right', 10000)
+            top = 720 - trig_data.get('top', 721 - self.ref_height) - self.ref_height
+            bottom = 720 - trig_data.get('bottom', -10000 + self.ref_height) - self.ref_height
+
+            id_ = self.canvas.create_rectangle(left, top, right, bottom,
+                                               outline='#22b74f', tag='fg',
+                                               stipple="@./empty.xbm",
+                                               activestipple='gray25',
+                                               activefill='#22b74f',
+                                               width=2)
+            self.triggers_visualisation_rectangles[id_] = trig_name
+            self.triggers_rectangles_id_from_name[trig_name] = id_
+
+        selection2 = self.triggers_list.curselection()
+        if len(selection2) > 0:
+            i2 = selection2[0]
+            trig_name = self.triggers_listbox_elements[i2]
+            trig = self.triggers[trig_name]
+            self.select_trigger(trig_name, trig)
+
+    def _hide_triggers(self):
+        for id_ in self.triggers_visualisation_rectangles:
+            self.canvas.delete(id_)
+        self.triggers_visualisation_rectangles = {}
+        self.triggers_rectangles_id_from_name = {}
+
+    def new_trigger(self):
+        name = askstring('New', 'Enter the name of the trigger.', parent=self.root)
+        if name is not None:
+            self._hide_triggers()
+            if len(self.triggers) > 0:
+                max_id = max(self.triggers.values(), key=lambda v: v['id'])['id']
+            else:
+                max_id = -1
+            self.triggers[name] = dict(
+                id=max_id + 1,
+                enabled=True,
+                actions=[]
+            )
+            self.update_triggers_listvar()
+
+    def rename_trigger(self):
+        selection = self.triggers_list.curselection()
+        if len(selection) > 0:
+            i = selection[0]
+            old_name = self.triggers_listbox_elements[i]
+            new_name = askstring(
+                'Rename', 'Enter the new name of the trigger.', parent=self.root, initialvalue=old_name)
+            if new_name is not None:
+                self._hide_triggers()
+
+                value = self.triggers[old_name]
+
+                self.triggers.pop(old_name)
+                self.triggers[new_name] = value
+                self.triggers_listbox_elements[i] = new_name
+                self.update_triggers_listvar()
+                i2 = self.triggers_listbox_elements.index(new_name)
+                self.triggers_list.selection_clear(i)
+                self.triggers_list.selection_set(i2)
+
+    def delete_trigger(self):
+        selection = self.triggers_list.curselection()
+        if len(selection) > 0:
+            i = selection[0]
+            name = self.triggers_listbox_elements[i]
+            if askokcancel('Delete', 'Are you sure you want to delete this trigger ?'):
+                self.triggers.pop(name)
+                self.update_triggers_listvar()
+                self.selected_trigger = None
+                self.trigger_data_text.delete("0.0", "end")
+                if len(self.triggers_rectangles_id_from_name) > 0:
+                    self._hide_triggers()
+                    self._show_triggers()
+
+    def add_trigger_action_command(self):
+        if self.selected_trigger is not None:
+            trigger_data = self.triggers[self.selected_trigger]
+            action = self.action_models[self.trig_action_combobox.get()]
+            trigger_data['actions'].append(action)
+            s = yaml.safe_dump(trigger_data)
+            self.trigger_data_text.delete("0.0", "end")
+            self.trigger_data_text.insert("0.0", s)
+
+    def widget_focusin_handler(self, evt):
+        widget = evt.widget
+        if widget is self.trigger_data_text:
+            selection = self.triggers_list.curselection()
+            if len(selection) > 0:
+                self.tl_selection_save = selection[0]
+            self.triggers_list.selection_clear(0, len(self.triggers_listbox_elements))
+            self.trigger_data_text.mark_set('insert', f'@{int(self.mouse_pos[0])},{int(self.mouse_pos[1])}')
+        elif self.last_to_loose_focus:
+            if widget is not self.triggers_list:
+                self.triggers_list.selection_clear(0, len(self.triggers_listbox_elements))
+                self.triggers_list.selection_set(self.tl_selection_save)
+            self.last_to_loose_focus = False
+
+    def widget_focusout_handler(self, evt):
+        widget = evt.widget
+        if widget is self.trigger_data_text:
+            self.last_to_loose_focus = True
+
     def on_closing(self):
         if self.root.title().endswith('*'):
             if askokcancel('Quit', 'Are you sure you want to quit without saving ?'):
                 self.root.destroy()
+                try:
+                    os.remove('temp.png')
+                except FileNotFoundError:
+                    pass
             return
         self.root.destroy()
+        try:
+            os.remove('temp.png')
+        except FileNotFoundError:
+            pass
 
     @staticmethod
     def transform_name(name):
@@ -555,4 +838,3 @@ if __name__ == '__main__':
     root = tk.Tk()
     app = App(root)
     root.mainloop()
-

@@ -1,0 +1,20 @@
+AbsoluteMovecam:
+    type_: AbsoluteMovecam
+    x: 0
+    y: 0
+    total_duration: 1
+    fade_in: 0
+    fade_out: 0
+
+EnableTrigger:
+    type_: EnableTrigger
+    target: 1
+
+DisableTrigger:
+    type_: DisableTrigger
+    target: 1
+
+TPEntity:
+    type_: TPEntity
+    npos: [0, 0]
+    entity_name: entity_name

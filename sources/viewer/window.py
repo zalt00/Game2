@@ -42,10 +42,12 @@ class Window:
         self.global_group = pygame.sprite.RenderUpdates()
         self.bg_group = pygame.sprite.LayeredUpdates()
         self.fg_group = pygame.sprite.LayeredUpdates()
+
         self.particle_group = pygame.sprite.RenderUpdates()
         self.entity_group = pygame.sprite.RenderUpdates()
         self.button_group = pygame.sprite.Group()
-        self.everything_but_bgfg_group = pygame.sprite.Group()
+
+        self.game_objects_group = pygame.sprite.LayeredUpdates()
         self.text_group = pygame.sprite.Group()
         
         self.screen_dec = [0, 0]
@@ -55,6 +57,10 @@ class Window:
 
         self.i = 0
         self.previous = Rect(0, 0, 0, 0)
+
+        self.transitioning = False
+        self.transition_surf = None
+        self.current_transition = None
 
     @staticmethod
     def init_joys():
@@ -73,25 +79,32 @@ class Window:
                 if event.type == QUIT or (event.type == KEYDOWN and event.key == K_DELETE):
                     self.stop_loop()
                 self.event_manager.do(event)
-            
+
             self.on_draw(dt / 1000)
 
-            sprite_rect = self.bg_group.get_top_sprite().subsurface_rect
-
-            if not self.is_bg_updated:
+            if not self.is_bg_updated or self.transitioning:
                 self.bg_group.draw(self.current_bg)
                 self.screen.blit(self.current_bg, (0, 0))
                 self.is_bg_updated = True
 
             self.fg_group.clear(self.screen, self.current_bg)
-            self.everything_but_bgfg_group.clear(self.screen, self.current_bg)
+            self.game_objects_group.clear(self.screen, self.current_bg)
 
-            self.everything_but_bgfg_group.draw(self.screen)
+            self.game_objects_group.draw(self.screen)
             self.fg_group.draw(self.screen)
 
-            if sprite_rect != self.previous:
-                self.is_bg_updated = False
-                self.previous = sprite_rect.copy()
+            if not len(self.bg_group.sprites()) == 0:
+                sprite_rect = self.bg_group.get_top_sprite().subsurface_rect
+                if sprite_rect != self.previous:
+                    self.is_bg_updated = False
+                    self.previous = sprite_rect.copy()
+
+            if self.transitioning:
+                self.transition_surf = self.current_transition.update()
+                if self.transition_surf is not None:
+                    self.screen.blit(self.transition_surf, (0, 0))
+                else:
+                    self.transitioning = False
 
             pygame.display.flip()
             dt = self.clock.tick(self.fps)
@@ -147,30 +160,32 @@ class Window:
 
         return sprite
 
-    def add_entity(self, res_name, position_handler, physics_updater, particles_handler, end_animation_callback):
+    def add_entity(
+            self, res_name, position_handler, physics_updater, particles_handler, end_animation_callback, layer=0):
         res = self.res_loader.load(res_name)
         img_hdlr = TBEntityImageHandler(res, end_animation_callback)
-        entity = Entity(img_hdlr, position_handler, physics_updater, particles_handler, res.dec, self.screen_dec)
+        entity = Entity(
+            img_hdlr, position_handler, physics_updater, particles_handler, res.dec, self.screen_dec, layer=layer)
         self.global_group.add(entity)
-        self.everything_but_bgfg_group.add(entity)
+        self.game_objects_group.add(entity)
         self.entity_group.add(entity)
         
         return entity
     
-    def add_structure(self, res_name, position_handler, state):
+    def add_structure(self, res_name, position_handler, state, layer=0):
         if isinstance(res_name, str):
             res = self.res_loader.load(res_name)
         else:
             res = res_name
         img_handler = StructureImageHandler(res)
-        struct = Structure(img_handler, position_handler, res.dec, self.screen_dec, state)
+        struct = Structure(img_handler, position_handler, res.dec, self.screen_dec, state, layer=layer)
         self.global_group.add(struct)
-        self.everything_but_bgfg_group.add(struct)
+        self.game_objects_group.add(struct)
         self.entity_group.add(struct)
         
         return struct
 
-    def build_structure(self, res_name, palette_name, position_handler, state):
+    def build_structure(self, res_name, palette_name, position_handler, state, layer=0):
         """builds and add a structure from a palette and a string buffer"""
 
         palette = self.res_loader.load(palette_name)
@@ -179,11 +194,12 @@ class Window:
         else:
             res = res_name
 
-        s = palette.build(res)
+        if not res.built:
+            s = palette.build(res)
 
-        sheets = {state: s}
-        res.build(sheets)
-        return self.add_structure(res, position_handler, state)
+            sheets = {state: s}
+            res.build(sheets)
+        return self.add_structure(res, position_handler, state, layer=layer)
 
     def add_button(self, res, position_handler, action_name):
         if isinstance(res, str):
@@ -192,7 +208,7 @@ class Window:
         button = Button(img_handler, position_handler, action_name)
         
         self.global_group.add(button)
-        self.everything_but_bgfg_group.add(button)
+        self.game_objects_group.add(button)
         self.button_group.add(button)
         
         return button
@@ -201,7 +217,7 @@ class Window:
         img_hdlr = TextImageHandler(res_getter)
         sprite = Text(img_hdlr, position_handler, (0, 0))
         self.global_group.add(sprite)
-        self.everything_but_bgfg_group.add(sprite)
+        self.game_objects_group.add(sprite)
         self.text_group.add(sprite)
 
         return sprite
@@ -212,7 +228,7 @@ class Window:
         img_hdlr.end_animation_callback = particle.kill
         
         self.global_group.add(particle)
-        self.everything_but_bgfg_group.add(particle)
+        self.game_objects_group.add(particle)
         self.particle_group.add(particle)
 
     def set_menu_event_manager(self, am):
@@ -284,5 +300,8 @@ class Window:
     
     def quit(self, *_, **__):
         pass
-    
 
+    def add_transition(self, transition):
+        self.transitioning = True
+        self.current_transition = transition
+        transition.start()

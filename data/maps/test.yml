@@ -1,0 +1,117 @@
+background_data:
+  pos:
+  - 0
+  - -550
+  res: forest/forest.bg
+objects_data:
+  ground_structure:
+    ground:
+    - - - 1000
+        - 120
+      - - -1000
+        - 120
+    is_built: false
+    layer: 1
+    name: ground
+    poly:
+    - - []
+    pos:
+    - 583
+    - -98
+    res: forest/structure.st
+    state: base
+    type: structure
+  player:
+    res: player/white_guy.obj
+    type: player
+  structure1_structure:
+    ground:
+    - - - -64
+        - 128
+      - - 64
+        - 128
+    is_built: false
+    layer: 1
+    name: structure1
+    poly:
+    - - - -64
+        - 0
+      - - 64
+        - 0
+      - - 64
+        - 127
+      - - -64
+        - 127
+    pos:
+    - 600
+    - 50
+    res: forest/smurf.st
+    state: base
+    type: structure
+  test_structure:
+    ground:
+    - - - -64
+        - 128
+      - - 64
+        - 128
+    is_built: false
+    layer: 1
+    name: test
+    poly:
+    - - - -64
+        - 0
+      - - 64
+        - 0
+      - - 64
+        - 127
+      - - -64
+        - 127
+    pos:
+    - 818
+    - 230
+    res: forest/smurf.st
+    state: base
+    type: structure
+palette: forest/forest_structure_tilesets.stsp
+space: true
+triggers_data:
+  bottom_of_world:
+    actions:
+    - entity_name: player
+      npos:
+      - 500
+      - 300
+      type_: TPEntity
+    enabled: true
+    id: 2
+    top: -100
+  left_border_trigger:
+    actions:
+    - fade_in: 30
+      fade_out: 30
+      total_duration: 80
+      type_: AbsoluteMovecam
+      x: 0
+      y: 0
+    - target: 0
+      type_: EnableTrigger
+    - target: 1
+      type_: DisableTrigger
+    enabled: true
+    id: 1
+    right: 1242
+  right_border_trigger:
+    actions:
+    - fade_in: 30
+      fade_out: 30
+      total_duration: 80
+      type_: AbsoluteMovecam
+      x: -1216
+      y: 0
+    - target: 1
+      type_: EnableTrigger
+    - target: 0
+      type_: DisableTrigger
+    enabled: true
+    id: 0
+    left: 1255

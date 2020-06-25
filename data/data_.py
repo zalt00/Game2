@@ -2,12 +2,13 @@
 
 from utils.save_modifier import SaveComponent
 from utils.types import Trigger, DataContainer
-from pymunk import Vec2d
+from pymunk.vec2d import Vec2d
 from pygame.constants import *
-from data.black_forest import Objects
 
 
 class Data(DataContainer):
+    save_path = 'data/saves/save.data'
+
     key_names = {
         K_LSHIFT: 'shift',
         K_RSHIFT: 'shift',
@@ -299,7 +300,7 @@ class Data(DataContainer):
     class Game(DataContainer):
 
         current_map_id = SaveComponent(4)
-        maps = ('data/bouh.yml',)
+        maps = ('data/maps/forest.yml',)
 
         class BasePlayerData:
             height = 80
