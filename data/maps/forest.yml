@@ -6,6 +6,18 @@ background_data:
     res: forest/forest.bg
     pos: [0, -550]
 
+    bg_decoration_object_set_res: forest/forest_bg_decoration_set.bgobj
+    bg_decoration_sequence:
+        - shrub
+        - bush
+        - large_tree
+        - bush
+        - stump
+        - small_tree
+        - bush
+    bg_decoration_layer_id: 3
+    bg_decoration_objects_pos: [0, 0]
+
 objects_data:
     player:
         type: player

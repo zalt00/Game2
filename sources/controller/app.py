@@ -1,7 +1,8 @@
 # -*- coding:Utf-8 -*-
 
 from .position_handler import StaticPositionHandler, PlayerPositionHandler, BgLayerPositionHandler
-from .action_manager import GameActionManager, MainMenuActionManager, OptionsActionManager
+from .action_manager import GameActionManager,\
+    MainMenuActionManager, OptionsActionManager, CharacterSelectionActionManager
 from .physics_updater import PhysicsUpdater
 from .particles_handler import ParticleHandler
 from .res_getter import FormatTextResGetter, SimpleTextResGetter
@@ -28,6 +29,8 @@ class App:
         self.transition_finished = False
         self.transition = None
 
+        self.current_save_id = 1
+
     def change_app_state(self, new_state):
         for sprite in self.window.global_group.sprites():
             sprite.kill()
@@ -38,13 +41,14 @@ class App:
         del self.current
 
         if new_state == 'game':
-            self.current = Game(self.window, self.model, self.return_to_main_menu, self.game_loading_finished_check)
+            self.current = Game(self.window, self.model,
+                                self.return_to_main_menu, self.game_loading_finished_check, self.current_save_id)
         elif new_state == 'menu':
             self.current = Menu(self.window, self.model, self.start_game)
 
     def start_fade_in_transition(self):
         self.transition_finished = False
-        self.transition = Transition(17, (0, 0, 0), (self.window.screen_rect.width, self.window.screen_rect.height),
+        self.transition = Transition(8, (0, 0, 0), (self.window.screen_rect.width, self.window.screen_rect.height),
                                      self.fade_in_transition_finished, 'in', False)
 
         self.window.add_transition(self.transition)
@@ -59,30 +63,32 @@ class App:
     def start_fade_out_transition(self):
         if self.transition is not None:
             self.transition.stop()
-        self.transition = Transition(17, (0, 0, 0), (self.window.screen_rect.width, self.window.screen_rect.height),
+        self.transition = Transition(8, (0, 0, 0), (self.window.screen_rect.width, self.window.screen_rect.height),
                                      lambda: None, 'out', True)
 
         self.window.add_transition(self.transition)
 
     def game_to_menu_fade_in_transition(self):
-        self.transition = Transition(17, (0, 0, 0), (self.window.screen_rect.width, self.window.screen_rect.height),
+        self.transition = Transition(8, (0, 0, 0), (self.window.screen_rect.width, self.window.screen_rect.height),
                                      self.game_to_menu_fade_out_transition, 'in', True)
 
         self.window.add_transition(self.transition)
 
     def game_to_menu_fade_out_transition(self):
         self.change_app_state('menu')
-        self.transition = Transition(17, (0, 0, 0), (self.window.screen_rect.width, self.window.screen_rect.height),
+        self.transition = Transition(8, (0, 0, 0), (self.window.screen_rect.width, self.window.screen_rect.height),
                                      lambda: None, 'out', True)
 
         self.window.add_transition(self.transition)
 
-    def start_game(self):
-        self.change_app_state('game')
-        self.start_fade_in_transition()
-        t = threading.Thread(target=self.current.load_resources)
-        t.start()
-        self.current_thread = t
+    def start_game(self, current_save_id):
+        if getattr(self.transition, 'state', None) != 1:
+            self.current_save_id = current_save_id
+            self.change_app_state('game')
+            self.start_fade_in_transition()
+            t = threading.Thread(target=self.current.load_resources)
+            t.start()
+            self.current_thread = t
 
     def game_loading_finished_check(self):
         if self.current_thread is not None:
@@ -96,7 +102,8 @@ class App:
                 self.transition_finished = False
 
     def return_to_main_menu(self):
-        self.game_to_menu_fade_in_transition()
+        if getattr(self.transition, 'state', None) != 1:
+            self.game_to_menu_fade_in_transition()
 
 
 class Menu:
@@ -178,7 +185,15 @@ class Menu:
             obj = None
             if data.typ == 'button':
                 bpos_hdlr = StaticPositionHandler(data.pos)
-                obj = self.window.add_button(data.res, bpos_hdlr, data.action)
+                if hasattr(data, 'res'):
+                    res = self.window.res_loader.load(data.res)
+                else:
+                    font_data = data.font
+                    res = self.get_button_res_from_font_data(font_data)
+
+                obj = self.window.add_button(res, bpos_hdlr, data.action)
+                if hasattr(data, 'arg'):
+                    obj.arg = data.arg
             elif data.typ == 'structure':
                 spos_hdlr = StaticPositionHandler(data.pos)
                 obj = self.window.add_structure(data.res, spos_hdlr, 'idle')
@@ -210,7 +225,7 @@ class Menu:
                 self.page.Objects.panel_order,
                 self.texts,
                 (),
-                self.start_game_callback,
+                self.play,
                 self.quit_game,
                 self.open_options
             )
@@ -224,12 +239,24 @@ class Menu:
                 self.page.Objects.panel_order,
                 self.texts,
                 (),
-                self.close_options,
+                self.return_to_main_menu,
                 self.change_kb_ctrls,
                 self.change_con_ctrls,
                 self.set_ctrl,
                 self.model.Options,
                 self.reinit_page
+            )
+        elif self.page.action_manager == 'CharacterSelectionActionManager':
+            actionmanager = CharacterSelectionActionManager(
+                self.window.button_group,
+                self.classic_buttons,
+                self.page.Objects.classic_buttons_order,
+                self.panels,
+                self.page.Objects.panel_order,
+                self.texts,
+                (),
+                self.start_game_callback,
+                self.return_to_main_menu
             )
 
         if actionmanager is None:
@@ -248,14 +275,7 @@ class Menu:
             res_name = bdata.get('res', None)
             if res_name is None:
                 font_data = bdata['font']
-                if font_data[0] == 'nkb':
-                    txt = self.get_key_name(font_data[2].get())
-                if font_data[0] == 'ncon':
-                    txt = self.get_controller_value_name(font_data[2].get_shorts())
-                
-                elif font_data[0] == 'txt':
-                    txt = font_data[2]
-                res = self.window.render_font(txt, font_data[1], font_data[3], font_data[4], font_data[5], font_data[6], font_data[7])
+                res = self.get_button_res_from_font_data(font_data)
             else:
                 res = self.window.res_loader.load(res_name)
             button = self.window.add_button(res, StaticPositionHandler(bdata['pos']), bdata['action'])
@@ -266,6 +286,19 @@ class Menu:
               
             ndict[bname] = button
         return ndict
+
+    def get_button_res_from_font_data(self, font_data):
+        if font_data[0] == 'nkb':
+            txt = self.get_key_name(font_data[2].get())
+        if font_data[0] == 'ncon':
+            txt = self.get_controller_value_name(font_data[2].get_shorts())
+
+        elif font_data[0] == 'txt':
+            txt = font_data[2]
+        res = self.window.render_font(txt, font_data[1], font_data[3], font_data[4], font_data[5], font_data[6],
+                                      font_data[7])
+
+        return res
 
     def reinit_page(self):
         if self.page_name is not None:
@@ -316,10 +349,14 @@ class Menu:
         self.delete_current_page()
         self.init_page('Options')
 
-    def close_options(self):
+    def return_to_main_menu(self):
         self.delete_current_page()
         self.init_page('MainMenu')
-    
+
+    def play(self):
+        self.delete_current_page()
+        self.init_page('CharacterSelectionMenu')
+
     def change_kb_ctrls(self, button):
         button.image_handler.res = self.empty_button_res
         self.window.set_change_ctrls_event_manager(self.action_manager, 'kb')
@@ -358,7 +395,7 @@ class Menu:
 
 
 class Game:
-    def __init__(self, window, model, return_to_main_menu, loading_finished_check):
+    def __init__(self, window, model, return_to_main_menu, loading_finished_check, current_save_id):
         self.window = window
         self.model = model
         self.state = 'idle'
@@ -366,13 +403,17 @@ class Game:
         self.loading_finished_check = loading_finished_check
         self.debug_draw = False
 
+        self.current_save_id = current_save_id
+
         self.t1 = self.count = self.number_of_space_updates = self.space = \
             self.player = self.entities = self.structures = self.triggers = self.ag = self.action_manager = None
 
         SaveComponent.load()
-        with open(self.model.Game.maps[self.model.Game.current_map_id.get(1)]) as datafile:
+        with open(self.model.Game.maps[self.model.Game.current_map_id.get(self.current_save_id)]) as datafile:
             self.level = yaml.safe_load(datafile)
         self.level_res = self.level['background_data']['res']
+
+        self.window.reset_event_manager()
 
     def load_resources(self):
         self.window.on_draw = self.loading_update
@@ -417,6 +458,19 @@ class Game:
             False
         )
 
+        if 'bg_decoration_object_set_res' in self.level['background_data']:
+            deco_res = self.window.res_loader.load(self.level['background_data']['bg_decoration_object_set_res'])
+            layer_res = deco_res.build_bg_decoration_layer(
+                self.level['background_data']['bg_decoration_sequence'],
+                self.level['background_data']['bg_decoration_layer_id']
+            )
+            pos_hdlr = BgLayerPositionHandler(
+                self.level['background_data']['bg_decoration_objects_pos'],
+                self.window.screen_rect
+            )
+            pos_hdlrs.append(pos_hdlr)
+            self.window.add_bg_layer(layer_res, self.level['background_data']['bg_decoration_layer_id'], pos_hdlr)
+
         # pos2 = pos[0] + self.window.get_length(self.level_res) * 2, pos[1]
         # ph = BgLayerPositionHandler(pos2, self.window.screen_dec)
         # pos_hdlrs.append(ph)
@@ -436,8 +490,8 @@ class Game:
         ### CAMERA ###
 
         self.ag('AbsoluteMovecam',
-                x=self.model.Game.BaseBGData.camera_pos_x.get(1),
-                y=self.model.Game.BaseBGData.camera_pos_y.get(1),
+                x=self.model.Game.BaseBGData.camera_pos_x.get(self.current_save_id),
+                y=self.model.Game.BaseBGData.camera_pos_y.get(self.current_save_id),
                 total_duration=1,
                 fade_in=0,
                 fade_out=0
@@ -494,7 +548,8 @@ class Game:
         name = player_data.name
 
         self.space.add_humanoid_entity(player_data.height,
-                                       player_data.width, (player_data.pos_x.get(1), player_data.pos_y.get(1)), name)
+                                       player_data.width, (player_data.pos_x.get(self.current_save_id),
+                                                           player_data.pos_y.get(self.current_save_id)), name)
 
         self.player = self.window.add_entity(
             additional_data['res'],
@@ -517,10 +572,12 @@ class Game:
         SaveComponent.dump()
 
     def save_position(self):
-        self.model.Game.BasePlayerData.pos_x.set(round(self.player.position_handler.body.position.x), 1)
-        self.model.Game.BasePlayerData.pos_y.set(round(self.player.position_handler.body.position.y), 1)
-        self.model.Game.BaseBGData.camera_pos_x.set(round(self.window.bg_pos[0]), 1)
-        self.model.Game.BaseBGData.camera_pos_y.set(round(self.window.bg_pos[1]), 1)
+        self.model.Game.BasePlayerData.pos_x.set(
+            round(self.player.position_handler.body.position.x), self.current_save_id)
+        self.model.Game.BasePlayerData.pos_y.set(
+            round(self.player.position_handler.body.position.y), self.current_save_id)
+        self.model.Game.BaseBGData.camera_pos_x.set(round(self.window.bg_pos[0]), self.current_save_id)
+        self.model.Game.BaseBGData.camera_pos_y.set(round(self.window.bg_pos[1]), self.current_save_id)
 
     def quit(self):
         self.dump_save()

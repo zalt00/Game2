@@ -1,0 +1,11 @@
+{
+  "scale": 2,
+  "max_height": 368,
+  "bg_objects": {
+    "stump": {"filename":  "stump.png", "size": [128, 368]},
+    "bush": {"filename":  "bush.png", "size": [128, 368]},
+    "large_tree": {"filename":  "large_tree.png", "size": [304, 368]},
+    "shrub": {"filename":  "shrub.png", "size": [112, 368]},
+    "small_tree": {"filename":  "small_tree.png", "size": [176, 368]}
+  }
+}

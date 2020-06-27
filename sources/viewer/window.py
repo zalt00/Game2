@@ -239,6 +239,9 @@ class Window:
     
     def set_game_event_manager(self, am, ctrls, deadzones):
         self.event_manager = GameEventManager(am, ctrls, deadzones)
+
+    def reset_event_manager(self):
+        self.event_manager = INACTIVE_EVENT_MANAGER
     
     def render_font(self, txt, size, passive_color, active_color, width=0, height=0, rectangle=0):
         """renders a font for a button"""

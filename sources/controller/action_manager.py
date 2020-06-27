@@ -397,7 +397,44 @@ class OptionsActionManager(BaseMenuActionManager):
 
         self._set_ctrl(value, self.changing_ctrl_button)
 
-    
+
+class CharacterSelectionActionManager(BaseMenuActionManager):
+    MOUSEMOTION = 0
+    LEFT_CLICK = 1
+
+    DOWN = 3
+    UP = 4
+    LEFT = 8
+    RIGHT = 9
+
+    ACTIVATE = 5
+
+    def __init__(self, buttons, classic_buttons, classic_buttons_order, panels,
+                 panel_order, additional_texts, additional_structures, start_game_callback,
+                 return_to_mainmenu_callback):
+
+        super(CharacterSelectionActionManager, self).__init__(buttons, classic_buttons, classic_buttons_order, panels,
+                                                              panel_order, additional_texts, additional_structures)
+
+        self.start_game = start_game_callback
+        self.return_to_mainmenu_callback = return_to_mainmenu_callback
+
+        self.do_handlers[self.MOUSEMOTION] = self.update_buttons
+        self.do_handlers[self.LEFT_CLICK] = self.left_click
+
+        self.do_handlers[self.DOWN] = self.move_focus_down
+        self.do_handlers[self.UP] = self.move_focus_up
+        self.do_handlers[self.LEFT] = self.move_focus_left
+        self.do_handlers[self.RIGHT] = self.move_focus_right
+
+        self.do_handlers[self.ACTIVATE] = self.button_activation
+
+        self.update_buttons2()
+
+    def load_save(self, i):
+        self.start_game(i)
+
+
 class GameActionManager(ActionManager):
     RIGHT = 0
     LEFT = 1

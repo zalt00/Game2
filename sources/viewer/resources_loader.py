@@ -118,7 +118,6 @@ class ResourcesLoader2:
         if res_name is None:
             res_name = local_dir.split('/')[-1]
 
-        print(res_name)
         res = None
         if res_name.endswith('st'):
             with open(local_dir, 'r', encoding='utf8') as file:
@@ -130,14 +129,16 @@ class ResourcesLoader2:
             with open(datafile_path, encoding='utf8') as datafile:
                 data = json.load(datafile, encoding='utf8')
 
-            if res_name.endswith('stsp'):
+            if res_name.endswith('.stsp'):
                 res = StructTSPalette(data, local_dir)
-            elif res_name.endswith('obj'):
+            elif res_name.endswith('.obj'):
                 res = Object(data, local_dir)
-            elif res_name.endswith('bg'):
+            elif res_name.endswith('.bg'):
                 res = Background(data, local_dir)
-            elif res_name.endswith('ts'):
+            elif res_name.endswith('.ts'):
                 res = Tileset(data, local_dir)
+            elif res_name.endswith('bgobj'):
+                res = BackgroundObjectSet(data, local_dir)
 
         if res is None:
             raise ValueError('invalid extension')
@@ -152,8 +153,6 @@ class ResourcesLoader2:
 
 class StructTSPalette:
     def __init__(self, data, directory):
-        print('takes some time')
-        time.sleep(2)
         self.data = data
         tilesets_data = self.data['tile sets data']
         self.tilesets_data = tilesets_data
@@ -307,6 +306,47 @@ class Tileset:
         self.tile_data = data['tile data']
         self.tile_size = data['tile size']
         self.eraser = data.get("eraser", None)
+
+
+class BackgroundObjectSet:
+    def __init__(self, data, directory):
+        scale = data['scale']
+        self.scale = scale
+        self.max_height = data['max_height']
+        for name, odata in data['bg_objects'].items():
+            path = os.path.join(directory, odata['filename']).replace('\\', '/')
+            img = pygame.image.load(path).convert_alpha()
+            if scale >= 2:
+                img = pygame.transform.scale2x(img)
+                img = pygame.transform.scale(
+                    img, (round(img.get_width() * (scale / 2)), round(img.get_height() * (scale / 2))))
+            else:
+                img = pygame.transform.scale(img, (img.get_width() * scale, img.get_height() * scale))
+            odata['img'] = img
+            odata.pop('filename')
+
+        self.bg_objects = data['bg_objects']
+
+    def build_bg_decoration_layer(self, sequence, layer_id):
+        total_width = sum((self.bg_objects[oname]['size'][0] for oname in sequence))
+
+        surf = pygame.Surface((total_width * self.scale, self.max_height * self.scale), SRCALPHA)
+        current_x = 0
+        for obj_name in sequence:
+            odata = self.bg_objects[obj_name]
+            surf.blit(odata['img'], (current_x, 0))
+            current_x += odata['size'][0] * self.scale
+
+        res = BgDecorationLayer({layer_id: surf}, total_width * self.scale, self.max_height * self.scale, (0, 0))
+        return res
+
+
+@dataclass
+class BgDecorationLayer:
+    layers: dict
+    width: int
+    height: int
+    dec: tuple
 
 
 @dataclass

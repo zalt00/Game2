@@ -98,7 +98,7 @@ class Data(DataContainer):
 ######################################################################################################
     
     class Menu(DataContainer):
-        pages = ('MainMenu', 'Options')
+        pages = ('MainMenu', 'Options', ' CharacterSelectionMenu')
 
         class Options(DataContainer):
             bg_res = 'black_forest.bg'
@@ -292,6 +292,59 @@ class Data(DataContainer):
                     action = 'open_options_menu'
                     pos = (40, 270)
                     button_name = 'options_button'
+
+        class CharacterSelectionMenu(DataContainer):
+            bg_res = 'black_forest.bg'
+            bg_pos = (0, 0)
+
+            action_manager = 'CharacterSelectionActionManager'
+
+            class Objects(DataContainer):
+                objects = ('Load1Button', 'Load2Button', 'Load3Button', 'CancelButton')
+
+                classic_buttons_order = (
+                    ('load1_button', 'cancel_button'),
+                    ('load2_button', 'cancel_button'),
+                    ('load3_button', 'cancel_button'),
+                )
+                panel_order = ()
+
+                class Load1Button:
+                    typ = 'button'
+
+                    font = ('txt', 40, 'Load save 1', "#eeeeee", "#888888", 200, 35, 5)
+                    action = 'load_save'
+                    arg = 1
+                    pos = (40, 350)
+                    button_name = 'load1_button'
+
+                class Load2Button:
+                    typ = 'button'
+
+                    font = ('txt', 40, 'Load save 2', "#eeeeee", "#888888", 200, 35, 5)
+                    action = 'load_save'
+                    arg = 2
+                    pos = (40, 270)
+                    button_name = 'load2_button'
+
+                class Load3Button:
+                    typ = 'button'
+
+                    font = ('txt', 40, 'Load save 3', "#eeeeee", "#888888", 200, 35, 5)
+                    action = 'load_save'
+                    arg = 3
+                    pos = (40, 190)
+                    button_name = 'load3_button'
+
+                class CancelButton:
+                    typ = 'button'
+
+                    font = ('txt', 35, 'Cancel', "#eeeeee", "#888888", 100, 30, 4)
+                    action = 'return_to_mainmenu_callback'
+                    pos = (1100, 120)
+                    button_name = 'cancel_button'
+
+
 
 
                     

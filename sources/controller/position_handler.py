@@ -67,6 +67,8 @@ class BgLayerPositionHandler:
         n_layers = len(entity.image_handler.res.layers)
         i = (n_layers + 1 - entity.get_layer()) ** 2
 
+        if i == 0:
+            i = 1
         return self.base_pos[0] + self.sdr[0] / i + entity.dec[0], -self.base_pos[1] - self.sdr[1] / i + entity.dec[1]
                 
 
@@ -100,7 +102,7 @@ class EntityPositionHandler:
 
         elif entity.state == 'dash':
             entity.thrust = Vec2d(0, 0)
-            self.body.velocity = Vec2d(2000 * entity.direction, 0)
+            self.body.velocity = Vec2d(2500 * entity.direction, 0)
 
         elif entity.air_control and entity.can_air_control:
             if (abs(self.body.velocity.x) < 100 or
