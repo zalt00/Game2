@@ -23,8 +23,19 @@ class FormatTextResGetter:
         self.size = size
         self.font = font
 
+        self.previous_res = None
+        self.render = True
+
     def __call__(self):
-        return self.render_txt(self.text.format(*map(self.parse_attr, self.values)), self.color, self.size, self.font)
+        if self.render:
+            self.render = False
+            res = self.render_txt(
+                self.text.format(*map(self.parse_attr, self.values)), self.color, self.size, self.font)
+            self.previous_res = res
+        else:
+            res = self.previous_res
+            self.render = True
+        return res
 
     def parse_attr(self, value):
         a = self.app

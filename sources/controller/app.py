@@ -401,7 +401,7 @@ class Game:
         self.state = 'idle'
         self.return_to_main_menu = return_to_main_menu
         self.loading_finished_check = loading_finished_check
-        self.debug_draw = True
+        self.debug_draw = False
 
         self.current_save_id = current_save_id
 
@@ -554,7 +554,7 @@ class Game:
         self.player = self.window.add_entity(
             additional_data['res'],
             PlayerPositionHandler(self.space.objects[name][0], self.triggers),
-            PhysicsUpdater(self.space.objects[name][0], self.action_manager.land, self.save_position),
+            PhysicsUpdater(self.space.objects[name][0], self.action_manager.land, self.save_position, self.space),
             ParticleHandler(self.window.spawn_particle),
             self.action_manager.set_state)
         self.action_manager.player = self.player

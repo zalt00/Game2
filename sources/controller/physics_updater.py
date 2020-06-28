@@ -2,8 +2,9 @@
 
 
 class PhysicsUpdater:
-    def __init__(self, body, landing_callback, save_position_callback):
+    def __init__(self, body, landing_callback, save_position_callback, space):
         self.body = body
+        self.space = space
         self.on_ground = False
         self.collide = False
         self.land = landing_callback
@@ -12,30 +13,41 @@ class PhysicsUpdater:
         self.x1 = 0
         self.x2 = 0
         self.xb = 0
-       
-    def is_on_ground(self, arbiter):
-        shapes = arbiter.shapes
-        for shape in shapes:
-            points = arbiter.contact_point_set.points
-            if getattr(shape, 'is_solid_ground', False):
-                for contact_point in points:
-                    if (round(contact_point.point_a.y) == round(self.body.position.y - 1)
-                            or round(contact_point.point_b.y) == round(self.body.position.y - 1)):
-                        self.on_ground = True
-                if len(points) == 2:
-                    self.x1, self.x2 = points[0].point_a.x, points[1].point_a.x
-                self.collide = True
-            elif getattr(shape, 'is_structure', False):
-                self.collide = True
-            if self.collide:
-                self.xb = points[0].point_a.x
+
+        self.space.add_collision_handler(0, 1).pre_solve = self.collision_with_ground
+        self.space.add_collision_handler(0, 2).post_solve = self.collision_with_structure
+        self.space.add_collision_handler(0, 1).separate = self.separate_from_ground
+        self.space.add_collision_handler(0, 2).separate = self.separate
+
+    def separate_from_ground(self, *_, **__):
+        self.separate()
+        self.on_ground = False
+
+    def separate(self, *_, **__):
+        self.collide = False
+
+    def collision_with_structure(self, arbiter, *_, **__):
+        self.collide = True
+        self.xb = arbiter.contact_point_set.points[0].point_a.x
+
+    def collision_with_ground(self, arbiter, *_, **__):
+        points = arbiter.contact_point_set.points
+        self.xb = points[0].point_a.x
+        self.collide = True
+        if len(points) == 2:
+            self.x1, self.x2 = points[0].point_a.x, points[1].point_a.x
+
+        for contact_point in points:
+            if (round(contact_point.point_a.y) == round(self.body.position.y - 1)
+                    or round(contact_point.point_b.y) == round(self.body.position.y - 1)):
+                self.on_ground = True
+                return True
+        self.on_ground = False
+        return False
     
     def update(self, entity, n=1):
         for _ in range(n):
             entity.can_air_control = True
-            self.on_ground = False
-            self.collide = False
-            self.body.each_arbiter(self.is_on_ground)
 
             # bug fix (prevents the player to keep his/her speed during the dash if he or she hits a structure)
             if self.collide and entity.state == 'dash':
