@@ -9,7 +9,7 @@ import json
 import time
 from typing import Any
 from pygame.locals import SRCALPHA
-from random import randint
+from random import randint, shuffle
 
 pygame.init()
 
@@ -175,6 +175,8 @@ class StructTSPalette:
             size = img.get_width() // tw
             tilesets_data[k] = img, size
 
+        self.rd_previous = -1
+
     def parse(self, s):
         key = s[:2]
         flip_x = int(s[2])
@@ -183,6 +185,15 @@ class StructTSPalette:
         tileset, size = self.tilesets_data.get(key, (None, None))
         if tile_id == 'RD':
             tile_id = randint(0, size - 1)
+            if tile_id == self.rd_previous:
+                if tile_id == size - 1:
+                    tile_id -= 1
+                else:
+                    tile_id += 1
+            self.rd_previous = tile_id
+        elif tile_id == 'PR':
+            tile_id = self.rd_previous
+
         else:
             tile_id = int(tile_id)
             if tile_id >= size:

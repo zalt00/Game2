@@ -65,7 +65,7 @@ class BgLayerPositionHandler:
         self.sdr[1] = self.pos[1] - self.base_pos[1]
         
         n_layers = len(entity.image_handler.res.layers)
-        i = (n_layers + 1 - entity.get_layer()) ** 2
+        i = abs(entity.get_layer()) ** 2
 
         if i == 0:
             i = 1

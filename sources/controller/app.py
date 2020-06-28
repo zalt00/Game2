@@ -401,7 +401,7 @@ class Game:
         self.state = 'idle'
         self.return_to_main_menu = return_to_main_menu
         self.loading_finished_check = loading_finished_check
-        self.debug_draw = False
+        self.debug_draw = True
 
         self.current_save_id = current_save_id
 

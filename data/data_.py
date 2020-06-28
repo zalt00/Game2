@@ -356,7 +356,7 @@ class Data(DataContainer):
         maps = ('data/maps/forest.yml',)
 
         class BasePlayerData:
-            height = 80
+            height = 50
             width = 30
             name = "player"
             pos_x = SaveComponent(2)

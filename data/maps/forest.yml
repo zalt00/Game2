@@ -1,6 +1,12 @@
 space: true
 palette: forest/forest_structure_tilesets.stsp
-resources: [forest/forest.bg, player/white_guy.obj, forest/structure.st, forest/smurf.st, forest/forest_structure_tilesets.stsp]
+resources:
+    - forest/forest.bg
+    - player/white_guy.obj
+    - forest/structure.st
+    - forest/smurf.st
+    - forest/forest_structure_tilesets.stsp
+    - forest/forest_bg_decoration_set.bgobj
 
 background_data:
     res: forest/forest.bg
@@ -9,14 +15,13 @@ background_data:
     bg_decoration_object_set_res: forest/forest_bg_decoration_set.bgobj
     bg_decoration_sequence:
         - shrub
-        - bush
+        - small_tree
         - large_tree
-        - bush
         - stump
         - small_tree
         - bush
-    bg_decoration_layer_id: 3
-    bg_decoration_objects_pos: [0, 0]
+    bg_decoration_layer_id: -2
+    bg_decoration_objects_pos: [0, -300]
 
 objects_data:
     player:
@@ -32,7 +37,7 @@ objects_data:
         state: base
         layer: 1
         poly:
-            - [[]]
+            - [[-64, 0], [64, 0], [64, 0], [-64, 0]]
         ground:
             - [[1000, 120], [-1000, 120]]
 
@@ -41,7 +46,20 @@ objects_data:
         res: forest/smurf.st
         is_built: false
         name: test
-        pos: [600, 50]
+        pos: [600, 121]
+        state: base
+        layer: -1
+        poly:
+            - [[-64, 0], [64, 0], [64, 127], [-64, 127]]
+        ground:
+            - [[-64, 128], [64, 128]]
+
+    test_struct2:
+        type: structure
+        res: forest/smurf.st
+        is_built: false
+        name: test
+        pos: [1080, 121]
         state: base
         layer: -1
         poly:
