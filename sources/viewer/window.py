@@ -253,7 +253,7 @@ class Window:
             passive_color = self.convert_color(passive_color)
         if isinstance(active_color, str):
             active_color = self.convert_color(active_color)
-        font = pygame.freetype.Font('m5x7.ttf', size)
+        font = pygame.freetype.Font('resources/fonts/m5x7.ttf', size)
         if width == height == 0:
             (pimg, r) = font.render(txt, passive_color)
             (aimg, r) = font.render(txt, active_color)
@@ -280,7 +280,7 @@ class Window:
             color = self.convert_color(color)
 
         max_width = 0
-        font = pygame.freetype.Font(font, size)
+        font = pygame.freetype.Font(f'resources/fonts/{font}', size)
         imgs = []
         for line in txt.split('\n'):
             img, r = font.render(line, fgcolor=color)

@@ -20,7 +20,7 @@ class ExceptionWrapper:
             self.viewer.quit()
             print(a, file=sys.stderr)
             sys.exit(-1)
-            
+        self.logger.info('Program finished without error')
         return False
 
 

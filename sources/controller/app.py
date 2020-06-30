@@ -17,6 +17,7 @@ from time import perf_counter
 import yaml
 import threading
 from viewer.transition import Transition
+from utils.logger import logger
 
 
 class App:
@@ -116,9 +117,9 @@ class Menu:
         self.model = model
         self.state = 'menu'
 
-        self.debug = debug
-
         SaveComponent.load()
+
+        self.debug = debug
 
         self.start_game_callback = start_game_callback
 

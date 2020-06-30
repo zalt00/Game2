@@ -46,7 +46,7 @@ at %(asctime)s, line %(lineno)s :
         self.base_handler.setLevel(lg.INFO)
 
         self.stream_handler.setFormatter(fmtb)
-        self.stream_handler.setLevel(lg.DEBUG)
+        self.stream_handler.setLevel(lg.INFO)
 
         self.error_handler.setFormatter(fmterr)
         self.error_handler.setLevel(lg.ERROR)
@@ -56,5 +56,12 @@ at %(asctime)s, line %(lineno)s :
         self.logger.addHandler(self.error_handler)
 
 
-logger = GameLogger().logger
+_logger = GameLogger()
+logger = _logger.logger
+
+
+def activate_debug_mode():
+    _logger.stream_handler.setLevel(lg.DEBUG)
+
+
 

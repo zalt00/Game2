@@ -27,7 +27,18 @@ class ActionManager:
 class BaseMenuActionManager(ActionManager):
     def __init__(self, buttons, classic_buttons, classic_buttons_order, panels,
                  panel_order, additional_texts, additional_structures):
-        
+
+        """constructor of the class
+
+        :param buttons: button sprite group
+        :param classic_buttons: base buttons, buttons which are always there even when the panel changes
+        :param classic_buttons_order: order of the buttons, useful for the controller
+        :param panels: dict which binds the name of the panel with the data of the panel
+        :param panel_order: panel order, useful for the next_panel and previous_panel fonctions
+        :param additional_texts: additional texts to display regardless of the panel
+        :param additional_structures: not implemented yet, has currently no effect
+        """
+
         super().__init__()
 
         self.additional_texts = additional_texts
@@ -40,7 +51,7 @@ class BaseMenuActionManager(ActionManager):
         self.base_classic_buttons = classic_buttons.copy()  # base
         self.classic_buttons_order = classic_buttons_order  # current
         self.classic_buttons = classic_buttons  # current
-        self.buttons_sprite_group = buttons  # base
+        self.buttons_sprite_group = buttons  # current
         self.additional_buttons = {}  # current
 
         self.confirmation_messages = {}  # current
@@ -51,6 +62,7 @@ class BaseMenuActionManager(ActionManager):
         self.focus = [0, 0]
         
     def update_buttons(self, mouse_pos):
+        """updates the text color of the buttons in function of the mouse's position"""
         if not self.controller:
             self.count = 0
             for button in self.buttons_sprite_group.sprites():
@@ -67,6 +79,7 @@ class BaseMenuActionManager(ActionManager):
                 pygame.mouse.set_pos(list(self.last_pos))
                 
     def update_buttons2(self):
+        """updates text color of the buttons using the "focus" attribute"""
         if not self.controller:
             self.last_pos = pygame.mouse.get_pos()
         pygame.mouse.set_visible(False)
@@ -79,6 +92,7 @@ class BaseMenuActionManager(ActionManager):
         button.state = 'activated'
 
     def remove_confirmation_messages(self, button):
+        """removes the confirmation messages of a specific action, or the button's action"""
         if isinstance(button, str):
             action = button
         else:
@@ -145,6 +159,7 @@ class BaseMenuActionManager(ActionManager):
             self.update_buttons2()
 
     def button_activation(self):
+        """executes the action of the focused button"""
         b_order = self.classic_buttons_order
         if len(b_order) != 0:
             button = self.classic_buttons[b_order[self.focus[1]][self.focus[0]]]
@@ -154,6 +169,7 @@ class BaseMenuActionManager(ActionManager):
                 getattr(self, button.action)()
                 
     def left_click(self, mouse_pos):
+        """executes the action of the buttons which are touching the mouse"""
         for button in self.buttons_sprite_group.sprites():
             if button.rect.collidepoint(mouse_pos):
                 if hasattr(button, 'arg'):
@@ -162,6 +178,7 @@ class BaseMenuActionManager(ActionManager):
                     getattr(self, button.action)()
                     
     def remove_current_panel(self):
+        """removes the current panel and all of its components"""
         if self.current_panel != "":
             for b in self.classic_buttons.values():
                 self.remove_confirmation_messages(b)
@@ -178,6 +195,7 @@ class BaseMenuActionManager(ActionManager):
             self.additional_buttons = dict()
             
     def _set_panel_to(self, panel_name):
+        """removes the current panel and initialize the precised panel"""
         self.remove_current_panel()
             
         nstructure = self.panels[panel_name]['structure']
@@ -233,6 +251,7 @@ class BaseMenuActionManager(ActionManager):
             self._set_panel_to(npanel)
         
     def add_confirmation_message(self, name, associated_button_action):
+        """adds the confirmation message of the precised name, associated with a specific button/button action"""
         msg = self.additional_texts[name]
         if associated_button_action in self.confirmation_messages:
             self.confirmation_messages[associated_button_action].append(msg)

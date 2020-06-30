@@ -8,7 +8,7 @@ Setup:
 Launchers:
  - `launcher.cmd`: classic launcher, cmd not hidden
  - `launcherwoc.cmd`: launcher without console, hides cmd
- - `launcherdb.cmd`: debug launcher, launches the program with the `--debug` argument, gives access to new in-game
+ - `launcherdb.cmd`: debug launcher, launches the program with the `--debug` argument: gives access to new in-game
   commands, displays more logs and pauses the program after his execution
  - `structure_builder_launcher.cmd`: launcher for the structure builder
  

@@ -5,6 +5,11 @@ from array import array
 import os
 import sys
 
+try:
+    from utils.logger import logger
+except ImportError:
+    logger = None
+
 
 class SaveComponent:
     data = None
@@ -52,6 +57,8 @@ class SaveComponent:
     
     @classmethod
     def load(cls):
+        if logger is not None:
+            logger.debug('Loading save from disk')
         with open(cls.path, 'rb') as file:
             up = xdrlib.Unpacker(file.read())
         cls.data = up.unpack_array(up.unpack_int)
@@ -59,6 +66,8 @@ class SaveComponent:
     
     @classmethod
     def dump(cls):
+        if logger is not None:
+            logger.debug('Dumping save to disk')
         p = xdrlib.Packer()
         p.pack_array(cls.data, p.pack_int)
         b = p.get_buffer()

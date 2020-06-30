@@ -9,6 +9,7 @@ import json
 import time
 from typing import Any
 from pygame.locals import SRCALPHA
+from utils.logger import logger
 from random import randint, shuffle
 
 pygame.init()
@@ -105,6 +106,12 @@ class ResourcesLoader2:
         self.cache = {}
 
     def load(self, res_name):
+        """loads a resource from cache or loads it from disk and caches it
+
+        :param res_name: name of the resource, actually the path relative to the resource directory
+        :type res_name: str
+        :return: Resource object"""
+
         try:
             return self.cache[res_name]
         except KeyError:
@@ -113,10 +120,18 @@ class ResourcesLoader2:
         local_dir = os.path.normpath(self.dir_ + '\\' + res_name + '\\').replace('\\', '/')
         return self.load_from_path(local_dir, res_name)
 
-    def load_from_path(self, local_dir, res_name=None):
+    def load_from_path(self, local_dir, res_name=''):
+        """loads a resource from disk, directly from the absolute path or the path relative to the launcher
 
-        if res_name is None:
+        :param local_dir: path of the resource directory or file
+        :type local_dir: str
+        :param res_name: name of the resource, automatically detected if not precised
+        :type res_name: str
+        :return: Resource object"""
+        if res_name == '':
             res_name = local_dir.split('/')[-1]
+
+        logger.debug(f'Loads {res_name} from disk')
 
         res = None
         if res_name.endswith('st'):
@@ -148,6 +163,7 @@ class ResourcesLoader2:
 
     @staticmethod
     def load_structure_from_string(s):
+        """loads a structure from a string buffer"""
         return Structure(s)
 
 
@@ -178,6 +194,7 @@ class StructTSPalette:
         self.rd_previous = -1
 
     def parse(self, s):
+        """parses a string buffer element and returns an image"""
         key = s[:2]
         flip_x = int(s[2])
         flip_y = int(s[3])
@@ -205,6 +222,7 @@ class StructTSPalette:
         return pygame.transform.flip(tileset.subsurface(r), flip_x, flip_y)
 
     def build(self, res):
+        """creates the structure's image with the string buffer and return it"""
         string_buffer = res.string_buffer
         w, h = res.dimensions
         surf = pygame.Surface((w, h), SRCALPHA)
