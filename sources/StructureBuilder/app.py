@@ -242,6 +242,9 @@ class App:
             self.i = 0
             self.change_tile(self.i)
 
+        elif key == K_SPACE:
+            self.get_position_infos()
+
     def run(self):
         while not self.stop:
             for event in pygame.event.get():
@@ -317,4 +320,17 @@ class App:
             self.clock.tick(self.fps)
             
             pygame.display.flip()
+
+    def get_position_infos(self):
+        y = self.nwpos[1]
+        x = (self.nwpos[0] + self.sepos[0]) / 2
+        middle_x = (self.cursor[0] - x) * self.tw
+        bottom_y = (y - self.cursor[1]) * self.th
+        left_x = middle_x - self.tw / 2
+        right_x = middle_x + self.tw / 2
+        middle_y = bottom_y + self.th / 2
+        top_y = bottom_y + self.th
+
+        print(f'\nX: left = {left_x}, middle = {middle_x}, right = {right_x}')
+        print(f'Y: bottom = {bottom_y}, middle = {middle_y}, top = {top_y}')
 

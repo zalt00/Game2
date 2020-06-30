@@ -10,7 +10,7 @@ class ExceptionWrapper:
         self.logger = logger
 
     def __enter__(self):
-        return
+        pass
 
     def __exit__(self, etype, value, tb):
         if etype:

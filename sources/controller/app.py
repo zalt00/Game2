@@ -20,10 +20,12 @@ from viewer.transition import Transition
 
 
 class App:
-    def __init__(self, window, model):
+    def __init__(self, window, model, debug=False):
         self.window = window
         self.model = model
-        self.current = Menu(window, model, self.start_game)
+        self.current = Menu(window, model, self.start_game, debug=debug)
+
+        self.debug = debug
 
         self.current_thread = None
         self.transition_finished = False
@@ -36,15 +38,17 @@ class App:
             sprite.kill()
         self.current.quit()
         self.window.on_draw = lambda *_, **__: None
+        self.window.after_draw = lambda *_, **__: None
         self.window.quit = lambda *_, **__: None
 
         del self.current
 
         if new_state == 'game':
             self.current = Game(self.window, self.model,
-                                self.return_to_main_menu, self.game_loading_finished_check, self.current_save_id)
+                                self.return_to_main_menu, self.game_loading_finished_check, self.current_save_id,
+                                debug=self.debug)
         elif new_state == 'menu':
-            self.current = Menu(self.window, self.model, self.start_game)
+            self.current = Menu(self.window, self.model, self.start_game, debug=self.debug)
 
     def start_fade_in_transition(self):
         self.transition_finished = False
@@ -107,11 +111,13 @@ class App:
 
 
 class Menu:
-    def __init__(self, window, model, start_game_callback):
+    def __init__(self, window, model, start_game_callback, debug=False):
         self.window = window
         self.model = model
         self.state = 'menu'
-        
+
+        self.debug = debug
+
         SaveComponent.load()
 
         self.start_game_callback = start_game_callback
@@ -395,7 +401,7 @@ class Menu:
 
 
 class Game:
-    def __init__(self, window, model, return_to_main_menu, loading_finished_check, current_save_id):
+    def __init__(self, window, model, return_to_main_menu, loading_finished_check, current_save_id, debug=False):
         self.window = window
         self.model = model
         self.state = 'idle'
@@ -403,10 +409,13 @@ class Game:
         self.loading_finished_check = loading_finished_check
         self.debug_draw = False
 
+        self.debug = debug
+
         self.current_save_id = current_save_id
 
         self.t1 = self.count = self.number_of_space_updates = self.space = \
             self.player = self.entities = self.structures = self.triggers = self.ag = self.action_manager = None
+        self.draw_options = None
 
         SaveComponent.load()
         with open(self.model.Game.maps[self.model.Game.current_map_id.get(self.current_save_id)]) as datafile:
@@ -436,6 +445,8 @@ class Game:
 
         if self.debug_draw:
             self.draw_options = pymunk.pygame_util.DrawOptions(self.window.screen)
+        else:
+            self.draw_options = None
 
         pygame.mouse.set_visible(False)
 
@@ -498,7 +509,8 @@ class Game:
                 )()
         #####
 
-        action_manager = GameActionManager(None, return_to_main_menu, self.save_position)
+        action_manager = GameActionManager(
+            None, return_to_main_menu, self.save_position, self.activate_deactivate_debug_draw)
         self.action_manager = action_manager
 
         ### OBJECTS ###
@@ -523,7 +535,7 @@ class Game:
             ctrls[kb.get()] = action_id
             ctrls[controller.get_shorts()] = action_id
 
-        self.window.set_game_event_manager(action_manager, ctrls, [0.35, 0.35, 0.3, 0.15, 0.15, 0.15])
+        self.window.set_game_event_manager(action_manager, ctrls, [0.35, 0.35, 0.3, 0.15, 0.15, 0.15], debug=self.debug)
         #####
 
         self.window.on_draw = self.update
@@ -589,9 +601,19 @@ class Game:
     def loading_update(self, _):
         self.loading_finished_check()
 
-    def update_space(self, _):
-        if self.debug_draw:
+    def activate_deactivate_debug_draw(self, activate):
+        if activate:
+            self.draw_options = pymunk.pygame_util.DrawOptions(self.window.screen)
+            self.window.after_draw = self.draw_space
+        else:
+            self.draw_options = None
+            self.window.after_draw = lambda *_, **__: None
+
+    def draw_space(self):
+        if self.draw_options is not None:
             self.space.debug_draw(self.draw_options)
+
+    def update_space(self, _):
         n1 = round((perf_counter() - self.t1) * 60 * 4) - self.number_of_space_updates
 
         for i in range(n1):

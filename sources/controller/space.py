@@ -46,11 +46,15 @@ class GameSpace(pymunk.Space):
         
         shapes = []
         for points in polys:
-            s = pymunk.Poly(body, points, radius=1)
-            shapes.append(s)
-            s.friction = 0
-            s.is_structure = True
-            s.collision_type = 2
+            a = points[-1]
+            for i in range(0, len(points)):
+                b = a
+                a = points[i]
+                s = pymunk.Segment(body, a, b, 1)
+                shapes.append(s)
+                s.friction = 0
+                s.is_solid_ground = False
+                s.collision_type = 2
         for a, b in segments:
             s = pymunk.Segment(body, a, b, 1)
             shapes.append(s)

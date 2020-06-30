@@ -96,7 +96,7 @@ class SaveCombination(list):
 def main():
     path = input('Please write the path the save.date file: ')
     if path == 'd':
-        path = '.\\..\\..\\data\\save.data'
+        path = '.\\..\\..\\data\\saves\\save.data'
     SaveComponent.init(path)
     SaveComponent.load()
     labels = []

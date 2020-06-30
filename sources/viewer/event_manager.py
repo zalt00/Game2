@@ -12,6 +12,7 @@ class BaseEventManager:
     def do(self, *args, **kwargs):
         pass
 
+
 INACTIVE_EVENT_MANAGER = BaseEventManager()
 
 
@@ -100,6 +101,28 @@ class GameEventManager(EventManager):
         action = self.controls.get(event.key, None)
         if action is not None:
             self.action_manager.stop(action)
+
+
+class DebugGameEventManager(GameEventManager):
+    def keydown(self, event):
+        action = self.controls.get(event.key, None)
+        if action is not None:
+            self.action_manager.do(action)
+        elif event.key == K_F1:
+            try:
+                self.action_manager.do(self.action_manager.ACTIVATE_DEBUG_DRAW)
+            except AttributeError:
+                pass
+        elif event.key == K_F2:
+            try:
+                self.action_manager.do(self.action_manager.DEACTIVATE_DEBUG_DRAW)
+            except AttributeError:
+                pass
+        elif event.key == K_F3:
+            try:
+                self.action_manager.do(self.action_manager.MANUALLY_RAISE_ERROR)
+            except AttributeError:
+                pass
 
 
 class MenuEventManager(EventManager):

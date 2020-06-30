@@ -4,7 +4,7 @@ import pygame
 import pygame.freetype
 pygame.init()
 from pygame.locals import *
-from .event_manager import INACTIVE_EVENT_MANAGER, GameEventManager, MenuEventManager, ChangeCtrlsEventManager
+from .event_manager import INACTIVE_EVENT_MANAGER, GameEventManager, MenuEventManager, ChangeCtrlsEventManager, DebugGameEventManager
 from .sprites import BgLayer, DBgLayer, Entity, Button, Particle, Structure, Text
 from .image_handler import BgLayerImageHandler, TBEntityImageHandler, ButtonImageHandler, StructureImageHandler, TextImageHandler
 from .resources_loader import ResourcesLoader2, OtherObjectsResource
@@ -106,6 +106,7 @@ class Window:
                 else:
                     self.transitioning = False
 
+            self.after_draw()
             pygame.display.flip()
             dt = self.clock.tick(self.fps)
 
@@ -237,8 +238,11 @@ class Window:
     def set_change_ctrls_event_manager(self, am, con_or_kb):
         self.event_manager = ChangeCtrlsEventManager(am, con_or_kb)
     
-    def set_game_event_manager(self, am, ctrls, deadzones):
-        self.event_manager = GameEventManager(am, ctrls, deadzones)
+    def set_game_event_manager(self, am, ctrls, deadzones, debug=False):
+        if debug:
+            self.event_manager = DebugGameEventManager(am, ctrls, deadzones)
+        else:
+            self.event_manager = GameEventManager(am, ctrls, deadzones)
 
     def reset_event_manager(self):
         self.event_manager = INACTIVE_EVENT_MANAGER
@@ -300,7 +304,10 @@ class Window:
     
     def on_draw(self, *_, **__):
         pass
-    
+
+    def after_draw(self, *_, **__):
+        pass
+
     def quit(self, *_, **__):
         pass
 

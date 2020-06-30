@@ -446,13 +446,19 @@ class GameActionManager(ActionManager):
     SAVE = 8
     MENU = 9
     INTERACT = 10
+    ACTIVATE_DEBUG_DRAW = 11
+    DEACTIVATE_DEBUG_DRAW = 12
+    MANUALLY_RAISE_ERROR = 13
     
-    def __init__(self, player, return_to_main_menu=lambda: None, save_callback=lambda: None):
+    def __init__(self, player,
+                 return_to_main_menu, save_callback, activate_deactivate_debug_draw_callback):
         super().__init__()
         self.player = player
         
         self.save = save_callback
-        
+
+        self.activate_deactivate_debug_draw = activate_deactivate_debug_draw_callback
+
         self.do_handlers[self.RIGHT] = self.walk_right
         self.stop_handlers[self.RIGHT] = self.stop_walking_right
         
@@ -467,7 +473,11 @@ class GameActionManager(ActionManager):
         
         self.do_handlers[self.SAVE] = self.save
         self.do_handlers[self.MENU] = return_to_main_menu
-        
+
+        self.do_handlers[self.ACTIVATE_DEBUG_DRAW] = self.activate_debug_draw
+        self.do_handlers[self.DEACTIVATE_DEBUG_DRAW] = self.deactivate_debug_draw
+        self.do_handlers[self.MANUALLY_RAISE_ERROR] = self.manually_raise_error
+
         self.still_walking = False
         self.still_running = False
         
@@ -475,7 +485,16 @@ class GameActionManager(ActionManager):
         self.next_direction = 1
         
         self.already_dashed = True
-    
+
+    def manually_raise_error(self):
+        raise RuntimeError('Error manually raised')
+
+    def activate_debug_draw(self):
+        self.activate_deactivate_debug_draw(True)
+
+    def deactivate_debug_draw(self):
+        self.activate_deactivate_debug_draw(False)
+
     def land(self):
         if self.still_walking:
             if self.still_running:
