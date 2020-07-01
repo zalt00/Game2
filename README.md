@@ -21,7 +21,7 @@ Additional infos:
   - credits: see `credits.txt`
   - manually set the save data (not recommended unless you softlock or the game crashes at launch):
   launch the `save_modifier.py` file in the `sources/utils` folder, it should only use modules from the
-  standard python library
+  standard python library (enter "d" instead of the path to have a default save path)
   - to use the level builder and the structure builder, make sure you installed python with the tcl interpreter
   and the `tkinter` module
  
