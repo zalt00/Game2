@@ -40,21 +40,18 @@ class GameSpace(pymunk.Space):
         
         self.objects[name] = (body, shape)
         
-    def add_structure(self, pos, polys, segments, name):
+    def add_structure(self, pos, walls, segments, name):
         body = pymunk.Body(body_type=pymunk.Body.STATIC)
         body.position = pos
         
         shapes = []
-        for points in polys:
-            a = points[-1]
-            for i in range(0, len(points)):
-                b = a
-                a = points[i]
-                s = pymunk.Segment(body, a, b, 1)
-                shapes.append(s)
-                s.friction = 0
-                s.is_solid_ground = False
-                s.collision_type = 2
+        for a, b in walls:
+            s = pymunk.Segment(body, a, b, 1)
+            shapes.append(s)
+            s.friction = 1
+            s.is_solid_ground = False
+            s.collision_type = 2
+
         for a, b in segments:
             s = pymunk.Segment(body, a, b, 1)
             shapes.append(s)

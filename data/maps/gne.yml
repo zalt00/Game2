@@ -13,24 +13,23 @@ objects_data:
     is_built: false
     layer: 1
     name: ground
-    poly:
-    - - []
     pos:
     - 600
     - 0
     res: forest/structure.st
     state: base
     type: structure
+    walls: []
   player:
     res: player/white_guy.obj
     type: player
   structure_structure:
     ground:
-    - - - -96
+    - - - -104
         - 224
-      - - 0
+      - - 8
         - 224
-    - - - 0
+    - - - 8
         - 144
       - - 48
         - 144
@@ -44,50 +43,50 @@ objects_data:
         - 64
     - - - -272
         - 64
-      - - -144
+      - - -135
         - 64
-    - - - -144
+    - - - -135
         - 112
-      - - -96
+      - - -104
         - 112
     is_built: false
     layer: 0
     name: structure
-    poly:
-    - - - -96
-        - 223
-      - - 0
-        - 223
-      - - 0
-        - 143
-      - - 48
-        - 143
-      - - 48
-        - 111
-      - - 64
-        - 111
-      - - 64
-        - 63
-      - - 272
-        - 63
-      - - 272
-        - 0
-      - - -272
-        - 0
-      - - -272
-        - 63
-      - - -144
-        - 63
-      - - -144
-        - 111
-      - - -96
-        - 111
     pos:
     - 1001
     - 64
     res: forest/save.st
     state: base
     type: structure
+    walls:
+    - - - 8
+        - 223
+      - - 8
+        - 143
+    - - - 48
+        - 143
+      - - 48
+        - 111
+    - - - 64
+        - 111
+      - - 64
+        - 63
+    - - - 272
+        - 63
+      - - 272
+        - 0
+    - - - -272
+        - 0
+      - - -272
+        - 63
+    - - - -135
+        - 63
+      - - -135
+        - 111
+    - - - -104
+        - 111
+      - - -104
+        - 223
 palette: forest/forest_structure_tilesets.stsp
 space: true
 triggers_data:

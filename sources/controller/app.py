@@ -552,7 +552,7 @@ class Game:
         else:
             struct = self.window.build_structure(data['res'], self.level['palette'], pos_handler, data['state'], layer)
 
-        self.space.add_structure(data['pos'], data['poly'], data['ground'], name)
+        self.space.add_structure(data['pos'], data['walls'], data['ground'], name)
 
         self.structures[name] = struct
 

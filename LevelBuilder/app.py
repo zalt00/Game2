@@ -246,7 +246,7 @@ class App(tk.Frame):
 
         self.last_saved = None
 
-        self.poly_visualisations = None
+        self.walls_visualisations = None
         self.ground_visualisations = None
 
         self.triggers = {}
@@ -614,7 +614,7 @@ class App(tk.Frame):
             struct_data['is_built'] = False
             struct_data['name'] = struct.name
             struct_data['pos'] = [int(struct.pos[0]), int(-self.ref_height + 800 - self.canvas.bbox(struct_id)[3])]
-            struct_data['poly'], struct_data['ground'] = self.get_collision_infos(struct)
+            struct_data['walls'], struct_data['ground'] = self.get_collision_infos(struct)
             struct_data['state'] = 'base'
             struct_data['layer'] = struct.layer
 
@@ -659,29 +659,34 @@ class App(tk.Frame):
             data = yaml.safe_load(datafile)
         struct_data = data.get(struct.res_path, None)
         if struct_data is not None:
-            return struct_data['poly'], struct_data['ground']
+            return struct_data['walls'], struct_data['ground']
         return
 
     def show_collision_command(self):
         if self.show_collision_var.get():
             if self.focus_on is not None:
                 self.ground_visualisations = []
-                self.poly_visualisations = []
+                self.walls_visualisations = []
                 data = self.get_collision_infos(self.focus_on[0])
                 if data is not None:
-                    poly_ = data[0]
+                    walls_ = data[0]
                     segments = data[1]
                     x = int(self.preview_canvas['width']) // 2
                     y = int(self.preview_canvas['height']) // 2 + self.preview_image.height() // 2
-                    for points in poly_:
-                        if len(points) > 0 and len(points[0]) > 0:
-                            p = [
-                                (int((dx / self.focus_on[0].scale) + x),
-                                 int(y - (dy / self.focus_on[0].scale))) for dx, dy in points]
+                    for a, b in walls_:
+                        xa, ya = int(a[0] / self.focus_on[0].scale + x), int(y - a[1] / self.focus_on[0].scale)
+                        xb, yb = int(b[0] / self.focus_on[0].scale + x), int(y - b[1] / self.focus_on[0].scale)
+                        walls_visu_id = self.preview_canvas.create_line(
+                            xa, ya, xb, yb, fill='#32b5fc', width=2, tag='fg2')
+                        # if len(points) > 0 and len(points[0]) > 0:
+                        #     p = [
+                        #         (int((dx / self.focus_on[0].scale) + x),
+                        #          int(y - (dy / self.focus_on[0].scale))) for dx, dy in points]
 
-                            poly_visu_id = self.preview_canvas.create_polygon(*p, fill='',
-                                                                              width=2, outline='#32b5fc', tag='fg2')
-                            self.poly_visualisations.append(poly_visu_id)
+                        # walls_visu_id = self.preview_canvas.create_polygon(*p, fill='',
+                        #
+                        #                                                       width=2, outline='#32b5fc', tag='fg2')
+                        self.walls_visualisations.append(walls_visu_id)
                     for a, b in segments:
                         xa, ya = int(a[0] / self.focus_on[0].scale + x), int(y - a[1] / self.focus_on[0].scale)
                         xb, yb = int(b[0] / self.focus_on[0].scale + x), int(y - b[1] / self.focus_on[0].scale)
@@ -689,12 +694,12 @@ class App(tk.Frame):
                         self.ground_visualisations.append(ground_visu_id)
 
         else:
-            if self.poly_visualisations is not None:
-                for pvisu in self.poly_visualisations:
+            if self.walls_visualisations is not None:
+                for pvisu in self.walls_visualisations:
                     self.preview_canvas.delete(pvisu)
                 for gvisu in self.ground_visualisations:
                     self.preview_canvas.delete(gvisu)
-                self.poly_visualisations = None
+                self.walls_visualisations = None
                 self.ground_visualisations = None
 
     def show_triggers_command(self):
