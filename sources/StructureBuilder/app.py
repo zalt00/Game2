@@ -21,6 +21,8 @@ class App:
         self.bg = self.screen.copy().convert_alpha()
         self.bg.fill((255, 255, 255, 0))
 
+        self.collision_segments_surf = self.bg.copy()
+
         self.palette = self.rl.load('forest/forest_structure_tilesets.stsp')
 
         self.tileset = self.rl.load('forest/basetileset.ts')
@@ -58,6 +60,21 @@ class App:
         self.nw = self.tw
         
         self.i = 0
+
+        self.kp_corres = {
+            K_KP7: (0, 5),
+            K_KP8: (1, 5),
+            K_KP9: (2, 5),
+            K_KP4: (0, 4),
+            K_KP5: (1, 4),
+            K_KP6: (2, 4),
+            K_KP1: (0, 3),
+            K_KP2: (1, 3),
+            K_KP3: (2, 3),
+        }
+
+        self.point_a = []
+        self.current_collision_segments = []
 
     def change_tile(self, i):
         self.tile_rect.x = i * self.tw
@@ -245,6 +262,18 @@ class App:
         elif key == K_SPACE:
             self.get_position_infos()
 
+        elif key in (K_KP1, K_KP2, K_KP3, K_KP4, K_KP5, K_KP6, K_KP7, K_KP8, K_KP9):
+            pos_infos = self.get_position_infos(False)
+            ix, iy = self.kp_corres[key]
+            self.add_pos(pos_infos[ix], pos_infos[iy])
+
+        elif key == K_KP0:
+            self.current_collision_segments = []
+            self.point_a = []
+
+        elif key == K_c:
+            self.collision_segments_surf.fill((255, 255, 255, 0))
+
     def run(self):
         while not self.stop:
             for event in pygame.event.get():
@@ -302,6 +331,7 @@ class App:
 
             self.screen.fill((190, 190, 190))
             self.screen.blit(self.bg, (0, 0))
+            self.screen.blit(self.collision_segments_surf, (0, 0))
 
             if self.i < 0:
                 self.i = 0
@@ -321,7 +351,7 @@ class App:
             
             pygame.display.flip()
 
-    def get_position_infos(self):
+    def get_position_infos(self, do_print=True):
         y = self.nwpos[1]
         x = (self.nwpos[0] + self.sepos[0]) / 2
         middle_x = (self.cursor[0] - x) * self.tw
@@ -331,6 +361,30 @@ class App:
         middle_y = bottom_y + self.th / 2
         top_y = bottom_y + self.th
 
-        print(f'\nX: left = {left_x}, middle = {middle_x}, right = {right_x}')
-        print(f'Y: bottom = {bottom_y}, middle = {middle_y}, top = {top_y}')
+        if do_print:
+            print(f'\nX: left = {left_x}, middle = {middle_x}, right = {right_x}')
+            print(f'Y: bottom = {bottom_y}, middle = {middle_y}, top = {top_y}')
+
+        return left_x, middle_x, right_x, bottom_y, middle_y, top_y
+
+    def add_pos(self, x, y):
+        if len(self.point_a) == 0:
+            self.point_a = [x, y]
+        else:
+            segment = [self.point_a, [x, y]]
+            self.current_collision_segments.append(segment)
+            self.point_a = []
+            print(*[f'\n- {repr(v)}' for v in self.current_collision_segments], sep='')
+
+            y = self.nwpos[1]
+            x = (self.nwpos[0] + self.sepos[0]) / 2
+
+            rl_pos_a = list(segment[0])
+            rl_pos_a[0] += (x + 0.5) * self.tw
+            rl_pos_a[1] = -rl_pos_a[1] + (y + 1) * self.th
+
+            rl_pos_b = list(segment[1])
+            rl_pos_b[0] += (x + 0.5) * self.tw
+            rl_pos_b[1] = -rl_pos_b[1] + (y + 1) * self.th
+            pygame.draw.line(self.collision_segments_surf, (23, 246, 234, 255), rl_pos_a, rl_pos_b, 1)
 

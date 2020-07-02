@@ -24,6 +24,7 @@
     "WP": {"calibration_squares": false, "filename": "wooden_platform.png"},
     "WU": {"calibration_squares": false, "filename": "wall_underground.png"},
     "LU": {"calibration_squares": false, "filename": "deep_underground.png"},
-    "WW": {"calibration_squares": false, "filename": "wood_wall.png"}
+    "WW": {"calibration_squares": false, "filename": "wood_wall.png"},
+    "HO": {"calibration_squares": false, "filename": "holes.png"}
   }
 }

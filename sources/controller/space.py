@@ -48,7 +48,7 @@ class GameSpace(pymunk.Space):
         for a, b in walls:
             s = pymunk.Segment(body, a, b, 1)
             shapes.append(s)
-            s.friction = 1
+            s.friction = 0
             s.is_solid_ground = False
             s.collision_type = 2
 
