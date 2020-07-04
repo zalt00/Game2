@@ -66,7 +66,7 @@ class BaseMenuActionManager(ActionManager):
         if not self.controller:
             self.count = 0
             for button in self.buttons_sprite_group.sprites():
-                if button.rect.collidepoint(mouse_pos):
+                if button.collide_with(*mouse_pos):
                     button.state = 'activated'
                 else:
                     button.state = 'idle'
@@ -171,7 +171,7 @@ class BaseMenuActionManager(ActionManager):
     def left_click(self, mouse_pos):
         """executes the action of the buttons which are touching the mouse"""
         for button in self.buttons_sprite_group.sprites():
-            if button.rect.collidepoint(mouse_pos):
+            if button.collide_with(*mouse_pos):
                 if hasattr(button, 'arg'):
                     getattr(self, button.action)(button.arg)
                 else:

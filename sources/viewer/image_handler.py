@@ -29,29 +29,29 @@ class EntityImageHandler(ImageHandler):
         raise NotImplementedError
 
 
-class FBEntityImageHandler(EntityImageHandler):
-    def update_image(self, entity, n=1):
-        
-        if entity.state != self.previous_state:
-            self.previous_state = entity.state
-            self.advance = 0
-        
-        a = self.advance // 6
-        sheet = self.res.sheets[entity.state]
-        if a * self.res.width == sheet.get_width():
-            self.advance = 0
-            a = 0
-            self.end_animation_callback(entity.state)
-            return self.update_image(entity)
-        else:
-            rect = pygame.Rect(a * self.res.width, 0, self.res.width, self.res.height)
-            self.advance += 1
-            
-            img = sheet.subsurface(rect)
-    
-            if entity.direction == -1:
-                return pygame.transform.flip(img, True, False)
-            return img
+# class FBEntityImageHandler(EntityImageHandler):
+#     def update_image(self, entity, n=1):
+#
+#         if entity.state != self.previous_state:
+#             self.previous_state = entity.state
+#             self.advance = 0
+#
+#         a = self.advance // 6
+#         sheet = self.res.sheets[entity.state]
+#         if a * self.res.width == sheet.get_width():
+#             self.advance = 0
+#             a = 0
+#             self.end_animation_callback(entity.state)
+#             return self.update_image(entity)
+#         else:
+#             rect = pygame.Rect(a * self.res.width, 0, self.res.width, self.res.height)
+#             self.advance += 1
+#
+#             img = sheet.subsurface(rect)
+#
+#             if entity.direction == -1:
+#                 return pygame.transform.flip(img, True, False)
+#             return img
         
         
 class TBEntityImageHandler(EntityImageHandler):
@@ -67,18 +67,15 @@ class TBEntityImageHandler(EntityImageHandler):
         self.advance += n
         a = self.advance // 6
         sheet = self.res.sheets[entity.state]
-        if a * self.res.width >= sheet.get_width():
+        try:
+            img = sheet[a]
+        except IndexError:
             self.advance = 0
-            a = 0
             self.end_animation_callback(entity.state)
             return self.update_image(entity)
         else:
-            rect = pygame.Rect(a * self.res.width, 0, self.res.width, self.res.height)
-            
-            img = sheet.subsurface(rect)
-
             if entity.direction == -1:
-                return pygame.transform.flip(img, True, False)
+                return img.get_transform(flip_x=True)
             return img
 
 

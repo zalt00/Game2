@@ -11,6 +11,10 @@ from typing import Any
 from pygame.locals import SRCALPHA
 from utils.logger import logger
 from random import randint, shuffle
+import pyglet
+import pyglet.resource
+import pyglet.image
+import pyglet.gl
 
 pygame.init()
 
@@ -103,6 +107,8 @@ class ResourceLoader:
 class ResourcesLoader2:
     def __init__(self, resources_directory):
         self.dir_ = resources_directory
+        pyglet.resource.path = [self.dir_]
+        pyglet.resource.reindex()
         self.cache = {}
 
     def load(self, res_name):
@@ -145,15 +151,15 @@ class ResourcesLoader2:
                 data = json.load(datafile, encoding='utf8')
 
             if res_name.endswith('.stsp'):
-                res = StructTSPalette(data, local_dir)
+                res = StructTSPalette(data, res_name)
             elif res_name.endswith('.obj'):
-                res = Object(data, local_dir)
+                res = Object(data, res_name)
             elif res_name.endswith('.bg'):
-                res = Background(data, local_dir)
+                res = Background(data, res_name)
             elif res_name.endswith('.ts'):
-                res = Tileset(data, local_dir)
+                res = Tileset(data, res_name)
             elif res_name.endswith('bgobj'):
-                res = BackgroundObjectSet(data, local_dir)
+                res = BackgroundObjectSet(data, res_name)
 
         if res is None:
             raise ValueError('invalid extension')
@@ -178,18 +184,15 @@ class StructTSPalette:
             filename = v['filename']
             cs = v['calibration_squares']
             path = os.path.join(directory, filename).replace('\\', '/')
-            try:
-                img = pygame.image.load(path).convert_alpha()
-            except pygame.error:
-                img = pygame.image.load(path)
+            img = pyglet.resource.image(path)
 
             if cs:
-                r = img.get_rect()
-                r.width -= 2 * tw
-                r.x = tw
-                img = img.subsurface(r).copy()
-            size = img.get_width() // tw
-            tilesets_data[k] = img, size
+                width = img.width - 2 * tw
+                x = tw
+                img = img.get_region(x, 0, width, img.height)
+            size = img.width // tw
+            img_grid = pyglet.image.ImageGrid(img, 1, size)
+            tilesets_data[k] = img_grid, size
 
         self.rd_previous = -1
 
@@ -218,51 +221,44 @@ class StructTSPalette:
         if tileset is None:
             raise ValueError('invalid key: ' + key)
         tw, th = self.data['tile size']
-        r = pygame.Rect(tile_id * tw, 0, tw, th)
-        return pygame.transform.flip(tileset.subsurface(r), flip_x, flip_y)
+
+        return tileset[tile_id].get_transform(flip_x, flip_y)
 
     def build(self, res):
         """creates the structure's image with the string buffer and return it"""
         string_buffer = res.string_buffer
         w, h = res.dimensions
-        surf = pygame.Surface((w, h), SRCALPHA)
-        surf.fill((255, 255, 255, 0))
+        img = pyglet.image.Texture.create(w, h, pyglet.gl.GL_RGBA)
         tw, th = self.tw, self.th
         for y, line in enumerate(string_buffer.splitlines()):
             if line:
                 for x, tile in enumerate(line.split(';')):
                     if not tile.startswith('NA'):
                         tile_img = self.parse(tile)
-                        surf.blit(tile_img, (x * tw, y * th))
-        if res.scale >= 2:
-            surf = pygame.transform.scale2x(surf)
-            surf = pygame.transform.scale(surf, (round(w * res.scale), round(h * res.scale)))
-        else:
-            surf = pygame.transform.scale(surf, (w * res.scale, h * res.scale))
+                        img.blit_into(tile_img, x * tw, y * th)
 
-        return surf
+        img.scale = res.scale
+        return img
 
 
 class Object:
     def __init__(self, data, directory):
         self.data = data
         self.sheets = {}
-        for name, v in self.data['animations'].items():
-            fn = v['filename']
-            path = os.path.join(directory, fn).replace('\\', '/')
-            try:
-                img = pygame.image.load(path).convert_alpha()
-            except pygame.error:
-                img = pygame.image.load(path)
-
-            for i in range(self.data['scale2x']):
-                img = pygame.transform.scale2x(img)
-            self.sheets[name] = img
 
         scale = 2 ** self.data['scale2x']
         self.width = self.data['dimensions'][0] * scale
         self.height = self.data['dimensions'][1] * scale
         self.dec = self.data['dec'][0] * scale, self.data['dec'][1] * scale
+
+        for name, v in self.data['animations'].items():
+            fn = v['filename']
+            path = os.path.join(directory, fn).replace('\\', '/')
+            img = pyglet.resource.image(path)
+
+            img.scale = 2 ** self.data['scale2x']
+            img_grid = pyglet.image.ImageGrid(img, 1, img.width // self.data["dimensions"][0])
+            self.sheets[name] = img_grid
 
 
 class Background:
@@ -278,16 +274,8 @@ class Background:
             for v in self.data[s]:
                 fn = v['filename']
                 path = os.path.join(directory, fn).replace('\\', '/')
-                try:
-                    img = pygame.image.load(path).convert_alpha()
-                except pygame.error:
-                    img = pygame.image.load(path)
-                if scale >= 2:
-                    img = pygame.transform.scale2x(img)
-                    img = pygame.transform.scale(
-                        img, (round(img.get_width() * (scale / 2)), round(img.get_height() * (scale / 2))))
-                else:
-                    img = pygame.transform.scale(img, (img.get_width() * scale, img.get_height() * scale))
+                img = pyglet.resource.image(path)
+                img.scale = scale
                 v['img'] = img
                 self.layers[v['layer']] = img
 
@@ -328,6 +316,7 @@ class Structure:
         self.sheets = sheets
 
 
+# TODO: changer ça de place, uniquement utilisé par le structure builder qui donctionne avec pygame
 class Tileset:
     def __init__(self, data, directory):
         path = os.path.join(directory, data['filename']).replace('\\', '/')
@@ -344,13 +333,8 @@ class BackgroundObjectSet:
         self.max_height = data['max_height']
         for name, odata in data['bg_objects'].items():
             path = os.path.join(directory, odata['filename']).replace('\\', '/')
-            img = pygame.image.load(path).convert_alpha()
-            if scale >= 2:
-                img = pygame.transform.scale2x(img)
-                img = pygame.transform.scale(
-                    img, (round(img.get_width() * (scale / 2)), round(img.get_height() * (scale / 2))))
-            else:
-                img = pygame.transform.scale(img, (img.get_width() * scale, img.get_height() * scale))
+            img = pyglet.resource.image(path)
+
             odata['img'] = img
             odata.pop('filename')
 
@@ -359,14 +343,14 @@ class BackgroundObjectSet:
     def build_bg_decoration_layer(self, sequence, layer_id):
         total_width = sum((self.bg_objects[oname]['size'][0] for oname in sequence))
 
-        surf = pygame.Surface((total_width * self.scale, self.max_height * self.scale), SRCALPHA)
+        img = pyglet.image.Texture.create(total_width * self.scale, self.max_height * self.scale)
         current_x = 0
         for obj_name in sequence:
             odata = self.bg_objects[obj_name]
-            surf.blit(odata['img'], (current_x, 0))
+            img.blit_into(odata['img'], current_x, 0)
             current_x += odata['size'][0] * self.scale
 
-        res = BgDecorationLayer({layer_id: surf}, total_width * self.scale, self.max_height * self.scale, (0, 0))
+        res = BgDecorationLayer({layer_id: img}, total_width * self.scale, self.max_height * self.scale, (0, 0))
         return res
 
 

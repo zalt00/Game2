@@ -1,11 +1,9 @@
 # -*- coding:Utf-8 -*-
 
-import pygame
-pygame.init() 
-from pygame.locals import *
+import pyglet
 
 
-class BaseEventManager:
+class BaseEventManager():
     def __init__(self, *args, **kwargs):
         pass
     
@@ -39,7 +37,7 @@ class GameEventManager(EventManager):
         self.handlers[JOYBUTTONDOWN] = self.joybuttondown
         self.handlers[JOYBUTTONUP] = self.joybuttonup
         self.handlers[JOYHATMOTION] = self.joyhatmotion
-    
+
     def joyhatmotion(self, event):
         if event.value[0] == 0:
             action1 = self.controls.get((11, 1), None)
@@ -128,11 +126,11 @@ class DebugGameEventManager(GameEventManager):
 class MenuEventManager(EventManager):
     def __init__(self, action_manager):
         super().__init__(action_manager)
-        self.handlers[MOUSEMOTION] = self.mousemotion
-        self.handlers[MOUSEBUTTONDOWN] = self.click
-        self.handlers[JOYHATMOTION] = self.joyhatmotion
-        self.handlers[JOYBUTTONDOWN] = self.joybuttondown
-        
+        self.handlers = dict(
+            on_mouse_motion=self.mousemotion,
+            on_mouse_press=self.click
+        )
+
         self.joyhatpressed = False
         
     def joyhatmotion(self, event):
@@ -178,13 +176,14 @@ class MenuEventManager(EventManager):
             except AttributeError:
                 pass
 
-    def mousemotion(self, event):
-        self.action_manager.do(self.action_manager.MOUSEMOTION, event.pos)
+    def mousemotion(self, x, y, dx, dy):
+        self.action_manager.do(self.action_manager.MOUSEMOTION, (x, y))
 
-    def click(self, event):
-        if event.button == 1:
-            self.action_manager.do(self.action_manager.LEFT_CLICK, event.pos)
-    
+    def click(self, x, y, button, modifiers):
+        print(button)
+        if button == 1:
+            self.action_manager.do(self.action_manager.LEFT_CLICK, (x, y))
+
 
 class ChangeCtrlsEventManager(EventManager):
     def __init__(self, action_manager, con_or_kb):

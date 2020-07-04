@@ -38,7 +38,7 @@ class App:
         for sprite in self.window.global_group.sprites():
             sprite.kill()
         self.current.quit()
-        self.window.on_draw = lambda *_, **__: None
+        self.window.update = lambda *_, **__: None
         self.window.after_draw = lambda *_, **__: None
         self.window.quit = lambda *_, **__: None
 
@@ -123,8 +123,6 @@ class Menu:
 
         self.start_game_callback = start_game_callback
 
-        self.empty_button_res = self.window.render_font('', 40, '#eeeeee', '#eeeeee', 100, 35, 5)
-        
         self.window.screen_dec[:] = (0, 0)
         self.window.init_joys()
         self.window.fps = 25
@@ -144,11 +142,11 @@ class Menu:
 
         pygame.mouse.set_visible(True)
         
-        self.window.on_draw = self.update
+        self.window.update = self.update
 
     def delete_current_page(self):
         self.page_name = None
-        for sprite in self.window.global_group.sprites():
+        for sprite in frozenset(self.window.global_group.sprites()):
             sprite.kill()
 
     def init_page(self, page_name):
@@ -365,11 +363,11 @@ class Menu:
         self.init_page('CharacterSelectionMenu')
 
     def change_kb_ctrls(self, button):
-        button.image_handler.res = self.empty_button_res
+        button.label.text = ''
         self.window.set_change_ctrls_event_manager(self.action_manager, 'kb')
         
     def change_con_ctrls(self, button):
-        button.image_handler.res = self.empty_button_res
+        button.label.text = ''
         self.window.set_change_ctrls_event_manager(self.action_manager, 'con')
         
     def set_ctrl(self, value, button):
@@ -426,7 +424,7 @@ class Game:
         self.window.reset_event_manager()
 
     def load_resources(self):
-        self.window.on_draw = self.loading_update
+        self.window.update = self.loading_update
         if 'resources' in self.level:
             for res_name in self.level['resources']:
                 self.window.res_loader.load(res_name)
@@ -539,7 +537,7 @@ class Game:
         self.window.set_game_event_manager(action_manager, ctrls, [0.35, 0.35, 0.3, 0.15, 0.15, 0.15], debug=self.debug)
         #####
 
-        self.window.on_draw = self.update
+        self.window.update = self.update
         self.window.quit = self.dump_save
 
     def init_structure(self, data):

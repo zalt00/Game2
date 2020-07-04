@@ -9,6 +9,7 @@ from controller import app
 from utils.exception_wrapper import ExceptionWrapper
 import utils.logger as lg
 import argparse
+import pyglet
 import sys
 pygame.init()
 
@@ -26,12 +27,11 @@ def main():
     m = get_model('data')
     w = window.Window(
         m.Options.Video.width.get(),
-        m.Options.Video.height.get(),
-        (FULLSCREEN | HWSURFACE | DOUBLEBUF) * m.Options.Video.display_mode.get() | SCALED)
+        m.Options.Video.height.get())
     a = app.App(w, m, debug=debug)
     lg.logger.info('Interfaces created successfully, starting main loop')
     with ExceptionWrapper(w, lg.logger):
-        w.run()
+        pyglet.app.run()
 
 
 if __name__ == '__main__':

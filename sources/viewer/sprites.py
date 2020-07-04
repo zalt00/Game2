@@ -1,80 +1,86 @@
 # -*- coding:Utf-8 -*-
 
 from pymunk import Vec2d
-import pygame
-from pygame.locals import SRCALPHA
-pygame.init()
+import pyglet
 
 
-class Sprite(pygame.sprite.Sprite):
-    def __init__(self, image_handler, position_handler, dec=(0, 0), screen_dec=[0, 0], layer=0):
-        super().__init__()
-
+class Sprite(pyglet.sprite.Sprite):
+    def __init__(self, image_handler,
+                 position_handler, batch, ordered_groups, groups=(), dec=(0, 0), screen_dec=[0, 0], layer=0):
         self._layer = layer
+
+        super().__init__(pyglet.image.Texture.create(0, 0), batch=batch, group=ordered_groups[layer + 10])
+        self.group = ordered_groups[layer + 10]
+
+        self.image = image_handler.update_image(self)
+
+        self.groups = groups if groups != () else set()
+        for grp in self.groups:
+            grp.add(self)
 
         self.screen_dec = screen_dec
         self.image_handler = image_handler
         self.position_handler = position_handler
-        
-        self.image = image_handler.update_image(self)
-        self.rect = self.image.get_rect()
+
         self.raw_dec = dec
-        self.dec = (0 - dec[0], 800 - self.rect.height + dec[1])
+        self.dec = (0 - dec[0], self.image.height - dec[1])
 
-        self.rect.x, self.rect.y = position_handler.update_position(self)
+        self.x, self.y = position_handler.update_position(self)
 
-    def update(self, n=1):
+    def update_(self, n=1):
         pass
+
+    def kill(self):
+        for grp in frozenset(self.groups):
+            grp.remove(self)
+        self.delete()
 
 
 class DynamicSprite(Sprite):
-    def update(self, n=1):
-        super().update(n)
-        self.rect.x, self.rect.y = self.position_handler.update_position(self, n)
+    def update_(self, n=1):
+        super().update_(n)
+        self.x, self.y = self.position_handler.update_position(self, n)
 
 
 class AnimatedSprite(Sprite):   
-    def update(self, n=1):
-        super().update(n)
+    def update_(self, n=1):
+        super().update_(n)
         self.image = self.image_handler.update_image(self, n)
 
 
 class AnimatedDynamicSprite(DynamicSprite, AnimatedSprite):
-    def update(self, n=1):
-        super().update(n)
+    def update_(self, n=1):
+        super().update_(n)
 
 
 # BG
 class BgLayer(Sprite):
-    def __init__(self, image_handler, position_handler, layer):
-        super().__init__(image_handler, position_handler, layer=layer)
+    def __init__(self, image_handler, position_handler, layer, batch, ordered_groups, groups=()):
+        super().__init__(image_handler, position_handler, batch, ordered_groups, groups=groups, layer=layer)
 
     def get_layer(self):
         return self._layer
 
 
 class DBgLayer(BgLayer):
-    def __init__(self, image_handler, position_handler, layer):
-        super(DBgLayer, self).__init__(image_handler, position_handler, layer)
-        self.bi_rect = self.image.get_rect()
-        self.bi_rect.width *= 2
-        self.base_image = pygame.Surface((self.bi_rect.width, self.bi_rect.height), SRCALPHA)
-        self.base_image.blit(self.image, (0, 0))
-        self.width = self.bi_rect.width // 2
-        self.base_image.blit(self.image, (self.width, 0))
-        self.subsurface_rect = self.image.get_rect()
+    def __init__(self, image_handler, position_handler, layer, batch, ordered_groups, groups=()):
+        super(DBgLayer, self).__init__(image_handler, position_handler, layer, batch, ordered_groups, groups=groups)
+        _image = pyglet.image.Texture.create(self.image.width * 2, self.image.height)
+        _image.blit_into(self.image.get_image_data(), 0, 0, 0)
+        _image.blit_into(self.image.get_image_data(), self.image.width, 0, 0)
+        self.image = _image
 
-    def update(self, n=1):
+    def update_(self, n=1):
         x, y = self.position_handler.update_position(self, n)
-        self.rect.y = y
-        x %= self.width
-        self.subsurface_rect.x = self.width - x
-        self.image = self.base_image.subsurface(self.subsurface_rect)
+        self.y = y
+        self.x = x % self.image.width // 2
 
 
 # ENTITY
 class Entity(AnimatedDynamicSprite):
-    def __init__(self, image_handler, position_handler, physics_updater, particles_handler, dec, screen_dec, layer=0):
+    def __init__(self, image_handler,
+                 position_handler, physics_updater, particles_handler,
+                 batch, ordered_groups, dec, screen_dec, layer=0, groups=()):
         self.state = 'idle'
         self.secondary_state = ''
         self.air_control = 0
@@ -84,41 +90,129 @@ class Entity(AnimatedDynamicSprite):
         self.is_on_ground = False
         self.physics_updater = physics_updater
         self.particles_handler = particles_handler
-        super().__init__(image_handler, position_handler, dec, screen_dec, layer=layer)
+        super().__init__(
+            image_handler, position_handler, batch, ordered_groups, groups=groups, dec=dec, screen_dec=screen_dec, layer=layer)
     
-    def update(self, n=1):
-        self.particles_handler.update(self)
-        self.physics_updater.update(self, n)
-        super().update(n)
+    def update_(self, n=1):
+        self.particles_handler.update_(self)
+        self.physics_updater.update_(self, n)
+        super().update_(n)
 
 
 class Particle(AnimatedSprite):
-    def __init__(self, image_handler, position_handler, dec, screen_dec, state, direction):
+    def __init__(self,
+                 image_handler,
+                 position_handler, batch, ordered_groups, dec, screen_dec, state, direction, groups=()):
         self.state = state
         self.direction = direction
-        super().__init__(image_handler, position_handler, dec, screen_dec)
+        super().__init__(image_handler, position_handler, batch, ordered_groups, groups=groups, dec=dec, screen_dec=screen_dec)
         
-    def kill(self, *_, **__):
-        super(Particle, self).kill()
-        
-    def update(self, *args, **kwargs):
-        super().update(*args, **kwargs)
+    def update_(self, *args, **kwargs):
+        super().update_(*args, **kwargs)
 
 
 class Structure(AnimatedDynamicSprite):
-    def __init__(self, image_handler, position_handler, dec, screen_dec, state, layer=0):
+    def __init__(self, image_handler, position_handler, batch, ordered_groups, dec, screen_dec, state, layer=0, groups=()):
         self.state = state
-        super().__init__(image_handler, position_handler, dec, screen_dec, layer=layer)
+        super().__init__(
+            image_handler, position_handler, batch, ordered_groups, groups=groups, dec=dec, screen_dec=screen_dec, layer=layer)
 
 
 class Text(AnimatedDynamicSprite):
-    def __init__(self, image_handler, position_handler, dec):
-        super(Text, self).__init__(image_handler, position_handler, dec, [0, 0])
+    def __init__(self, image_handler, position_handler, batch, ordered_groups, dec, groups=()):
+        super(Text, self).__init__(
+            image_handler, position_handler, batch, ordered_groups, groups=groups, dec=dec, screen_dec=[0, 0])
 
         
 class Button(AnimatedDynamicSprite):
-    def __init__(self, image_handler, position_handler, action_name):
+    def __init__(self, image_handler, position_handler, batch, ordered_groups, action_name, groups=()):
         self.state = 'idle'
         self.action = action_name
-        super().__init__(image_handler, position_handler)
+        super().__init__(image_handler, position_handler, batch, ordered_groups, groups=groups, layer=9)
+
+    def collide_with(self, x, y):
+        if self.x <= x <= (self.x + self.image.width):
+            if self.y <= y <= (self.y + self.image.height):
+                return True
+
+        return False
+
+
+class GeneratedButton:
+    def __init__(self, text, position_handler, font, size, batch, ordered_groups, action_name, width,
+                 rectangle=0, layer=9, groups=()):
+        self.text = text
+        self.position_handler = position_handler
+        self.font = font
+        self.batch = batch
+        self.group = ordered_groups[layer + 10]
+        for grp in groups:
+            grp.add(self)
+        self.groups = groups if groups != () else set()
+        self.action = action_name
+
+        self.state = 'idle'
+
+        x, y = self.position_handler.update_position(self)
+        self.previous_coords = [x, y]
+
+        self.label = pyglet.text.Label(self.text, font, size, batch=self.batch, group=self.group)
+
+        if rectangle:
+            width = max(width, self.label.content_width)
+            height = self.label.content_height
+            self.rectangle_width = rectangle
+            self.rectangle = {
+                pyglet.shapes.Line(x, y, x + width, y, self.rectangle_width, batch=self.batch, group=self.group),
+                pyglet.shapes.Line(
+                    x + width, y, x + width, y + height, self.rectangle_width, batch=self.batch, group=self.group),
+                pyglet.shapes.Line(
+                    x + width, y + height, x, y + height, self.rectangle_width, batch=self.batch, group=self.group),
+                pyglet.shapes.Line(x, y + height, x, y, self.rectangle_width, batch=self.batch, group=self.group)
+            }
+        else:
+            self.rectangle = {}
+
+        self.width = width
+        self.height = height
+
+    def kill(self):
+        for grp in frozenset(self.groups):
+            grp.remove(self)
+        self.label.delete()
+        for line in self.rectangle:
+            line.delete()
+
+    def update(self, *_, **__):
+
+        #  un peu contradictoire avec la manière de faire des autres sprites, mais bon c'est vraiment pour un truc
+        #  très spécifique
+        if self.state == 'idle':
+            color = (255, 255, 255)
+        else:
+            color = (127, 127, 127)
+        self.label.color = color
+        for line in self.rectangle:
+            line.color = color
+
+        x, y = self.position_handler.update_position(self)
+        self.label.x = x
+        self.label.y = y
+        dx = x - self.previous_coords[0]
+        dy = y - self.previous_coords[1]
+        for line in self.rectangle:
+            line.x += dx
+            line.x2 += dx
+            line.y += dy
+            line.y2 += dy
+        self.previous_coords = x, y
+
+    def collide_with(self, x, y):
+        if self.label.x <= x <= (self.label.x + self.width):
+            if self.label.y <= y <= (self.label.y + self.height):
+                return True
+
+        return False
+
+
 

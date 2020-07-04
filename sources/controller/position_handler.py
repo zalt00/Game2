@@ -11,7 +11,7 @@ class StaticPositionHandler:
         self.pos = pos
         
     def update_position(self, entity, n=1):
-        return self.pos[0] + entity.dec[0] + entity.screen_dec[0], -self.pos[1] + entity.dec[1] + entity.screen_dec[1]
+        return self.pos[0] + entity.dec[0] + entity.screen_dec[0], self.pos[1] + entity.dec[1] + entity.screen_dec[1]
 
 
 class BgLayerPositionHandler:
