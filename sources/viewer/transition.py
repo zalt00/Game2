@@ -1,16 +1,13 @@
 # -*- coding:Utf-8 -*-
 
-import pygame
-from pygame.locals import *
 from time import perf_counter
-pygame.init()
 
 
 class Transition:
     def __init__(self, duration, color, surf_size, end_of_transition_callback, fade, stop_after_end=True):
         self.duration = duration
         self.base_color = color
-        self.current_surf = pygame.Surface(surf_size, SRCALPHA)
+        #self.current_surf = pygame.Surface(surf_size, SRCALPHA)
         self.on_transition_end = end_of_transition_callback
         self.fade = fade
         self.stop_after_end = stop_after_end

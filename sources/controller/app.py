@@ -6,10 +6,8 @@ from .action_manager import GameActionManager,\
 from .physics_updater import PhysicsUpdater
 from .particles_handler import ParticleHandler
 from .res_getter import FormatTextResGetter, SimpleTextResGetter
-from pygame.locals import *
-import pygame.mouse
 from .space import GameSpace
-import pymunk.pygame_util
+import pymunk.pyglet_util
 from utils.save_modifier import SaveComponent
 from .triggers import Trigger
 from .trigger_action_getter import GameActionGetter
@@ -53,7 +51,7 @@ class App:
 
     def start_fade_in_transition(self):
         self.transition_finished = False
-        self.transition = Transition(8, (0, 0, 0), (self.window.screen_rect.width, self.window.screen_rect.height),
+        self.transition = Transition(8, (0, 0, 0), (self.window.width, self.window.height),
                                      self.fade_in_transition_finished, 'in', False)
 
         self.window.add_transition(self.transition)
@@ -68,10 +66,10 @@ class App:
     def start_fade_out_transition(self):
         if self.transition is not None:
             self.transition.stop()
-        self.transition = Transition(8, (0, 0, 0), (self.window.screen_rect.width, self.window.screen_rect.height),
-                                     lambda: None, 'out', True)
-
-        self.window.add_transition(self.transition)
+        # self.transition = Transition(8, (0, 0, 0), (self.window.screen_rect.width, self.window.screen_rect.height),
+        #                              lambda: None, 'out', True)
+        #
+        # self.window.add_transition(self.transition)
 
     def game_to_menu_fade_in_transition(self):
         self.transition = Transition(8, (0, 0, 0), (self.window.screen_rect.width, self.window.screen_rect.height),
@@ -98,7 +96,7 @@ class App:
     def game_loading_finished_check(self):
         if self.current_thread is not None:
             if not self.current_thread.is_alive():
-                if self.transition_finished:
+                if self.transition_finished or True:
                     self.current.start_game()
                     self.transition.stop()
                     self.start_fade_out_transition()
@@ -116,6 +114,7 @@ class Menu:
         self.window = window
         self.model = model
         self.state = 'menu'
+        self.window.app_state = 'menu'
 
         SaveComponent.load()
 
@@ -140,8 +139,8 @@ class Menu:
 
         self.init_page('MainMenu')
 
-        pygame.mouse.set_visible(True)
-        
+        self.window.set_mouse_visible(True)
+
         self.window.update = self.update
 
     def delete_current_page(self):
@@ -168,10 +167,6 @@ class Menu:
             True
         )
 
-        pos2 = pos[0] + self.window.get_length(self.page_res) * 2, pos[1]
-        ph = BgLayerPositionHandler(pos2, [0, 0], self.reverse_trajectory)
-        pos_hdlrs.append(ph)
-        self.window.add_bg_layer(self.page_res, 4, ph, foreground=True)
         """
         for p in pos_hdlrs:
             p.add_trajectory((-2300, 0), 1500, 1, 100)
@@ -192,11 +187,16 @@ class Menu:
                 bpos_hdlr = StaticPositionHandler(data.pos)
                 if hasattr(data, 'res'):
                     res = self.window.res_loader.load(data.res)
+                    obj = self.window.add_button(res, bpos_hdlr, data.action)
                 else:
                     font_data = data.font
-                    res = self.get_button_res_from_font_data(font_data)
+                    obj = self.window.add_generated_button(self.get_button_text_from_font_data(font_data),
+                                                           'm5x7',
+                                                           font_data[1],
+                                                           StaticPositionHandler(data.pos),
+                                                           data.action,
+                                                           font_data[5], font_data[-1])
 
-                obj = self.window.add_button(res, bpos_hdlr, data.action)
                 if hasattr(data, 'arg'):
                     obj.arg = data.arg
             elif data.typ == 'structure':
@@ -223,6 +223,7 @@ class Menu:
         actionmanager = None
         if self.page.action_manager == 'MainMenuActionManager':
             actionmanager = MainMenuActionManager(
+                self.window,
                 self.window.button_group,
                 self.classic_buttons,
                 self.page.Objects.classic_buttons_order,
@@ -237,6 +238,7 @@ class Menu:
 
         elif self.page.action_manager == 'OptionsActionManager':
             actionmanager = OptionsActionManager(
+                self.window,
                 self.window.button_group,
                 self.classic_buttons,
                 self.page.Objects.classic_buttons_order,
@@ -253,6 +255,7 @@ class Menu:
             )
         elif self.page.action_manager == 'CharacterSelectionActionManager':
             actionmanager = CharacterSelectionActionManager(
+                self.window,
                 self.window.button_group,
                 self.classic_buttons,
                 self.page.Objects.classic_buttons_order,
@@ -278,12 +281,16 @@ class Menu:
         ndict = {}
         for bname, bdata in buttons_data.items():
             res_name = bdata.get('res', None)
-            if res_name is None:
-                font_data = bdata['font']
-                res = self.get_button_res_from_font_data(font_data)
+            if res_name is not None:
+                button = self.window.add_button(res_name, StaticPositionHandler(bdata['pos']), bdata['action'])
             else:
-                res = self.window.res_loader.load(res_name)
-            button = self.window.add_button(res, StaticPositionHandler(bdata['pos']), bdata['action'])
+                font_data = bdata['font']
+                button = self.window.add_generated_button(self.get_button_text_from_font_data(font_data),
+                                                          'm5x7',
+                                                          font_data[1],
+                                                          StaticPositionHandler(bdata['pos']),
+                                                          bdata['action'],
+                                                          font_data[5], font_data[-1])
             if 'arg' in bdata:
                 button.arg = bdata['arg']
                 if hasattr(data, 'options_save'):
@@ -292,7 +299,7 @@ class Menu:
             ndict[bname] = button
         return ndict
 
-    def get_button_res_from_font_data(self, font_data):
+    def get_button_text_from_font_data(self, font_data):
         if font_data[0] == 'nkb':
             txt = self.get_key_name(font_data[2].get())
         if font_data[0] == 'ncon':
@@ -300,10 +307,7 @@ class Menu:
 
         elif font_data[0] == 'txt':
             txt = font_data[2]
-        res = self.window.render_font(txt, font_data[1], font_data[3], font_data[4], font_data[5], font_data[6],
-                                      font_data[7])
-
-        return res
+        return txt
 
     def reinit_page(self):
         if self.page_name is not None:
@@ -314,7 +318,7 @@ class Menu:
     def get_key_name(self, nkey):
         name = self.model.key_names.get(nkey, None)
         if name is None:
-            name = pygame.key.name(nkey)
+            name = "a"
         return name
     
     def get_controller_value_name(self, nvalue):
@@ -332,13 +336,8 @@ class Menu:
                     res_name = bdata.get('res', None)
                     if res_name is None:
                         font_data = bdata['font']
-                        if font_data[0] == 'nkb':
-                            txt = self.get_key_name(font_data[2].get())
-                        if font_data[0] == 'ncon':
-                            txt = self.get_controller_value_name(font_data[2].get_shorts())
-                        
-                        elif font_data[0] == 'txt':
-                            txt = font_data[2]
+                        txt = None
+                        raise RuntimeError
                         res = self.window.render_font(
                             txt, font_data[1], font_data[3], font_data[4], font_data[5], font_data[6], font_data[7])
                     else:
@@ -404,6 +403,7 @@ class Game:
         self.window = window
         self.model = model
         self.state = 'idle'
+        self.window.app_state = 'game'
         self.return_to_main_menu = return_to_main_menu
         self.loading_finished_check = loading_finished_check
         self.debug_draw = False
@@ -425,7 +425,7 @@ class Game:
 
     def load_resources(self):
         self.window.update = self.loading_update
-        if 'resources' in self.level:
+        if 'resources' in self.level and False:
             for res_name in self.level['resources']:
                 self.window.res_loader.load(res_name)
 
@@ -447,7 +447,7 @@ class Game:
         else:
             self.draw_options = None
 
-        pygame.mouse.set_visible(False)
+        #pygame.mouse.set_visible(False)
 
         self.space = GameSpace(0, 0)
 
@@ -476,7 +476,7 @@ class Game:
             )
             pos_hdlr = BgLayerPositionHandler(
                 self.level['background_data']['bg_decoration_objects_pos'],
-                self.window.screen_rect
+                [0, 0]
             )
             pos_hdlrs.append(pos_hdlr)
             self.window.add_bg_layer(layer_res, self.level['background_data']['bg_decoration_layer_id'], pos_hdlr)
@@ -521,7 +521,8 @@ class Game:
             elif data['type'] == 'structure':
                 self.init_structure(data)
             elif data['type'] == 'text':
-                self.init_text(data)
+                pass
+                #self.init_text(data)
         #####
 
 
@@ -541,7 +542,6 @@ class Game:
         self.window.quit = self.dump_save
 
     def init_structure(self, data):
-
         name = data['name']
         pos_handler = StaticPositionHandler(data['pos'])
         layer = data.get('layer', 0)
@@ -593,11 +593,10 @@ class Game:
     def quit(self):
         self.dump_save()
 
-    def update(self, dt):
-        pygame.display.set_caption(str(1/dt))
-        self.update_space(dt)
+    def update(self):
+        self.update_space()
 
-    def loading_update(self, _):
+    def loading_update(self, *_, **__):
         self.loading_finished_check()
 
     def activate_deactivate_debug_draw(self, activate):
@@ -612,7 +611,7 @@ class Game:
         if self.draw_options is not None:
             self.space.debug_draw(self.draw_options)
 
-    def update_space(self, _):
+    def update_space(self, *_, **__):
         n1 = round((perf_counter() - self.t1) * 60 * 4) - self.number_of_space_updates
 
         for i in range(n1):

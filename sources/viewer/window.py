@@ -1,16 +1,15 @@
 # -*- coding:Utf-8 -*-
 
-import pygame
-import pygame.freetype
-pygame.init()
 from .event_manager import INACTIVE_EVENT_MANAGER, GameEventManager, MenuEventManager, ChangeCtrlsEventManager, DebugGameEventManager
 from .sprites import BgLayer, DBgLayer, Entity, Button, Particle, Structure, Text, GeneratedButton
 from .image_handler import BgLayerImageHandler, TBEntityImageHandler, ButtonImageHandler, StructureImageHandler, TextImageHandler
 from .resources_loader import ResourcesLoader2, OtherObjectsResource
 import pyglet
 import pyglet.window
-from utils import sprite_set
-pygame.joystick.init()
+from utils import sprite_set, window_event
+
+pyglet.image.Texture.default_min_filter = pyglet.gl.gl.GL_NEAREST
+pyglet.image.Texture.default_mag_filter = pyglet.gl.gl.GL_NEAREST
 
 
 class Window(pyglet.window.Window):
@@ -25,6 +24,8 @@ class Window(pyglet.window.Window):
 
         self.bg_pos = [0, 0]
 
+        self.app_state = ''
+
         # CLOCK
         self.fps = 60
         self.current_fps = 60
@@ -36,8 +37,10 @@ class Window(pyglet.window.Window):
         self.res_loader = ResourcesLoader2('resources')
 
         # SPRITES
-        self.ordered_groups = [pyglet.graphics.OrderedGroup(i) for i in range(20)]
-        self.batch = pyglet.graphics.Batch()
+        self.ordered_groups = {'menu': [pyglet.graphics.OrderedGroup(i) for i in range(20)],
+                               'game': [pyglet.graphics.OrderedGroup(i) for i in range(20)]}
+
+        self.batches = {'menu': pyglet.graphics.Batch(), 'game': pyglet.graphics.Batch()}
 
         self.global_group = sprite_set.SpriteSet()
         self.bg_group = sprite_set.SpriteSet()
@@ -70,9 +73,18 @@ class Window(pyglet.window.Window):
     def after_draw(self, *_, **__):
         pass
 
+    def add_transition(self, *_, **__):
+        pass
+
     def on_draw(self):
         self.current_fps = pyglet.clock.get_fps()
-        self.batch.draw()
+        # if self.app_state in self.batches:
+        #     self.batches[self.app_state].draw()
+        if self.app_state == 'game':
+            for sprite in self.global_group.sprites():
+                sprite.draw()
+        else:
+            self.batches[self.app_state].draw()
         self.after_draw()
 
     def stop_loop(self):
@@ -106,6 +118,9 @@ class Window(pyglet.window.Window):
             position_handlers[i].base_pos = tuple(position_handlers[i].pos)
             i += 1
 
+    def get_group(self, layer):
+        return self.ordered_groups[self.app_state][layer + 10]
+
     def add_bg_layer(self, res, layer_id, position_handler, dynamic=True, animated=False, foreground=False):
         if isinstance(res, str):
             res = self.res_loader.load(res)
@@ -115,7 +130,7 @@ class Window(pyglet.window.Window):
 
         imghdlr = BgLayerImageHandler(res)
         if dynamic:
-            sprite = DBgLayer(imghdlr, position_handler, layer_id, self.batch, self.ordered_groups)
+            sprite = DBgLayer(imghdlr, position_handler, layer_id, self.batches[self.app_state], self.get_group)
         else:
             raise NotImplemented
 
@@ -132,7 +147,7 @@ class Window(pyglet.window.Window):
         res = self.res_loader.load(res_name)
         img_hdlr = TBEntityImageHandler(res, end_animation_callback)
         entity = Entity(
-            img_hdlr, position_handler, physics_updater, particles_handler, self.batch, self.ordered_groups,
+            img_hdlr, position_handler, physics_updater, particles_handler, self.batches[self.app_state], self.get_group,
             res.dec, self.screen_dec, layer=layer)
         self.global_group.add(entity)
         self.game_objects_group.add(entity)
@@ -140,14 +155,14 @@ class Window(pyglet.window.Window):
 
         return entity
 
-    def add_structure(self, res_name, position_handler, state, layer=0):
+    def add_structure(self, res_name, position_handler, state, layer=9):
         if isinstance(res_name, str):
             res = self.res_loader.load(res_name)
         else:
             res = res_name
         img_handler = StructureImageHandler(res)
         struct = Structure(img_handler, position_handler,
-                           self.batch, self.ordered_groups, res.dec, self.screen_dec, state, layer=layer)
+                           self.batches[self.app_state], self.get_group, res.dec, self.screen_dec, state, layer=layer)
         self.global_group.add(struct)
         self.game_objects_group.add(struct)
         self.entity_group.add(struct)
@@ -172,7 +187,7 @@ class Window(pyglet.window.Window):
 
     def add_generated_button(self, text, font, size, position_handler, action_name, width=0, rectangle=0):
         button = GeneratedButton(
-            text, position_handler, font, size, self.batch, self.ordered_groups, action_name, width, rectangle)
+            text, position_handler, font, size, self.batches[self.app_state], self.get_group, action_name, width, rectangle)
         self.global_group.add(button)
         self.game_objects_group.add(button)
         self.button_group.add(button)
@@ -183,7 +198,7 @@ class Window(pyglet.window.Window):
         if isinstance(res, str):
             res = self.res_loader.load(res)
         img_handler = ButtonImageHandler(res, self.res_loader)
-        button = Button(img_handler, position_handler, self.batch, self.ordered_groups, action_name)
+        button = Button(img_handler, position_handler, self.batches[self.app_state], self.get_group, action_name)
 
         self.global_group.add(button)
         self.game_objects_group.add(button)
@@ -204,25 +219,47 @@ class Window(pyglet.window.Window):
         img_hdlr = TBEntityImageHandler(res, None)
         particle = Particle(img_hdlr,
                             position_handler,
-                            self.batch, self.ordered_groups, res.dec, self.screen_dec, state, direction)
+                            self.batches[self.app_state], self.get_group, res.dec, self.screen_dec, state, direction)
         img_hdlr.end_animation_callback = particle.kill
 
         self.global_group.add(particle)
         self.game_objects_group.add(particle)
         self.particle_group.add(particle)
 
+    def _remove_handler(self):
+        raise RuntimeError('not the way we do anymore')
+        for name, handler in self.event_manager.handlers.items():
+            self.remove_handler(name, handler)
+
     def _init_handler(self):
+        raise RuntimeError('not the way we do anymore')
         for name, handler in self.event_manager.handlers.items():
             self.set_handler(name, handler)
 
+    @window_event.event
+    def on_key_press(self, symbol, modifiers):
+        pass
+
+    @window_event.event
+    def on_key_release(self, symbol, modifiers):
+        pass
+
+    @window_event.event
+    def on_mouse_motion(self, x, y, dx, dy):
+        pass
+
+    @window_event.event
+    def on_mouse_press(self, x, y, button, modifiers):
+        pass
+
     def set_menu_event_manager(self, am):
         self.event_manager = MenuEventManager(am)
-        self._init_handler()
 
     def set_change_ctrls_event_manager(self, am, con_or_kb):
         self.event_manager = ChangeCtrlsEventManager(am, con_or_kb)
 
     def set_game_event_manager(self, am, ctrls, deadzones, debug=False):
+        print('game event')
         if debug:
             self.event_manager = DebugGameEventManager(am, ctrls, deadzones)
         else:

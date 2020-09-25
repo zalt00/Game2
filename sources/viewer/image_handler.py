@@ -1,8 +1,6 @@
 # -*- coding:Utf-8 -*-
 
 from time import perf_counter
-import pygame
-pygame.init()
 
 
 class ImageHandler:
@@ -15,6 +13,7 @@ class ImageHandler:
 
 class BgLayerImageHandler(ImageHandler):
     def update_image(self, sprite, n=1):
+        print(self.res.layers)
         return self.res.layers[sprite.get_layer()]
 
 
@@ -25,7 +24,7 @@ class EntityImageHandler(ImageHandler):
         self.advance = 0
         self.previous_state = 'idle'
     
-    def update_image(self, _):
+    def update_image(self, _, __=1):
         raise NotImplementedError
 
 

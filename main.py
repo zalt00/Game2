@@ -1,8 +1,6 @@
 # -*- coding:Utf-8 -*-
 
-import pygame
 from profile import run
-from pygame.constants import FULLSCREEN, DOUBLEBUF, HWSURFACE, SCALED
 from utils.model_loader import get_model
 from viewer import window
 from controller import app
@@ -11,7 +9,6 @@ import utils.logger as lg
 import argparse
 import pyglet
 import sys
-pygame.init()
 
 
 def main():

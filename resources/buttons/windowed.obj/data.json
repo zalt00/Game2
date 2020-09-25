@@ -1,6 +1,6 @@
 {
   "dec": [0, 0],
-  "dimensions": [32, 32],
+  "dimensions": [127, 22],
   "scale2x": 0,
   "animations": {
     "idle": {"filename":  "idle.png"},

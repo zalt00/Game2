@@ -8,7 +8,7 @@ class ParticleHandler:
         self.spawn_particle = spawn_particle_callback
         self.a = 0
         
-    def update(self, entity):
+    def update_(self, entity):
         if entity.state == 'dash':
             res = entity.image_handler.res
             ph = StaticPositionHandler(entity.position_handler.pos)

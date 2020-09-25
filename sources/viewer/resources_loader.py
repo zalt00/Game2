@@ -1,6 +1,5 @@
 # -*- coding:Utf-8 -*-
 
-import pygame
 import os
 from glob import glob
 import configparser
@@ -8,7 +7,6 @@ from dataclasses import dataclass
 import json
 import time
 from typing import Any
-from pygame.locals import SRCALPHA
 from utils.logger import logger
 from random import randint, shuffle
 import pyglet
@@ -16,7 +14,6 @@ import pyglet.resource
 import pyglet.image
 import pyglet.gl
 
-pygame.init()
 
 
 class ResourceLoader:
@@ -153,6 +150,7 @@ class ResourcesLoader2:
             if res_name.endswith('.stsp'):
                 res = StructTSPalette(data, res_name)
             elif res_name.endswith('.obj'):
+                print(res_name)
                 res = Object(data, res_name)
             elif res_name.endswith('.bg'):
                 res = Background(data, res_name)
@@ -235,9 +233,8 @@ class StructTSPalette:
                 for x, tile in enumerate(line.split(';')):
                     if not tile.startswith('NA'):
                         tile_img = self.parse(tile)
-                        img.blit_into(tile_img, x * tw, y * th)
+                        img.blit_into(tile_img.get_image_data(), x * tw, y * th, 0)
 
-        img.scale = res.scale
         return img
 
 
@@ -251,13 +248,14 @@ class Object:
         self.height = self.data['dimensions'][1] * scale
         self.dec = self.data['dec'][0] * scale, self.data['dec'][1] * scale
 
+        self.scale = scale
+
         for name, v in self.data['animations'].items():
             fn = v['filename']
             path = os.path.join(directory, fn).replace('\\', '/')
             img = pyglet.resource.image(path)
 
-            img.scale = 2 ** self.data['scale2x']
-            img_grid = pyglet.image.ImageGrid(img, 1, img.width // self.data["dimensions"][0])
+            img_grid = pyglet.image.ImageGrid(img, 1, img.width // (self.data["dimensions"][0]))
             self.sheets[name] = img_grid
 
 
@@ -270,12 +268,13 @@ class Background:
         self.layers = {}
         scale = self.data['scale']
 
+        self.scale = scale
+
         for s in ('background', 'foreground'):
             for v in self.data[s]:
                 fn = v['filename']
                 path = os.path.join(directory, fn).replace('\\', '/')
                 img = pyglet.resource.image(path)
-                img.scale = scale
                 v['img'] = img
                 self.layers[v['layer']] = img
 
@@ -316,7 +315,7 @@ class Structure:
         self.sheets = sheets
 
 
-# TODO: changer ça de place, uniquement utilisé par le structure builder qui donctionne avec pygame
+# TODO: changer ça de place, uniquement utilisé par le structure builder qui fonctionne avec pygame
 class Tileset:
     def __init__(self, data, directory):
         path = os.path.join(directory, data['filename']).replace('\\', '/')
@@ -347,7 +346,7 @@ class BackgroundObjectSet:
         current_x = 0
         for obj_name in sequence:
             odata = self.bg_objects[obj_name]
-            img.blit_into(odata['img'], current_x, 0)
+            img.blit_into(odata['img'].get_image_data(), current_x, 0, 0)
             current_x += odata['size'][0] * self.scale
 
         res = BgDecorationLayer({layer_id: img}, total_width * self.scale, self.max_height * self.scale, (0, 0))
@@ -360,6 +359,7 @@ class BgDecorationLayer:
     width: int
     height: int
     dec: tuple
+    scale: int = 1
 
 
 @dataclass

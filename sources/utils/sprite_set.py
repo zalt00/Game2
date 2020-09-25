@@ -18,7 +18,7 @@ class SpriteSet:
             sprite.groups.remove(self)
 
     def sprites(self):
-        return self._sprites
+        return tuple(self._sprites)
 
     def update(self, *args, **kwargs):
         for sprite in self._sprites:

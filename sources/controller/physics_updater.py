@@ -45,7 +45,7 @@ class PhysicsUpdater:
         self.on_ground = False
         return False
     
-    def update(self, entity, n=1):
+    def update_(self, entity, n=1):
         for _ in range(n):
             entity.can_air_control = True
 

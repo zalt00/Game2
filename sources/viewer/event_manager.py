@@ -3,9 +3,9 @@
 import pyglet
 
 
-class BaseEventManager():
+class BaseEventManager:
     def __init__(self, *args, **kwargs):
-        pass
+        self.handlers = {}
     
     def do(self, *args, **kwargs):
         pass
@@ -20,10 +20,10 @@ class EventManager(BaseEventManager):
         self.action_manager = action_manager
         self.handlers = {}
         
-    def do(self, event):
-        f = self.handlers.get(event.type, None)
+    def do(self, event_type, *args, **kwargs):
+        f = self.handlers.get(event_type, None)
         if f is not None:
-            f(event)
+            f(*args, **kwargs)
 
 
 class GameEventManager(EventManager):
@@ -31,12 +31,11 @@ class GameEventManager(EventManager):
         super().__init__(action_manager)
         self.controls = controls
         self.deadzones = deadzones
-        self.handlers[KEYDOWN] = self.keydown
-        self.handlers[KEYUP] = self.keyup
-        self.handlers[JOYAXISMOTION] = self.axis_motion
-        self.handlers[JOYBUTTONDOWN] = self.joybuttondown
-        self.handlers[JOYBUTTONUP] = self.joybuttonup
-        self.handlers[JOYHATMOTION] = self.joyhatmotion
+
+        self.handlers = dict(
+            on_key_press=self.keydown,
+            on_key_release=self.keyup
+        )
 
     def joyhatmotion(self, event):
         if event.value[0] == 0:
@@ -89,20 +88,20 @@ class GameEventManager(EventManager):
             if action is not None:
                 self.action_manager.stop(action)
     
-    def keydown(self, event):
-
-        action = self.controls.get(event.key, None)
+    def keydown(self, symbol, modifiers):
+        print(symbol)
+        action = self.controls.get(symbol, None)
         if action is not None:
             self.action_manager.do(action)
         
-    def keyup(self, event):
-        action = self.controls.get(event.key, None)
+    def keyup(self, symbol, modifiers):
+        action = self.controls.get(symbol, None)
         if action is not None:
             self.action_manager.stop(action)
 
 
 class DebugGameEventManager(GameEventManager):
-    def keydown(self, event):
+    def keydown2(self, event):
         action = self.controls.get(event.key, None)
         if action is not None:
             self.action_manager.do(action)

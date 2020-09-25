@@ -2,8 +2,8 @@
 
 
 from pymunk.vec2d import Vec2d
-import pygame.mouse
 from utils.save_modifier import SaveComponent
+import ctypes
 
 
 class ActionManager:
@@ -25,11 +25,12 @@ class ActionManager:
 
 
 class BaseMenuActionManager(ActionManager):
-    def __init__(self, buttons, classic_buttons, classic_buttons_order, panels,
+    def __init__(self, window, buttons, classic_buttons, classic_buttons_order, panels,
                  panel_order, additional_texts, additional_structures):
 
         """constructor of the class
 
+        :param window: app.window
         :param buttons: button sprite group
         :param classic_buttons: base buttons, buttons which are always there even when the panel changes
         :param classic_buttons_order: order of the buttons, useful for the controller
@@ -43,6 +44,8 @@ class BaseMenuActionManager(ActionManager):
 
         self.additional_texts = additional_texts
         self.additional_structures = additional_structures
+
+        self.window = window
 
         self.panels = panels
         self.panel_order = panel_order
@@ -60,9 +63,12 @@ class BaseMenuActionManager(ActionManager):
         self.last_pos = (0, 0)
         self.controller = False
         self.focus = [0, 0]
+
+        self.mouse_pos = (0, 0)
         
     def update_buttons(self, mouse_pos):
         """updates the text color of the buttons in function of the mouse's position"""
+        self.mouse_pos = mouse_pos
         if not self.controller:
             self.count = 0
             for button in self.buttons_sprite_group.sprites():
@@ -75,14 +81,14 @@ class BaseMenuActionManager(ActionManager):
             self.count += 1
             if self.count > 2:
                 self.controller = False
-                pygame.mouse.set_visible(True)                
-                pygame.mouse.set_pos(list(self.last_pos))
-                
+                self.window.set_mouse_visible(True)
+                ctypes.windll.user32.SetCursorPos(*self.last_pos)
+
     def update_buttons2(self):
         """updates text color of the buttons using the "focus" attribute"""
         if not self.controller:
-            self.last_pos = pygame.mouse.get_pos()
-        pygame.mouse.set_visible(False)
+            self.last_pos = self.mouse_pos
+        self.window.set_mouse_visible(False)
         self.controller = True
         button = self.classic_buttons[self.classic_buttons_order[self.focus[1]][self.focus[0]]]
         for b in self.classic_buttons.values():
@@ -170,7 +176,7 @@ class BaseMenuActionManager(ActionManager):
                 
     def left_click(self, mouse_pos):
         """executes the action of the buttons which are touching the mouse"""
-        for button in self.buttons_sprite_group.sprites():
+        for button in frozenset(self.buttons_sprite_group.sprites()):
             if button.collide_with(*mouse_pos):
                 if hasattr(button, 'arg'):
                     getattr(self, button.action)(button.arg)
@@ -274,11 +280,11 @@ class MainMenuActionManager(BaseMenuActionManager):
 
     ACTIVATE = 5
 
-    def __init__(self, buttons, classic_buttons, classic_buttons_order, panels,
+    def __init__(self, window, buttons, classic_buttons, classic_buttons_order, panels,
                  panel_order, additional_texts, additional_structures, start_game_callback,
                  quit_game_callback, open_options_callback):
 
-        super(MainMenuActionManager, self).__init__(buttons, classic_buttons, classic_buttons_order, panels,
+        super(MainMenuActionManager, self).__init__(window, buttons, classic_buttons, classic_buttons_order, panels,
                                                     panel_order, additional_texts, additional_structures)
 
         self.play = start_game_callback
@@ -313,12 +319,12 @@ class OptionsActionManager(BaseMenuActionManager):
 
     SET_CTRL = 10
 
-    def __init__(self, buttons, classic_buttons, classic_buttons_order, panels,
+    def __init__(self, window, buttons, classic_buttons, classic_buttons_order, panels,
                  panel_order, additional_texts, additional_structures,
                  close_options_callback, change_kb_ctrls_callback, change_con_ctrls_callback,
                  set_ctrl_callback, options_data, reinit_page_callback):
 
-        super(OptionsActionManager, self).__init__(buttons, classic_buttons, classic_buttons_order, panels,
+        super(OptionsActionManager, self).__init__(window, buttons, classic_buttons, classic_buttons_order, panels,
                                                    panel_order, additional_texts, additional_structures)
 
         self._close_options = close_options_callback
@@ -428,11 +434,11 @@ class CharacterSelectionActionManager(BaseMenuActionManager):
 
     ACTIVATE = 5
 
-    def __init__(self, buttons, classic_buttons, classic_buttons_order, panels,
+    def __init__(self, window, buttons, classic_buttons, classic_buttons_order, panels,
                  panel_order, additional_texts, additional_structures, start_game_callback,
                  return_to_mainmenu_callback):
 
-        super(CharacterSelectionActionManager, self).__init__(buttons, classic_buttons, classic_buttons_order, panels,
+        super(CharacterSelectionActionManager, self).__init__(window, buttons, classic_buttons, classic_buttons_order, panels,
                                                               panel_order, additional_texts, additional_structures)
 
         self.start_game = start_game_callback

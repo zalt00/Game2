@@ -101,26 +101,26 @@ class Data(DataContainer):
         pages = ('MainMenu', 'Options', ' CharacterSelectionMenu')
 
         class Options(DataContainer):
-            bg_res = 'black_forest.bg'
-            bg_pos = (0, 0)
+            bg_res = 'forest/forest.bg'
+            bg_pos = (0, -500)
             action_manager = 'OptionsActionManager'
 
             class Objects(DataContainer):
                 objects = ('MainStructure', 'ControlsButton', 'GameplayButton', 'VideoButton', 'ApplyButton',
-                           'CancelButton', 'ResetButton', 'ResetConfirmationText', 'ControlsPanel', 'VideoPanel',
+                           'CancelButton', 'ResetButton', 'ControlsPanel', 'VideoPanel',
                            'GameplayPanel')
 
                 panel_order = ('Video', 'Gameplay', 'Controls')
                 classic_buttons_order = ()
 
-                class ResetConfirmationText:
-                    typ = 'text'
-                    name = 'reset_confirmation_message'
-                    font = 'm3x6.ttf'
-                    text = 'Are you sure you want to reset the options?'
-                    color = '#ffffff'
-                    size = 40
-                    pos = (605, 127 * 1000)
+                # class ResetConfirmationText:
+                #     typ = 'text'
+                #     name = 'reset_confirmation_message'
+                #     font = 'm3x6.ttf'
+                #     text = 'Are you sure you want to reset the options?'
+                #     color = '#ffffff'
+                #     size = 40
+                #     pos = (605, 127 * 1000)
 
                 class MainStructure:
                     typ = 'structure'
@@ -255,8 +255,8 @@ class Data(DataContainer):
                     pos = (1092, 150)
 
         class MainMenu(DataContainer):
-            bg_res = 'black_forest.bg'
-            bg_pos = (0, 0)
+            bg_res = 'forest/forest.bg'
+            bg_pos = (0, -500)
 
             action_manager = 'MainMenuActionManager'
 
@@ -294,8 +294,8 @@ class Data(DataContainer):
                     button_name = 'options_button'
 
         class CharacterSelectionMenu(DataContainer):
-            bg_res = 'black_forest.bg'
-            bg_pos = (0, 0)
+            bg_res = 'forest/forest.bg'
+            bg_pos = (0, -500)
 
             action_manager = 'CharacterSelectionActionManager'
 
@@ -353,7 +353,7 @@ class Data(DataContainer):
     class Game(DataContainer):
 
         current_map_id = SaveComponent(4)
-        maps = ('data/maps/test.yml',)
+        maps = ('data/maps/forest.yml',)
 
         class BasePlayerData:
             height = 50

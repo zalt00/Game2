@@ -69,7 +69,7 @@ class BgLayerPositionHandler:
 
         if i == 0:
             i = 1
-        return self.base_pos[0] + self.sdr[0] / i + entity.dec[0], -self.base_pos[1] - self.sdr[1] / i + entity.dec[1]
+        return self.base_pos[0] + self.sdr[0] / i + entity.dec[0], self.base_pos[1] + self.sdr[1] / i + entity.dec[1]
                 
 
 class EntityPositionHandler:
