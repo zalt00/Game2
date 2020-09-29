@@ -34,17 +34,11 @@ class GameEventManager(EventManager):
 
         self.handlers = dict(
             on_key_press=self.keydown,
-            on_key_release=self.keyup,
-            on_joyaxis_motion=self.axis_motion,
-            on_joybutton_press=self.joybuttondown,
-            on_joybutton_release=self.joybuttonup,
-            on_joyhat_motion=self.joyhatmotion
+            on_key_release=self.keyup
         )
 
-        self._axis = {'x': 0, 'y': 1, 'z': 2, 'rx': 3, 'ry': 4}
-
-    def joyhatmotion(self, hat_x, hat_y):
-        if hat_x == 0:
+    def joyhatmotion(self, event):
+        if event.value[0] == 0:
             action1 = self.controls.get((11, 1), None)
             if action1 is not None:
                 self.action_manager.stop(action1)
@@ -52,11 +46,11 @@ class GameEventManager(EventManager):
             if action1 is not None:
                 self.action_manager.stop(action1)
         else:
-            action1 = self.controls.get((11, hat_x), None)
+            action1 = self.controls.get((11, event.value[0]), None)
             if action1 is not None:
                 self.action_manager.do(action1)
         
-        if hat_y == 0:
+        if event.value[1] == 0:
             action2 = self.controls.get((12, 1), None)
             if action2 is not None:
                 self.action_manager.stop(action2)
@@ -64,38 +58,38 @@ class GameEventManager(EventManager):
             if action2 is not None:
                 self.action_manager.stop(action2)
         else:
-            action2 = self.controls.get((12, hat_y), None)
+            action2 = self.controls.get((12, event.value[1]), None)
             if action2 is not None:
                 self.action_manager.do(action2)
 
-    def joybuttondown(self, button):
-        action = self.controls.get((10, button), None)
+    def joybuttondown(self, event):
+        action = self.controls.get((10, event.button), None)
         if action is not None:
             self.action_manager.do(action)
     
-    def joybuttonup(self, button):
-        action = self.controls.get((10, button), None)
+    def joybuttonup(self, event):
+        action = self.controls.get((10, event.button), None)
         if action is not None:
             self.action_manager.stop(action)            
             
-    def axis_motion(self, axis, value):
-        if abs(value) > self.deadzones[self._axis[axis]]:
-            if value > 0:
-                action = self.controls.get((self._axis[axis], 1), None)
+    def axis_motion(self, event):
+        if abs(event.value) > self.deadzones[event.axis]:
+            if event.value > 0:
+                action = self.controls.get((event.axis, 1), None)
             else:
-                action = self.controls.get((self._axis[axis], -1), None)
+                action = self.controls.get((event.axis, -1), None)
             if action is not None:
                 self.action_manager.do(action)
         else:
-            action = self.controls.get((self._axis[axis], 1), None)
+            action = self.controls.get((event.axis, 1), None)
             if action is not None:
                 self.action_manager.stop(action)
-            action = self.controls.get((self._axis[axis], -1), None)
+            action = self.controls.get((event.axis, -1), None)
             if action is not None:
                 self.action_manager.stop(action)
     
     def keydown(self, symbol, modifiers):
-        # print(symbol)
+        print(symbol)
         action = self.controls.get(symbol, None)
         if action is not None:
             self.action_manager.do(action)
@@ -107,23 +101,23 @@ class GameEventManager(EventManager):
 
 
 class DebugGameEventManager(GameEventManager):
-    def keydown(self, symbol, modifier):
-        action = self.controls.get(symbol, None)
+    def keydown2(self, event):
+        action = self.controls.get(event.key, None)
         if action is not None:
             self.action_manager.do(action)
-        elif symbol == pyglet.window.key.F1:
+        elif event.key == K_F1:
             try:
-                self.action_manager.do(self.action_manager.TOGGLE_DEBUG_DRAW)
+                self.action_manager.do(self.action_manager.ACTIVATE_DEBUG_DRAW)
             except AttributeError:
                 pass
-        elif symbol == pyglet.window.key.F2:
+        elif event.key == K_F2:
+            try:
+                self.action_manager.do(self.action_manager.DEACTIVATE_DEBUG_DRAW)
+            except AttributeError:
+                pass
+        elif event.key == K_F3:
             try:
                 self.action_manager.do(self.action_manager.MANUALLY_RAISE_ERROR)
-            except AttributeError:
-                pass
-        elif symbol == pyglet.window.key.F3:
-            try:
-                self.action_manager.do(self.action_manager.PAUSE)
             except AttributeError:
                 pass
 
@@ -133,52 +127,49 @@ class MenuEventManager(EventManager):
         super().__init__(action_manager)
         self.handlers = dict(
             on_mouse_motion=self.mousemotion,
-            on_mouse_press=self.click,
-            on_joyhat_motion=self.joyhatmotion,
-            on_joybutton_press=self.joybuttondown
+            on_mouse_press=self.click
         )
 
         self.joyhatpressed = False
         
-    def joyhatmotion(self, hat_x, hat_y):
-        if hat_y == 1:
+    def joyhatmotion(self, event):
+        if event.value[1] == 1:
             if not self.joyhatpressed:
                 self.action_manager.do(self.action_manager.UP)
                 self.joyhatpressed = True
-        elif hat_y == -1:
+        elif event.value[1] == -1:
             if not self.joyhatpressed:
                 self.action_manager.do(self.action_manager.DOWN)
                 self.joyhatpressed = True
-        elif hat_x == -1:
+        elif event.value[0] == -1:
             if not self.joyhatpressed:
                 self.action_manager.do(self.action_manager.LEFT)
                 self.joyhatpressed = True            
-        elif hat_x == 1:
+        elif event.value[0] == 1:
             if not self.joyhatpressed:            
                 self.action_manager.do(self.action_manager.RIGHT)
                 self.joyhatpressed = True            
         
-        if hat_x == hat_y == 0:
+        if not any(event.value):
             self.joyhatpressed = False
         
-    def joybuttondown(self, button):
-        print(button)
-        if button == 0:
+    def joybuttondown(self, event):
+        if event.button == 0:
             try:
                 self.action_manager.do(self.action_manager.ACTIVATE)
             except AttributeError:
                 pass
-        elif button == 1:
+        elif event.button == 1:
             try:
                 self.action_manager.do(self.action_manager.CANCEL)
             except AttributeError:
                 pass
-        elif button == 5:
+        elif event.button == 5:
             try:
                 self.action_manager.do(self.action_manager.NEXT)
             except AttributeError:
                 pass
-        elif button == 4:
+        elif event.button == 4:
             try:
                 self.action_manager.do(self.action_manager.PREVIOUS)
             except AttributeError:
@@ -197,35 +188,35 @@ class ChangeCtrlsEventManager(EventManager):
     def __init__(self, action_manager, con_or_kb):
         super().__init__(action_manager)
         if con_or_kb == "kb":
-            self.handlers['on_key_press'] = self.keydown
+            self.handlers[KEYDOWN] = self.keydown
         else:
-            self.handlers['on_key_press'] = self.keydown2
-            self.handlers['on_joyaxis_motion'] = self.axis_motion
-            self.handlers['on_joybutton_press'] = self.joybuttondown
-            self.handlers['on_joyhat_motion'] = self.joyhatmotion
-
-            self._axis = {'x': 0, 'y': 1, 'z': 2, 'rx': 3, 'ry': 4}
+            self.handlers[KEYDOWN] = self.keydown2
+            self.handlers[JOYAXISMOTION] = self.axis_motion
+            self.handlers[JOYBUTTONDOWN] = self.joybuttondown
+            self.handlers[JOYHATMOTION] = self.joyhatmotion
     
-    def keydown(self, symbol, modifier):
-        self.action_manager.do(self.action_manager.SET_CTRL, symbol)
+    def keydown(self, event):
+        self.action_manager.do(self.action_manager.SET_CTRL, event.key)
         
-    def keydown2(self, symbol, modifier):
-        if symbol == pyglet.window.key.ESCAPE:
+    def keydown2(self, event):
+        if event.key == K_ESCAPE:
             self.action_manager.do(self.action_manager.SET_CTRL, (20, 20))
         
-    def joyhatmotion(self, hat_x, hat_y):
-        if hat_x:
-            self.action_manager.do(self.action_manager.SET_CTRL, (11, hat_x))
+    def joyhatmotion(self, event):
+        if event.value[0] != 0:
+            self.action_manager.do(self.action_manager.SET_CTRL, (11, event.value[0]))
         
-        elif hat_y != 0:
-            self.action_manager.do(self.action_manager.SET_CTRL, (12, hat_y))
+        elif event.value[1] != 0:
+            self.action_manager.do(self.action_manager.SET_CTRL, (12, event.value[1]))
 
-    def joybuttondown(self, button):
-        self.action_manager.do(self.action_manager.SET_CTRL, (10, button))
+    def joybuttondown(self, event):
+        self.action_manager.do(self.action_manager.SET_CTRL, (10, event.button))
             
-    def axis_motion(self, axis, value):
-        if abs(value) > 0.5:
-            if value > 0:
-                self.action_manager.do(self.action_manager.SET_CTRL, (self._axis[axis], 1))
+    def axis_motion(self, event):
+        if abs(event.value) > 0.5:
+            if event.value > 0:
+                self.action_manager.do(self.action_manager.SET_CTRL, (event.axis, 1))                
             else:
-                self.action_manager.do(self.action_manager.SET_CTRL, (self._axis[axis], -1))
+                self.action_manager.do(self.action_manager.SET_CTRL, (event.axis, -1))  
+    
+    

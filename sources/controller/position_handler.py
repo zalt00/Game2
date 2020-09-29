@@ -11,12 +11,12 @@ class StaticPositionHandler:
         self.pos = pos
         
     def update_position(self, entity, n=1):
-        return self.pos[0] + entity.dec[0] + entity.screen_dec[0], self.pos[1] + entity.dec[1] + entity.screen_dec[1]
+        return self.pos[0], self.pos[1]
 
 
 class BgLayerPositionHandler:
-    def __init__(self, pos, screen_dec_ref, end_trajectory_callback=None):
-        self.sdr = screen_dec_ref
+    def __init__(self, pos, screen_offset, end_trajectory_callback=None):
+        self.sdr = screen_offset
         self.pos = list(pos)
         self.base_pos = tuple(pos)
         self.trajectory = None
@@ -65,11 +65,12 @@ class BgLayerPositionHandler:
         self.sdr[1] = self.pos[1] - self.base_pos[1]
         
         n_layers = len(entity.image_handler.res.layers)
-        i = abs(entity.get_layer()) ** 2
+        i = abs(entity.get_layer()) ** 1.5
 
         if i == 0:
             i = 1
-        return self.base_pos[0] + self.sdr[0] / i + entity.dec[0], self.base_pos[1] + self.sdr[1] / i + entity.dec[1]
+
+        return self.base_pos[0] + self.sdr[0] / i, self.base_pos[1] + self.sdr[1] / i
                 
 
 class EntityPositionHandler:
@@ -117,7 +118,7 @@ class EntityPositionHandler:
         entity.thrust = Vec2d(0, 0)
 
         self.pos = self.body.position
-        return self.body.position.x + entity.dec[0] + entity.screen_dec[0], -self.body.position.y + entity.dec[1] + entity.screen_dec[1]
+        return self.body.position.x, self.body.position.y
     
 
 class PlayerPositionHandler(EntityPositionHandler):

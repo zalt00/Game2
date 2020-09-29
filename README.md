@@ -5,6 +5,15 @@ Setup:
  2. enter the command `venv`, make sure python 3.6+ is installed and in your PATH environment variable, it should setup
  the virtual environment and install the required packages
  
+Requirements:
+ - required packages are listed in `requirements.txt`
+ - these requirements are for the whole project, to launch the game you need only these packages:
+    - `pymunk`: physics engine powered with chipmunk
+    - `pyglet`: graphics engine powered with openGl
+    - `numpy`: scientific package
+    - `pyyaml`: small module to read yaml files
+ 
+ 
 Launchers:
  - `launcher.cmd`: classic launcher, cmd not hidden
  - `launcherwoc.cmd`: launcher without console, hides cmd
@@ -12,10 +21,10 @@ Launchers:
   commands, more logs are displayed and pauses the program after his execution
  - `structure_builder_launcher.cmd`: launcher for the structure builder
  
- Debug commands:
- - `F1`: activates debug draw
- - `F2`: deactivates debug draw
- - `F3`: raises an error, manually makes the program crash
+Debug commands:
+ - `F1`: toggle debug draw
+ - `F2`: raises an error, manually makes the program crash
+ - `F3`: toggle the update of the game
  
 Additional infos:
   - credits: see `credits.txt`

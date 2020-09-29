@@ -3,19 +3,19 @@
 from utils.save_modifier import SaveComponent
 from utils.types import Trigger, DataContainer
 from pymunk.vec2d import Vec2d
-from pygame.constants import *
+from pyglet.window.key import *
 
 
 class Data(DataContainer):
     save_path = 'data/saves/save.data'
 
     key_names = {
-        K_LSHIFT: 'shift',
-        K_RSHIFT: 'shift',
-        K_LCTRL: 'ctrl',
-        K_RCTRL: 'ctrl',
-        K_LALT: 'alt',
-        K_RALT: 'alt'
+        LSHIFT: 'shift',
+        RSHIFT: 'shift',
+        LCTRL: 'ctrl',
+        RCTRL: 'ctrl',
+        LALT: 'alt',
+        RALT: 'alt'
     }
     
     controller_values_name = {
@@ -142,34 +142,34 @@ class Data(DataContainer):
                     )
                     additional_buttons = dict(
                         kb_left=dict(pos=(205, 500 * 1000), action='set_kbkey', arg='left',
-                                     font=('nkb', 40, SaveComponent(6), "#eeeeee", "#888888", 100, 35, 5)),
+                                     font=('nkb', 40, SaveComponent(6), "#eeeeee", "#888888", 100, 35, 3)),
                         kb_right=dict(pos=(205, 440 * 1000), action='set_kbkey', arg='right',
-                                      font=('nkb', 40, SaveComponent(7), "#eeeeee", "#888888", 100, 35, 5)),
+                                      font=('nkb', 40, SaveComponent(7), "#eeeeee", "#888888", 100, 35, 3)),
                         kb_run=dict(pos=(205, 380 * 1000), action='set_kbkey', arg='run',
-                                    font=('nkb', 40, SaveComponent(8), "#eeeeee", "#888888", 100, 35, 5)),
+                                    font=('nkb', 40, SaveComponent(8), "#eeeeee", "#888888", 100, 35, 3)),
                         kb_dash=dict(pos=(205, 320 * 1000), action='set_kbkey', arg='dash',
-                                     font=('nkb', 40, SaveComponent(9), "#eeeeee", "#888888", 100, 35, 5)),
+                                     font=('nkb', 40, SaveComponent(9), "#eeeeee", "#888888", 100, 35, 3)),
                         kb_jump=dict(pos=(205, 260 * 1000), action='set_kbkey', arg='jump',
-                                     font=('nkb', 40, SaveComponent(10), "#eeeeee", "#888888", 100, 35, 5)),
+                                     font=('nkb', 40, SaveComponent(10), "#eeeeee", "#888888", 100, 35, 3)),
                         kb_menu=dict(pos=(790, 500 * 1000), action='set_kbkey', arg='menu',
-                                     font=('nkb', 40, SaveComponent(11), "#eeeeee", "#888888", 100, 35, 5)),
+                                     font=('nkb', 40, SaveComponent(11), "#eeeeee", "#888888", 100, 35, 3)),
                         kb_interact=dict(pos=(790, 440 * 1000), action='set_kbkey', arg='interact',
-                                         font=('nkb', 40, SaveComponent(12), "#eeeeee", "#888888", 100, 35, 5)),
+                                         font=('nkb', 40, SaveComponent(12), "#eeeeee", "#888888", 100, 35, 3)),
 
                         con_left=dict(pos=(430, 500 * 1000), action='set_conkey', arg='left',
-                                      font=('ncon', 40, SaveComponent(13), "#eeeeee", "#888888", 100, 35, 5)),
+                                      font=('ncon', 40, SaveComponent(13), "#eeeeee", "#888888", 100, 35, 3)),
                         con_right=dict(pos=(430, 440 * 1000), action='set_conkey', arg='right',
-                                       font=('ncon', 40, SaveComponent(14), "#eeeeee", "#888888", 100, 35, 5)),
+                                       font=('ncon', 40, SaveComponent(14), "#eeeeee", "#888888", 100, 35, 3)),
                         con_run=dict(pos=(430, 380 * 1000), action='set_conkey', arg='run',
-                                     font=('ncon', 40, SaveComponent(15), "#eeeeee", "#888888", 100, 35, 5)),
+                                     font=('ncon', 40, SaveComponent(15), "#eeeeee", "#888888", 100, 35, 3)),
                         con_dash=dict(pos=(430, 320 * 1000), action='set_conkey', arg='dash',
-                                      font=('ncon', 40, SaveComponent(16), "#eeeeee", "#888888", 100, 35, 5)),
+                                      font=('ncon', 40, SaveComponent(16), "#eeeeee", "#888888", 100, 35, 3)),
                         con_jump=dict(pos=(430, 260 * 1000), action='set_conkey', arg='jump',
-                                      font=('ncon', 40, SaveComponent(17), "#eeeeee", "#888888", 100, 35, 5)),
+                                      font=('ncon', 40, SaveComponent(17), "#eeeeee", "#888888", 100, 35, 3)),
                         con_menu=dict(pos=(1025, 500 * 1000), action='set_conkey', arg='menu',
-                                      font=('ncon', 40, SaveComponent(18), "#eeeeee", "#888888", 100, 35, 5)),
+                                      font=('ncon', 40, SaveComponent(18), "#eeeeee", "#888888", 100, 35, 3)),
                         con_interact=dict(pos=(1025, 440 * 1000), action='set_conkey', arg='interact',
-                                          font=('ncon', 40, SaveComponent(19), "#eeeeee", "#888888", 100, 35, 5)),
+                                          font=('ncon', 40, SaveComponent(19), "#eeeeee", "#888888", 100, 35, 3)),
 
                     )
                     panel_name = 'Controls'
@@ -312,7 +312,7 @@ class Data(DataContainer):
                 class Load1Button:
                     typ = 'button'
 
-                    font = ('txt', 40, 'Load save 1', "#eeeeee", "#888888", 200, 35, 5)
+                    font = ('txt', 40, 'Load save 1', "#eeeeee", "#888888", 200, 35, 3)
                     action = 'load_save'
                     arg = 1
                     pos = (40, 350)
@@ -321,7 +321,7 @@ class Data(DataContainer):
                 class Load2Button:
                     typ = 'button'
 
-                    font = ('txt', 40, 'Load save 2', "#eeeeee", "#888888", 200, 35, 5)
+                    font = ('txt', 40, 'Load save 2', "#eeeeee", "#888888", 200, 35, 3)
                     action = 'load_save'
                     arg = 2
                     pos = (40, 270)
@@ -330,7 +330,7 @@ class Data(DataContainer):
                 class Load3Button:
                     typ = 'button'
 
-                    font = ('txt', 40, 'Load save 3', "#eeeeee", "#888888", 200, 35, 5)
+                    font = ('txt', 40, 'Load save 3', "#eeeeee", "#888888", 200, 35, 3)
                     action = 'load_save'
                     arg = 3
                     pos = (40, 190)
@@ -339,7 +339,7 @@ class Data(DataContainer):
                 class CancelButton:
                     typ = 'button'
 
-                    font = ('txt', 35, 'Cancel', "#eeeeee", "#888888", 100, 30, 4)
+                    font = ('txt', 35, 'Cancel', "#eeeeee", "#888888", 100, 30, 3)
                     action = 'return_to_mainmenu_callback'
                     pos = (1100, 120)
                     button_name = 'cancel_button'

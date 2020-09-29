@@ -24,7 +24,8 @@ def main():
     m = get_model('data')
     w = window.Window(
         m.Options.Video.width.get(),
-        m.Options.Video.height.get())
+        m.Options.Video.height.get(),
+        m.Options.Video.display_mode.get())
     a = app.App(w, m, debug=debug)
     lg.logger.info('Interfaces created successfully, starting main loop')
     with ExceptionWrapper(w, lg.logger):

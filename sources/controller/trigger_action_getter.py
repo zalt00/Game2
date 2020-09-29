@@ -28,7 +28,7 @@ class GameActionGetter(ActionGetter):
         def __call__(self):
             for p in self.ag.pos_hdlrs:
                 p.add_trajectory((self.x, self.y), self.total_duration, self.fade_in, self.fade_out)
-            self.ag.window.bg_pos[:] = self.x, self.y
+#            self.ag.window.bg_pos[:] = self.x, self.y
     
     @dataclass
     class EnableTrigger:

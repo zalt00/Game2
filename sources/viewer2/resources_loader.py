@@ -13,8 +13,7 @@ import pyglet
 import pyglet.resource
 import pyglet.image
 import pyglet.gl
-import numpy as np
-from PIL import Image
+
 
 
 class ResourceLoader:
@@ -149,7 +148,7 @@ class ResourcesLoader2:
                 data = json.load(datafile, encoding='utf8')
 
             if res_name.endswith('.stsp'):
-                res = StructTSPalette(data, res_name, self.dir_)
+                res = StructTSPalette(data, res_name)
             elif res_name.endswith('.obj'):
                 print(res_name)
                 res = Object(data, res_name)
@@ -173,7 +172,7 @@ class ResourcesLoader2:
 
 
 class StructTSPalette:
-    def __init__(self, data, directory, resources_directory='resources'):
+    def __init__(self, data, directory):
         self.data = data
         tilesets_data = self.data['tile sets data']
         self.tilesets_data = tilesets_data
@@ -183,19 +182,17 @@ class StructTSPalette:
             filename = v['filename']
             cs = v['calibration_squares']
             path = os.path.join(directory, filename).replace('\\', '/')
-            array = np.array(Image.open(f'{resources_directory}/{path}'))
+            img = pyglet.resource.image(path)
 
             if cs:
-                width = array.shape[1] - 2 * tw
+                width = img.width - 2 * tw
                 x = tw
-                array = array[:, x:x + width, :]
-
-            size = array.shape[1] // tw
-            tilesets_data[k] = array, size
+                img = img.get_region(x, 0, width, img.height)
+            size = img.width // tw
+            img_grid = pyglet.image.ImageGrid(img, 1, size)
+            tilesets_data[k] = img_grid, size
 
         self.rd_previous = -1
-
-        self.resources_directory = resources_directory
 
     def parse(self, s):
         """parses a string buffer element and returns an image"""
@@ -223,25 +220,20 @@ class StructTSPalette:
             raise ValueError('invalid key: ' + key)
         tw, th = self.data['tile size']
 
-        step_x = flip_x * -2 + 1
-        step_y = flip_y * -2 + 1
-        return tileset[::step_y, tile_id * tw:(tile_id + 1) * tw:step_x, :]
+        return tileset[tile_id].get_transform(flip_x, flip_y)
 
     def build(self, res):
         """creates the structure's image with the string buffer and return it"""
         string_buffer = res.string_buffer
         w, h = res.dimensions
-        array = np.zeros((h, w, 4), dtype=np.uint8)
+        img = pyglet.image.Texture.create(w, h, pyglet.gl.GL_RGBA)
         tw, th = self.tw, self.th
         for y, line in enumerate(string_buffer.splitlines()):
             if line:
                 for x, tile in enumerate(line.split(';')):
                     if not tile.startswith('NA'):
-                        tile_array = self.parse(tile)
-                        array[y * th:(y + 1) * th, x * tw:(x + 1) * tw, :] = tile_array
-
-        img_height, img_width, _ = array.shape
-        img = pyglet.image.ImageData(img_width, img_height, 'RGBA', array.tobytes(), -img_width * 4).get_texture()
+                        tile_img = self.parse(tile)
+                        img.blit_into(tile_img.get_image_data(), x * tw, y * th, 0)
 
         return img
 
@@ -254,7 +246,7 @@ class Object:
         scale = 2 ** self.data['scale2x']
         self.width = self.data['dimensions'][0] * scale
         self.height = self.data['dimensions'][1] * scale
-        self.dec = self.data['dec'][0], self.data['dec'][1]
+        self.dec = self.data['dec'][0] * scale, self.data['dec'][1] * scale
 
         self.scale = scale
 
@@ -309,6 +301,9 @@ class Structure:
             raise ValueError('invalid syntax')
         except ValueError:
             raise ValueError('invalid values')
+        else:
+            self.dec[0] *= self.scale
+            self.dec[1] *= self.scale
 
         try:
             self.string_buffer = '\n'.join(lines[5:5 + length])
@@ -337,9 +332,9 @@ class BackgroundObjectSet:
         self.max_height = data['max_height']
         for name, odata in data['bg_objects'].items():
             path = os.path.join(directory, odata['filename']).replace('\\', '/')
-            array = np.array(Image.open(f'resources/{path}'))
+            img = pyglet.resource.image(path)
 
-            odata['array'] = array
+            odata['img'] = img
             odata.pop('filename')
 
         self.bg_objects = data['bg_objects']
@@ -347,20 +342,14 @@ class BackgroundObjectSet:
     def build_bg_decoration_layer(self, sequence, layer_id):
         total_width = sum((self.bg_objects[oname]['size'][0] for oname in sequence))
 
-        array = np.zeros((self.max_height, total_width, 4), dtype=np.uint8)
+        img = pyglet.image.Texture.create(total_width * self.scale, self.max_height * self.scale)
         current_x = 0
         for obj_name in sequence:
             odata = self.bg_objects[obj_name]
-            oarray = odata['array']
-            height, width, _ = oarray.shape
-            array[:, current_x:current_x + width, :] = oarray
-            current_x += odata['size'][0]
+            img.blit_into(odata['img'].get_image_data(), current_x, 0, 0)
+            current_x += odata['size'][0] * self.scale
 
-        img_height, img_width, _ = array.shape
-
-        img = pyglet.image.ImageData(img_width, img_height, 'RGBA', array.tobytes(), -img_width * 4).get_texture()
-
-        res = BgDecorationLayer({layer_id: img}, total_width, self.max_height, (0, 0), self.scale)
+        res = BgDecorationLayer({layer_id: img}, total_width * self.scale, self.max_height * self.scale, (0, 0))
         return res
 
 

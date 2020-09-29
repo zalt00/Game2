@@ -4,6 +4,7 @@
 from pymunk.vec2d import Vec2d
 from utils.save_modifier import SaveComponent
 import ctypes
+import time
 
 
 class ActionManager:
@@ -71,7 +72,7 @@ class BaseMenuActionManager(ActionManager):
         self.mouse_pos = mouse_pos
         if not self.controller:
             self.count = 0
-            for button in self.buttons_sprite_group.sprites():
+            for button in self.buttons_sprite_group:
                 if button.collide_with(*mouse_pos):
                     button.state = 'activated'
                 else:
@@ -176,7 +177,7 @@ class BaseMenuActionManager(ActionManager):
                 
     def left_click(self, mouse_pos):
         """executes the action of the buttons which are touching the mouse"""
-        for button in frozenset(self.buttons_sprite_group.sprites()):
+        for button in frozenset(self.buttons_sprite_group):
             if button.collide_with(*mouse_pos):
                 if hasattr(button, 'arg'):
                     getattr(self, button.action)(button.arg)
@@ -471,18 +472,19 @@ class GameActionManager(ActionManager):
     SAVE = 8
     MENU = 9
     INTERACT = 10
-    ACTIVATE_DEBUG_DRAW = 11
-    DEACTIVATE_DEBUG_DRAW = 12
+    TOGGLE_DEBUG_DRAW = 11
     MANUALLY_RAISE_ERROR = 13
+    PAUSE = 14
     
     def __init__(self, player,
-                 return_to_main_menu, save_callback, activate_deactivate_debug_draw_callback):
+                 return_to_main_menu, save_callback, toggle_debug_draw_callback, pause_callback):
         super().__init__()
         self.player = player
         
         self.save = save_callback
 
-        self.activate_deactivate_debug_draw = activate_deactivate_debug_draw_callback
+        self.toggle_debug_draw = toggle_debug_draw_callback
+        self.pause = pause_callback
 
         self.do_handlers[self.RIGHT] = self.walk_right
         self.stop_handlers[self.RIGHT] = self.stop_walking_right
@@ -499,9 +501,9 @@ class GameActionManager(ActionManager):
         self.do_handlers[self.SAVE] = self.save
         self.do_handlers[self.MENU] = return_to_main_menu
 
-        self.do_handlers[self.ACTIVATE_DEBUG_DRAW] = self.activate_debug_draw
-        self.do_handlers[self.DEACTIVATE_DEBUG_DRAW] = self.deactivate_debug_draw
+        self.do_handlers[self.TOGGLE_DEBUG_DRAW] = self.toggle_debug_draw
         self.do_handlers[self.MANUALLY_RAISE_ERROR] = self.manually_raise_error
+        self.do_handlers[self.PAUSE] = self.pause
 
         self.still_walking = False
         self.still_running = False
@@ -519,6 +521,9 @@ class GameActionManager(ActionManager):
 
     def deactivate_debug_draw(self):
         self.activate_deactivate_debug_draw(False)
+
+    def sleep(self):
+        time.sleep(2)
 
     def land(self):
         if self.still_walking:

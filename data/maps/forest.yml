@@ -1,8 +1,6 @@
 space: true
 palette: forest/forest_structure_tilesets.stsp
 resources:
-    - forest/forest.bg
-    - player/white_guy.obj
     - forest/structure.st
     - forest/smurf.st
     - forest/forest_structure_tilesets.stsp
