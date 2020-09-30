@@ -5,7 +5,7 @@ from .action_manager import GameActionManager,\
     MainMenuActionManager, OptionsActionManager, CharacterSelectionActionManager
 from .physics_updater import PhysicsUpdater
 from .particles_handler import ParticleHandler
-from .res_getter import FormatTextResGetter, SimpleTextResGetter
+from .text_getter import FormatTextGetter, SimpleTextGetter
 from .space import GameSpace
 import pymunk.pyglet_util
 from utils.save_modifier import SaveComponent
@@ -449,6 +449,8 @@ class Game:
         self.viewer_page.add_group('bg_layers')
         self.viewer_page.add_group('structures')
         self.viewer_page.add_group('dash_particles')
+        self.viewer_page.add_group('texts')
+
         self.window.game_page.add_child(self.viewer_page)
         self.window.set_page(self.window.game_page)
 
@@ -541,8 +543,7 @@ class Game:
             elif data['type'] == 'structure':
                 self.init_structure(data)
             elif data['type'] == 'text':
-                pass
-                #self.init_text(data)
+                self.init_text(data)
         #####
 
 
@@ -619,10 +620,11 @@ class Game:
         #  print(len(self.viewer_page.dash_particles))
 
     def init_text(self, data):
-        res_getter = FormatTextResGetter(
-            data['text'], data['values'], self, self.window.render_text, data['color'], data['size'])
-        poshdlr = StaticPositionHandler(data['pos'])
-        self.window.add_text(res_getter, poshdlr)
+        text_getter = FormatTextGetter(data['text'], data['values'], self)
+        position_handler = StaticPositionHandler(data['pos'])
+        sprite = self.window.add_text(
+            self.viewer_page, 0, 'm5x7', data['size'], text_getter, position_handler)
+        self.viewer_page.texts.add(sprite)
 
     @staticmethod
     def dump_save():

@@ -72,7 +72,7 @@ objects_data:
     pos:
     - 20
     - 640
-    size: 28
+    size: 7
     text: 'x velocity: {}
 
       y velocity: {}

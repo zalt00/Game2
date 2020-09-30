@@ -26,6 +26,9 @@ Debug commands:
  - `F2`: raises an error, manually makes the program crash
  - `F3`: toggle the update of the game
  
+ Signaling an issue:
+  - please use the "issues" functionality from github or directly send me a pm
+ 
 Additional infos:
   - credits: see `credits.txt`
   - manually set the save data (not recommended unless you softlock or the game crashes at launch):

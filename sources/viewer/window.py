@@ -34,6 +34,8 @@ class Window(pyglet.window.Window):
         self.joysticks = []
         self.init_joysticks()
 
+        self.current_framerate = 60
+
         pyglet.clock.schedule_interval(self._update, 1 / 120.0)
 
     def init_joysticks(self):
@@ -193,7 +195,15 @@ class Window(pyglet.window.Window):
     def add_generated_button(self, page, layer, font, size, text, position_handler, action_name, width, rectangle=0):
         batch = page.batch
         layer_group = self.get_group(layer)
-        sprite = GeneratedButton(batch, layer_group, font, size, text, position_handler, action_name, width, rectangle)
+        constructor = SpriteMetaclass.get_constructor('GeneratedButton')
+        sprite = constructor(batch, layer_group, font, size, text, position_handler, action_name, width, rectangle)
+        return sprite
+
+    def add_text(self, page, layer, font, size, text_getter, position_handler, color=(255, 255, 255, 255)):
+        batch = page.batch
+        layer_group = self.get_group(layer)
+        constructor = SpriteMetaclass.get_constructor('Text')
+        sprite = constructor(batch, layer_group, font, size, text_getter, position_handler, color)
         return sprite
 
     def build_structure(self, page, layer, position_handler, res, palette_name):

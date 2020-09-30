@@ -125,10 +125,6 @@ class BgLayer(BaseSprite, metaclass=SpriteMetaclass):
         return self.image_handler.layer
 
 
-class Text(BaseSprite, metaclass=SpriteMetaclass):
-    pass
-
-
 class Structure(BaseSprite, metaclass=SpriteMetaclass):
     pass
 
@@ -155,7 +151,7 @@ class Particle(BaseSprite, metaclass=SpriteMetaclass):
         self.position_changed = True
 
 
-class GeneratedButton:
+class GeneratedButton(metaclass=SpriteMetaclass):
     def __init__(self, batch, layer_group, font, size, text, position_handler, action_name, width, rectangle=0):
         self.text = text
         self.position_handler = position_handler
@@ -242,4 +238,23 @@ class GeneratedButton:
         self.rectangle[1].x += dif
         self.rectangle[1].x2 += dif
         self.rectangle[2].x += dif
+
+
+class Text(pyglet.text.Label, metaclass=SpriteMetaclass):
+    def __init__(self, batch, layer_group, font, size, text_getter, position_handler, color=(255, 255, 255, 255)):
+
+        self.get_text = text_getter
+
+        text = self.get_text()
+
+        super(Text, self).__init__(text, font, size, batch=batch, group=layer_group, color=color, multiline=True, width=500)
+
+        self.position_handler = position_handler
+
+        self.update_()
+
+    def update_(self, *_, **__):
+        self.x, self.y = self.position_handler.update_position(self)
+        text = self.get_text()
+        self.text = text
 
