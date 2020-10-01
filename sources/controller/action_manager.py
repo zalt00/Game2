@@ -3,7 +3,6 @@
 
 from pymunk.vec2d import Vec2d
 from utils.save_modifier import SaveComponent
-import ctypes
 import time
 
 
@@ -83,7 +82,6 @@ class BaseMenuActionManager(ActionManager):
             if self.count > 2:
                 self.controller = False
                 self.window.set_mouse_visible(True)
-                ctypes.windll.user32.SetCursorPos(*self.last_pos)
 
     def update_buttons2(self):
         """updates text color of the buttons using the "focus" attribute"""

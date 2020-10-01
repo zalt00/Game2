@@ -1,13 +1,14 @@
 # -*- coding:Utf-8 -*-
 
 from . import event_manager as evtm
-from .resources_loader import ResourcesLoader2, OtherObjectsResource
+from .resources_loader import ResourcesLoader, OtherObjectsResource
 import pyglet
 import pyglet.window
 from .sprites import SpriteMetaclass, GeneratedButton
 from . import image_handler as ihdlr
 from .page import Page
 from utils import window_event
+from pyglet import clock
 
 pyglet.image.Texture.default_min_filter = pyglet.gl.gl.GL_NEAREST
 pyglet.image.Texture.default_mag_filter = pyglet.gl.gl.GL_NEAREST
@@ -25,7 +26,7 @@ class Window(pyglet.window.Window):
 
         self.ordered_groups = [pyglet.graphics.OrderedGroup(i) for i in range(20)]
 
-        self.resource_loader = ResourcesLoader2('resources')
+        self.resource_loader = ResourcesLoader('resources')
 
         self.event_manager = evtm.INACTIVE_EVENT_MANAGER
 
@@ -81,6 +82,8 @@ class Window(pyglet.window.Window):
                 self.current_transition.update()
                 self.current_transition.sprite.draw()
         self.after_draw()
+
+        self.current_framerate = clock.get_fps()
 
     @window_event.event
     def on_key_press(self, symbol, modifiers):

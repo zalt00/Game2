@@ -95,7 +95,6 @@ class GameEventManager(EventManager):
                 self.action_manager.stop(action)
     
     def keydown(self, symbol, modifiers):
-        # print(symbol)
         action = self.controls.get(symbol, None)
         if action is not None:
             self.action_manager.do(action)
@@ -162,7 +161,6 @@ class MenuEventManager(EventManager):
             self.joyhatpressed = False
         
     def joybuttondown(self, button):
-        print(button)
         if button == 0:
             try:
                 self.action_manager.do(self.action_manager.ACTIVATE)
@@ -188,7 +186,6 @@ class MenuEventManager(EventManager):
         self.action_manager.do(self.action_manager.MOUSEMOTION, (x, y))
 
     def click(self, x, y, button, modifiers):
-        print(button)
         if button == 1:
             self.action_manager.do(self.action_manager.LEFT_CLICK, (x, y))
 

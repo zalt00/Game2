@@ -247,7 +247,7 @@ class Text(pyglet.text.Label, metaclass=SpriteMetaclass):
 
         text = self.get_text()
 
-        super(Text, self).__init__(text, font, size, batch=batch, group=layer_group, color=color, multiline=True, width=500)
+        super(Text, self).__init__(text, font, size, batch=batch, group=layer_group, color=color, multiline=True, width=800)
 
         self.position_handler = position_handler
 

@@ -153,6 +153,8 @@ class Menu:
         self.viewer_page.add_group('buttons')
         self.viewer_page.add_group('bg_layers')
         self.viewer_page.add_group('structures')
+        self.viewer_page.add_group('texts')
+
         self.window.menu_page.add_child(self.viewer_page)
 
         n_layers = self.window.get_number_of_layers(self.page_res)
@@ -164,10 +166,6 @@ class Menu:
         bg_layers = self.window.add_bg(self.viewer_page, pos_hdlrs, self.page_res)
         self.viewer_page.bg_layers.update(bg_layers)
 
-        """
-        for p in pos_hdlrs:
-            p.add_trajectory((-2300, 0), 1500, 1, 100)
-        """
         self.pos_hdlrs = pos_hdlrs
 
         self.panels = {}
@@ -177,11 +175,17 @@ class Menu:
 
         self.texts = {}
 
+        self.y_offset = self.model.Menu.y_offset
+
         for oname in self.page.Objects.objects:
             data = self.page.Objects.get(oname)
             obj = None
             if data.typ == 'button':
-                bpos_hdlr = StaticPositionHandler(data.pos)
+                if data.pos[1] > 2000:
+                    offset = self.y_offset * 1000
+                else:
+                    offset = self.y_offset
+                bpos_hdlr = StaticPositionHandler([data.pos[0], data.pos[1] + offset])
                 if hasattr(data, 'res'):
                     obj = self.window.add_button(self.viewer_page, 0, bpos_hdlr, data.res, data.action)
                     self.viewer_page.buttons.add(obj)
@@ -189,13 +193,18 @@ class Menu:
                     font_data = data.font
                     obj = self.window.add_generated_button(
                         self.viewer_page, 0, 'm5x7', font_data[1], self.get_button_text_from_font_data(font_data),
-                        StaticPositionHandler(data.pos), data.action, font_data[5], font_data[-1])
+                        StaticPositionHandler([data.pos[0], data.pos[1] + offset]),
+                        data.action, font_data[5], font_data[-1])
                     self.viewer_page.buttons.add(obj)
 
                 if hasattr(data, 'arg'):
                     obj.arg = data.arg
             elif data.typ == 'structure':
-                spos_hdlr = StaticPositionHandler(data.pos)
+                if data.pos[1] > 2000:
+                    offset = self.y_offset * 1000
+                else:
+                    offset = self.y_offset
+                spos_hdlr = StaticPositionHandler([data.pos[0], data.pos[1] + offset])
                 obj = self.window.add_structure(self.viewer_page, 0, spos_hdlr, data.res)
                 self.viewer_page.structures.add(obj)
                 if hasattr(data, 'panel_name'):
@@ -205,13 +214,15 @@ class Menu:
                                                         buttons_order=data.buttons_order, data=data)
 
             elif data.typ == 'text':
-                raise RuntimeError
-                tpos_hdlr = StaticPositionHandler(data.pos)
-                obj = self.window.add_text(
-                    SimpleTextResGetter(data.text, self.window.render_text,
-                                        data.color, data.size, data.font), tpos_hdlr)
+                if data.pos[1] > 2000:
+                    offset = self.y_offset * 1000
+                else:
+                    offset = self.y_offset
+                tpos_hdlr = StaticPositionHandler([data.pos[0], data.pos[1] + offset])
+                obj = self.window.add_text(self.viewer_page, 0, data.font, data.size,
+                                           SimpleTextGetter(data.text), tpos_hdlr)
                 self.texts[data.name] = obj
-
+                self.viewer_page.texts.add(obj)
             if obj is not None:
                 self.menu_objects.append(obj)
                 if hasattr(data, 'button_name'):
@@ -279,16 +290,22 @@ class Menu:
         ndict = {}
         for bname, bdata in buttons_data.items():
             res_name = bdata.get('res', None)
+            if bdata['pos'][1] > 2000:
+                offset = self.y_offset * 1000
+            else:
+                offset = self.y_offset
             if res_name is not None:
                 button = self.window.add_button(
-                    self.viewer_page, 0, StaticPositionHandler(bdata['pos']), res_name, bdata['action'])
+                    self.viewer_page, 0, StaticPositionHandler([bdata['pos'][0], bdata['pos'][1] + offset]),
+                    res_name, bdata['action'])
                 self.viewer_page.buttons.add(button)
 
             else:
                 font_data = bdata['font']
                 button = self.window.add_generated_button(
                     self.viewer_page, 0, 'm5x7', font_data[1], self.get_button_text_from_font_data(font_data),
-                    StaticPositionHandler(bdata['pos']), bdata['action'], font_data[5], font_data[-1])
+                    StaticPositionHandler([bdata['pos'][0], bdata['pos'][1] + offset]),
+                    bdata['action'], font_data[5], font_data[-1])
                 self.viewer_page.buttons.add(button)
 
             if 'arg' in bdata:
@@ -617,7 +634,6 @@ class Game:
             particle = self.window.spawn_particle(self.viewer_page, 0, position_handler, res, state, direction, 8)
             self.viewer_page.dash_particles.add(particle)
             self.dash_particles.append(particle)
-        #  print(len(self.viewer_page.dash_particles))
 
     def init_text(self, data):
         text_getter = FormatTextGetter(data['text'], data['values'], self)

@@ -60,10 +60,10 @@ class Data(DataContainer):
             (SaveComponent(5), (0, 0)),
             (SaveComponent(6), 113),
             (SaveComponent(7), 100),
-            (SaveComponent(8), 1073742049),
+            (SaveComponent(8), 65505),
             (SaveComponent(9), 122),
             (SaveComponent(10), 32),
-            (SaveComponent(11), 27),
+            (SaveComponent(11), 65307),
             (SaveComponent(12), 101),
             (SaveComponent(13), (0, -1)),
             (SaveComponent(14), (0, 1)),
@@ -100,6 +100,8 @@ class Data(DataContainer):
     class Menu(DataContainer):
         pages = ('MainMenu', 'Options', ' CharacterSelectionMenu')
 
+        y_offset = -50
+
         class Options(DataContainer):
             bg_res = 'forest/forest.bg'
             bg_pos = (0, -500)
@@ -108,19 +110,19 @@ class Data(DataContainer):
             class Objects(DataContainer):
                 objects = ('MainStructure', 'ControlsButton', 'GameplayButton', 'VideoButton', 'ApplyButton',
                            'CancelButton', 'ResetButton', 'ControlsPanel', 'VideoPanel',
-                           'GameplayPanel')
+                           'GameplayPanel', 'ResetConfirmationText')
 
                 panel_order = ('Video', 'Gameplay', 'Controls')
                 classic_buttons_order = ()
 
-                # class ResetConfirmationText:
-                #     typ = 'text'
-                #     name = 'reset_confirmation_message'
-                #     font = 'm3x6.ttf'
-                #     text = 'Are you sure you want to reset the options?'
-                #     color = '#ffffff'
-                #     size = 40
-                #     pos = (605, 127 * 1000)
+                class ResetConfirmationText:
+                    typ = 'text'
+                    name = 'reset_confirmation_message'
+                    font = 'm3x6'
+                    text = 'Are you sure you want to reset the options?'
+                    color = (255, 255, 255, 255)
+                    size = 40
+                    pos = (440, 145 * 1000)
 
                 class MainStructure:
                     typ = 'structure'
