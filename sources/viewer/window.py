@@ -74,6 +74,7 @@ class Window(pyglet.window.Window):
         self._screen_offset[1] = value[1]
 
     def on_draw(self):
+        self.update()
         self.current_page.draw()
         if self.current_transition is not None:
             if self.current_transition.state == 2:

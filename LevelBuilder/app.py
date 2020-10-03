@@ -10,7 +10,7 @@ from typing import Any
 import json
 import os
 from configparser import ConfigParser
-from viewer.resources_loader import ResourcesLoader2
+from viewer.resources_loader import ResourcesLoader
 from PIL import Image, ImageTk
 import pygame
 import yaml
@@ -47,7 +47,7 @@ class App(tk.Frame):
         cfg.read('config.ini', encoding="utf-8")
         self.resources_base_dir = cfg['env']['resources_base_dir']
 
-        self.rl = ResourcesLoader2(self.resources_base_dir)
+        self.rl = ResourcesLoader(self.resources_base_dir)
         self.palette_res_name = 'forest/forest_structure_tilesets.stsp'
         self.palette = self.rl.load(self.palette_res_name)
 
@@ -226,7 +226,8 @@ class App(tk.Frame):
         self.state = 'idle'
         self.focus_on = None
 
-        self.ref_visual_line = self.canvas.create_line(0, 720, 10000, 720, fill='#94CAFF', width=2, tag='fg')
+        self.ref_visual_line_bottom = self.canvas.create_line(0, 720, 10000, 720, fill='#94CAFF', width=2, tag='fg')
+        self.ref_visual_line_top = self.canvas.create_line(0, 0, 10000, 0, fill='#94CAFF', width=2, tag='fg')
 
         self.structures = dict()
         self.i = 0
@@ -303,7 +304,12 @@ class App(tk.Frame):
                     pass
 
                 try:
-                    s.remove(self.ref_visual_line)
+                    s.remove(self.ref_visual_line_bottom)
+                except KeyError:
+                    pass
+
+                try:
+                    s.remove(self.ref_visual_line_top)
                 except KeyError:
                     pass
 
@@ -340,7 +346,8 @@ class App(tk.Frame):
 
     def update_height_ref(self):
         self.height_ref_label['text'] = 'height ref: {}\n'.format(self.ref_height)
-        self.canvas.coords(self.ref_visual_line, 0, 720 - self.ref_height, 10000, 720 - self.ref_height)
+        self.canvas.coords(self.ref_visual_line_bottom, 0, 720 - self.ref_height, 10000, 720 - self.ref_height)
+        self.canvas.coords(self.ref_visual_line_top, 0, 0 - self.ref_height, 10000, 0 - self.ref_height)
 
     def _add_structure(self, struct):
         id_ = self.canvas.create_image(struct.pos[0], struct.pos[1], image=struct.img)
@@ -362,7 +369,8 @@ class App(tk.Frame):
             self.i += 1
             name = 'structure' + str(self.i)
             pos = list(self.copied.pos)
-            struct = Structure(res_path, img, pos, state, pilimage, name, layer=self.copied.layer)
+            struct = Structure(res_path, img, pos, state, pilimage, name, scale=self.copied.scale,
+                               layer=self.copied.layer)
             struct_id = self.canvas.create_image(*pos, image=img)
             self.structures[struct_id] = struct
             self.update_structure_listvar()
@@ -372,7 +380,6 @@ class App(tk.Frame):
     def select_structure(self, struct, struct_id):
         self.focus_on = struct, struct_id
         preview_pilimage = struct.pilimage
-        struct.scale = 1
         while preview_pilimage.width > 1000 or preview_pilimage.height > 1000:
             preview_pilimage = preview_pilimage.resize((preview_pilimage.width // 2, preview_pilimage.height // 2))
             struct.scale *= 2
@@ -481,13 +488,12 @@ class App(tk.Frame):
 
         # awful, but no choice. Tkinter images are crap.
         pgimg = res.sheets['base']
-        strimg = pygame.image.tostring(pgimg, 'RGBA')
-        pilimage = Image.frombytes('RGBA', pgimg.get_size(), strimg)
-        pilimage.save('temp.png')
-        img = tk.PhotoImage(file='temp.png')
+        pgimg.save('temp.png')
+        img = tk.PhotoImage(file='temp.png').zoom(res.scale)
+        pilimage = Image.open('temp.png')
 
         pos = [0, 0]
-        return Structure(res_name, img, pos, 'base', pilimage, layer=layer)
+        return Structure(res_name, img, pos, 'base', pilimage, scale=res.scale, layer=layer)
 
     def set_height_ref(self):
         self.state = 'set height ref'
@@ -604,7 +610,7 @@ class App(tk.Frame):
         base['palette'] = self.palette_res_name
         base['background_data']['res'] = self.bg_res
         if self.bg is not None:
-            base['background_data']['pos'] = [0, -(int(self.bg[0].height() - 720 + self.ref_height - 80))]
+            base['background_data']['pos'] = [0, -(int(self.bg[0].height() - 800 + self.ref_height))]
 
         for struct_id, struct in self.structures.items():
             base['objects_data'][struct.name + '_structure'] = {}
@@ -613,7 +619,7 @@ class App(tk.Frame):
             struct_data['res'] = struct.res_path
             struct_data['is_built'] = False
             struct_data['name'] = struct.name
-            struct_data['pos'] = [int(struct.pos[0]), int(-self.ref_height + 800 - self.canvas.bbox(struct_id)[3])]
+            struct_data['pos'] = [int(struct.pos[0]), int(-self.ref_height + 720 - self.canvas.bbox(struct_id)[3])]
             struct_data['walls'], struct_data['ground'] = self.get_collision_infos(struct)
             struct_data['state'] = 'base'
             struct_data['layer'] = struct.layer
@@ -638,7 +644,7 @@ class App(tk.Frame):
                     struct = self.create_structure_from_res(obj_data['res'], layer)
                     struct.name = obj_data['name']
                     x = obj_data['pos'][0]
-                    y = 800 - self.ref_height - obj_data['pos'][1] - struct.img.height() // 2
+                    y = 720 - self.ref_height - obj_data['pos'][1] - struct.img.height() // 2
 
                     struct.pos = [x, y]
                     self._add_structure(struct)
