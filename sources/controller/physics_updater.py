@@ -41,6 +41,7 @@ class PhysicsUpdater:
             if (round(contact_point.point_a.y) == round(self.body.position.y - 1)
                     or round(contact_point.point_b.y) == round(self.body.position.y - 1)):
                 self.on_ground = True
+                print(0)
                 return True
         self.on_ground = False
         return False

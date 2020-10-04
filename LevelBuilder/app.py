@@ -11,12 +11,14 @@ import json
 import os
 from configparser import ConfigParser
 from viewer.resources_loader import ResourcesLoader
-from PIL import Image, ImageTk
+from PIL import Image, ImageTk, ImageFile
 import pygame
 import yaml
 import yaml.parser
 pygame.init()
 
+
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 @dataclass()
 class Structure:
@@ -380,9 +382,6 @@ class App(tk.Frame):
     def select_structure(self, struct, struct_id):
         self.focus_on = struct, struct_id
         preview_pilimage = struct.pilimage
-        while preview_pilimage.width > 1000 or preview_pilimage.height > 1000:
-            preview_pilimage = preview_pilimage.resize((preview_pilimage.width // 2, preview_pilimage.height // 2))
-            struct.scale *= 2
         self.preview_image = ImageTk.PhotoImage(preview_pilimage)
         width, height = int(self.preview_image.width() + 10), int(self.preview_image.height() + 10)
 
@@ -491,7 +490,7 @@ class App(tk.Frame):
         pgimg.save('temp.png')
         img = tk.PhotoImage(file='temp.png').zoom(res.scale)
         pilimage = Image.open('temp.png')
-
+        pilimage.load()
         pos = [0, 0]
         return Structure(res_name, img, pos, 'base', pilimage, scale=res.scale, layer=layer)
 

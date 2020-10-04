@@ -16,54 +16,6 @@ background_data:
   - -550
   res: forest/forest.bg
 objects_data:
-  ground1_structure:
-    ground:
-    - - - -304
-        - 96
-      - - 304
-        - 96
-    is_built: false
-    layer: 1
-    name: ground1
-    pos:
-    - 304
-    - 45
-    res: forest/ground.st
-    state: base
-    type: structure
-    walls: []
-  ground2_structure:
-    ground:
-    - - - -304
-        - 96
-      - - 304
-        - 96
-    is_built: false
-    layer: 1
-    name: ground2
-    pos:
-    - 2096
-    - 45
-    res: forest/ground.st
-    state: base
-    type: structure
-    walls: []
-  ground3_structure:
-    ground:
-    - - - -304
-        - 96
-      - - 304
-        - 96
-    is_built: false
-    layer: 1
-    name: ground3
-    pos:
-    - 912
-    - 45
-    res: forest/ground.st
-    state: base
-    type: structure
-    walls: []
   player:
     res: player/white_guy.obj
     type: player
@@ -72,7 +24,7 @@ objects_data:
     pos:
     - 20
     - 640
-    size: 7
+    size: 28
     text: 'x velocity: {}
 
       y velocity: {}
@@ -108,94 +60,98 @@ objects_data:
       - y
     - - window
       - current_framerate
-  structure1_structure:
+  structure2_structure:
     ground:
-    - - - -288.0
+    - - - -368.0
         - 96
-      - - -256.0
+      - - -192.0
         - 96
-    - - - -256.0
-        - 160
-      - - -128.0
-        - 160
-    - - - -128.0
+    - - - -192.0
+        - 224
+      - - -96.0
+        - 224
+    - - - -96.0
         - 96
-      - - -16.0
-        - 96
-    - - - -16.0
-        - 256
       - - 16.0
-        - 256
+        - 96
     - - - 16.0
-        - 384
-      - - 112.0
-        - 384
-    - - - 240.0
-        - 96
-      - - 288.0
-        - 96
+        - 64
+      - - 128.0
+        - 64
+    - - - 128.0
+        - 80.0
+      - - 161.0
+        - 80.0
+    - - - 161.0
+        - 112.0
+      - - 192.0
+        - 112.0
+    - - - 176.0
+        - 320
+      - - 352.0
+        - 320
     is_built: false
     layer: 0
-    name: structure1
+    name: structure2
     pos:
-    - 1504
-    - 45
-    res: forest/struct_1.st
+    - 884
+    - 0
+    res: forest/level.st
     state: base
     type: structure
     walls:
-    - - - -256.0
+    - - - -192.0
         - 96
-      - - -256.0
-        - 160
-    - - - -128.0
-        - 160
-      - - -128.0
-        - 96
-    - - - -16.0
-        - 96
-      - - -16.0
-        - 160
-    - - - -16.0
-        - 160
-      - - -32.0
-        - 192
-    - - - -32.0
-        - 192
-      - - -16.0
+      - - -192.0
         - 224
-    - - - -16.0
+    - - - -96.0
         - 224
-      - - -16.0
-        - 256
+      - - -96.0
+        - 96
     - - - 16.0
-        - 256
-      - - 16.0
-        - 384
-    - - - 112.0
-        - 384
-      - - 112.0
-        - 336.0
-    - - - 112.0
-        - 336.0
-      - - 160.0
-        - 320
-    - - - 160.0
-        - 320
-      - - 176.0
-        - 272.0
-    - - - 176.0
-        - 272.0
-      - - 224.0
-        - 256
-    - - - 224.0
-        - 256
-      - - 240.0
-        - 240.0
-    - - - 240.0
-        - 240.0
-      - - 240.0
         - 96
+      - - 16.0
+        - 64
+    - - - 128.0
+        - 64
+      - - 128.0
+        - 80.0
+    - - - 160.0
+        - 80.0
+      - - 160.0
+        - 112.0
+    - - - 192.0
+        - 112.0
+      - - 192.0
+        - 304.0
+    - - - 192.0
+        - 304.0
+      - - 176.0
+        - 304.0
+    - - - 176.0
+        - 304.0
+      - - 176.0
+        - 320
+    - - - 352.0
+        - 320
+      - - 352.0
+        - 32
+  structure4_structure:
+    ground:
+    - - - -416.0
+        - 128
+      - - 416.0
+        - 128
+    is_built: false
+    layer: 0
+    name: structure4
+    pos:
+    - 100
+    - -32
+    res: forest/structure.st
+    state: base
+    type: structure
+    walls: []
 palette: forest/forest_structure_tilesets.stsp
 space: true
 triggers_data:
@@ -203,39 +159,9 @@ triggers_data:
     actions:
     - entity_name: player
       npos:
-      - 500
+      - 300
       - 300
       type_: TPEntity
     enabled: true
-    id: 2
-    top: -100
-  left_border_trigger:
-    actions:
-    - fade_in: 30
-      fade_out: 30
-      total_duration: 80
-      type_: AbsoluteMovecam
-      x: 0
-      y: 0
-    - target: 0
-      type_: EnableTrigger
-    - target: 1
-      type_: DisableTrigger
-    enabled: true
-    id: 1
-    right: 1242
-  right_border_trigger:
-    actions:
-    - fade_in: 30
-      fade_out: 30
-      total_duration: 80
-      type_: AbsoluteMovecam
-      x: -1216
-      y: 0
-    - target: 1
-      type_: EnableTrigger
-    - target: 0
-      type_: DisableTrigger
-    enabled: true
     id: 0
-    left: 1255
+    top: -200
