@@ -152,8 +152,6 @@ class StructTSPalette:
                 for x, tile in enumerate(line.split(';')):
                     if not tile.startswith('NA'):
                         tile_array = self.parse(tile)
-                        print(42, tile_array.shape)
-                        print(array[y * th:(y + 1) * th, x * tw:(x + 1) * tw, :].shape)
                         array[y * th:(y + 1) * th, x * tw:(x + 1) * tw, :] = tile_array
 
         img_height, img_width, _ = array.shape

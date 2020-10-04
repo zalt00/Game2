@@ -62,8 +62,8 @@ class App:
         
         self.i = 0
 
-        self.kp_corres = {
-            K_KP7: (0, 5),
+        self.kp_corres = {  # correspondance entre les touches et l'index de l'info recherchée renvoyée par
+            K_KP7: (0, 5),  # self.get_positions_info
             K_KP8: (1, 5),
             K_KP9: (2, 5),
             K_KP4: (0, 4),
@@ -73,6 +73,15 @@ class App:
             K_KP2: (1, 3),
             K_KP3: (2, 3),
         }
+
+        self.kp_to_direction = {
+            K_KP8: [0, 1],
+            K_KP6: [1, 0],
+            K_KP2: [0, -1],
+            K_KP4: [-1, 0]
+        }
+
+        self.multiplier = 1
 
         self.point_a = []
         self.current_collision_segments = []
@@ -214,7 +223,7 @@ class App:
             self.draw_tile(self.cursor, 0, 0, 0)
             self.change_tile(self.i)
 
-    def keydown(self, key, shift, ctrl):
+    def keydown(self, key, shift, ctrl, alt):
         if key == K_a:
             self.draw_tile(self.cursor, shift, ctrl, 0)
             self.holded_b = K_a
@@ -244,6 +253,15 @@ class App:
         elif key == K_RIGHT:
             self.cursor[0] += 1
 
+        elif alt:
+            if key in (K_KP4, K_KP6, K_KP8, K_KP2):
+                if ctrl:
+                    dx2, dy2 = self.kp_to_direction[key]
+                    self.stretch_last_segment(0, 0, dx2, dy2)
+                else:
+                    dx1, dy1 = self.kp_to_direction[key]
+                    self.stretch_last_segment(dx1, dy1, 0, 0)
+
         elif ctrl:
             if key == K_c:
                 self.copy()
@@ -255,6 +273,9 @@ class App:
                 self.load()
             elif key == K_b:
                 self.rebuild()
+
+            elif key in (K_KP4, K_KP6, K_KP8, K_KP2):
+                self.stretch_last_segment(*self.kp_to_direction[key])
 
         elif key == K_0:
             self.i = 0
@@ -278,21 +299,31 @@ class App:
         elif key == K_c:
             self.collision_segments_surf.fill((255, 255, 255, 0))
 
+        elif key == K_KP_PLUS:
+            self.multiplier += 1
+            print(f'multiplier: {self.multiplier}')
+
+        elif key == K_KP_MINUS:
+            self.multiplier -= 1
+            print(f'multiplier: {self.multiplier}')
+
     def run(self):
         while not self.stop:
             for event in pygame.event.get():
                 mods = pygame.key.get_mods()
-                shift = ctrl = False
+                shift = ctrl = alt = False
                 if mods & KMOD_SHIFT:
                     shift = True
                 if mods & KMOD_CTRL:
                     ctrl = True
+                if mods & KMOD_ALT:
+                    alt = True
                     
                 if event.type == QUIT:
                     self.stop = True
 
                 elif event.type == KEYDOWN:
-                    self.keydown(event.key, shift, ctrl)
+                    self.keydown(event.key, shift, ctrl, alt)
 
                 elif event.type == KEYUP:
                     self.holded_b = 0
@@ -331,7 +362,7 @@ class App:
                     if self.button1down:
                         self.cursor[:] = coords
                         if self.holded_b:
-                            self.keydown(self.holded_b, shift, ctrl)
+                            self.keydown(self.holded_b, shift, ctrl, alt)
 
             self.screen.fill((190, 190, 190))
             self.screen.blit(self.bg, (0, 0))
@@ -377,30 +408,71 @@ class App:
         else:
             segment = [self.point_a, [x, y]]
 
-            y2 = self.nwpos[1]
-            x2 = (self.nwpos[0] + self.sepos[0]) / 2
+            self.add_segment(segment)
 
-            rl_pos_a = list(segment[0])
-            rl_pos_a[0] += (x2 + 0.5) * self.tw
-            rl_pos_a[1] = -rl_pos_a[1] + (y2 + 1) * self.th
-
-            rl_pos_b = list(segment[1])
-            rl_pos_b[0] += (x2 + 0.5) * self.tw
-            rl_pos_b[1] = -rl_pos_b[1] + (y2 + 1) * self.th
-            pygame.draw.line(self.collision_segments_surf, (23, 246, 234, 255), rl_pos_a, rl_pos_b, 1)
-
-            self.current_collision_segments.append((segment, (rl_pos_a, rl_pos_b)))
             self.point_a = []
             print(*[f'\n- {repr(v[0])}' for v in self.current_collision_segments], sep='')
 
-    def remove_last_pos(self):
+    def add_segment(self, segment):
+        y2 = self.nwpos[1]
+        x2 = (self.nwpos[0] + self.sepos[0]) / 2
+
+        rl_pos_a = list(segment[0])
+        rl_pos_a[0] += (x2 + 0.5) * self.tw
+        rl_pos_a[1] = -rl_pos_a[1] + (y2 + 1) * self.th
+
+        rl_pos_b = list(segment[1])
+        rl_pos_b[0] += (x2 + 0.5) * self.tw
+        rl_pos_b[1] = -rl_pos_b[1] + (y2 + 1) * self.th
+        pygame.draw.line(self.collision_segments_surf, (1, 151, 181, 255), rl_pos_a, rl_pos_b, 1)
+
+        self.current_collision_segments.append((segment, (rl_pos_a, rl_pos_b)))
+        self.update_color()
+
+    def remove_last_pos(self, do_print=True):
         if len(self.current_collision_segments) != 0:
             _, last_rlpos = self.current_collision_segments.pop()
             rl_pos_a, rl_pos_b = last_rlpos
 
             pygame.draw.line(self.collision_segments_surf, (255, 255, 255, 0), rl_pos_a, rl_pos_b, 1)
 
+            self.update_color()
+
+            if do_print:
+                print(*[f'\n- {repr(v[0])}' for v in self.current_collision_segments], sep='')
+
+    def stretch_last_segment(self, dx1, dy1, dx2=None, dy2=None):
+        if len(self.current_collision_segments):
+            last_segment, _ = self.current_collision_segments[-1]
+            self.remove_last_pos(False)
+
+            if dx2 is None:
+                dx2 = dx1
+            if dy2 is None:
+                dy2 = dy1
+
+            last_segment[0][0] += dx1 * self.multiplier
+            last_segment[1][0] += dx2 * self.multiplier
+            last_segment[0][1] += dy1 * self.multiplier
+            last_segment[1][1] += dy2 * self.multiplier
+            self.add_segment(last_segment)
+
+            self.redraw()
+
             print(*[f'\n- {repr(v[0])}' for v in self.current_collision_segments], sep='')
 
+    def update_color(self):
+        if len(self.current_collision_segments) != 0:
+            if len(self.current_collision_segments) > 1:
+                _, (rl_pos_a, rl_pos_b) = self.current_collision_segments[-2]
+                pygame.draw.line(self.collision_segments_surf, (1, 151, 181, 255), rl_pos_a, rl_pos_b, 1)
+
+            _, (rl_pos_a, rl_pos_b) = self.current_collision_segments[-1]
+            pygame.draw.line(self.collision_segments_surf, (237, 68, 99, 255), rl_pos_a, rl_pos_b, 1)
+
+    def redraw(self):
+        for _, (rl_pos_a, rl_pos_b) in self.current_collision_segments:
+            pygame.draw.line(self.collision_segments_surf, (1, 151, 181, 255), rl_pos_a, rl_pos_b, 1)
+        self.update_color()
 
 

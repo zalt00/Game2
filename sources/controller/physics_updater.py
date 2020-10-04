@@ -36,14 +36,13 @@ class PhysicsUpdater:
         self.collide = True
         if len(points) == 2:
             self.x1, self.x2 = points[0].point_a.x, points[1].point_a.x
-
+        # print()
         for contact_point in points:
+            #print(round(contact_point.point_a.y), round(self.body.position.y - 1), round(contact_point.point_b.y), round(self.body.position.y - 1))
             if (round(contact_point.point_a.y) == round(self.body.position.y - 1)
                     or round(contact_point.point_b.y) == round(self.body.position.y - 1)):
                 self.on_ground = True
-                print(0)
                 return True
-        self.on_ground = False
         return False
     
     def update_(self, entity, n=1):
@@ -86,7 +85,7 @@ class PhysicsUpdater:
             # prevents a "flicker" effect when the player leaves the ground for 1 or 2 ticks (it sometimes happens
             # when the player simply runs on a structure after a weird landing)
             if not self.on_ground:
-                if self.a > 2:
+                if self.a > 3:
                     on_ground = False
                 else:
                     self.a += 1

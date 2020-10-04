@@ -15,6 +15,7 @@ from PIL import Image, ImageTk, ImageFile
 import pygame
 import yaml
 import yaml.parser
+import sys
 pygame.init()
 
 
@@ -47,7 +48,8 @@ class App(tk.Frame):
 
         cfg = ConfigParser()
         cfg.read('config.ini', encoding="utf-8")
-        self.resources_base_dir = cfg['env']['resources_base_dir']
+
+        self.resources_base_dir = cfg['env']['resources_base_dir'].format(**dict(os.environ))
 
         self.rl = ResourcesLoader(self.resources_base_dir)
         self.palette_res_name = 'forest/forest_structure_tilesets.stsp'
@@ -659,13 +661,31 @@ class App(tk.Frame):
             self.canvas.tag_raise(struct_id)
 
     @staticmethod
-    def get_collision_infos(struct):
+    def _load_collision_infos(struct):
         with open('default_collisions.yaml') as datafile:
             data = yaml.safe_load(datafile)
         struct_data = data.get(struct.res_path, None)
         if struct_data is not None:
-            return struct_data['walls'], struct_data['ground']
-        return
+            return (struct_data['walls'], struct_data['ground'],
+                    struct_data.get('x_offset', 0), struct_data.get('y_offset', 0))
+
+    def get_collision_infos(self, struct):
+        data = self._load_collision_infos(struct)
+        if data is not None:
+            walls, segments, x_offset, y_offset = data
+            print(data)
+            for a, b in walls:
+                a[0] += x_offset
+                b[0] += x_offset
+                a[1] += y_offset
+                b[1] += y_offset
+
+            for a, b in segments:
+                a[0] += x_offset
+                b[0] += x_offset
+                a[1] += y_offset
+                b[1] += y_offset
+            return walls, segments
 
     def show_collision_command(self):
         if self.show_collision_var.get():
@@ -679,8 +699,10 @@ class App(tk.Frame):
                     x = int(self.preview_canvas['width']) // 2
                     y = int(self.preview_canvas['height']) // 2 + self.preview_image.height() // 2
                     for a, b in walls_:
-                        xa, ya = int(a[0] / self.focus_on[0].scale + x), int(y - a[1] / self.focus_on[0].scale)
-                        xb, yb = int(b[0] / self.focus_on[0].scale + x), int(y - b[1] / self.focus_on[0].scale)
+                        xa = int(a[0] / self.focus_on[0].scale + x)
+                        ya = int(y - a[1] / self.focus_on[0].scale)
+                        xb = int(b[0] / self.focus_on[0].scale + x)
+                        yb = int(y - b[1] / self.focus_on[0].scale)
                         walls_visu_id = self.preview_canvas.create_line(
                             xa, ya, xb, yb, fill='#32b5fc', width=2, tag='fg2')
                         # if len(points) > 0 and len(points[0]) > 0:
@@ -693,8 +715,10 @@ class App(tk.Frame):
                         #                                                       width=2, outline='#32b5fc', tag='fg2')
                         self.walls_visualisations.append(walls_visu_id)
                     for a, b in segments:
-                        xa, ya = int(a[0] / self.focus_on[0].scale + x), int(y - a[1] / self.focus_on[0].scale)
-                        xb, yb = int(b[0] / self.focus_on[0].scale + x), int(y - b[1] / self.focus_on[0].scale)
+                        xa = int(a[0] / self.focus_on[0].scale + x)
+                        ya = int(y - a[1] / self.focus_on[0].scale)
+                        xb = int(b[0] / self.focus_on[0].scale + x)
+                        yb = int(y - b[1] / self.focus_on[0].scale)
                         ground_visu_id = self.preview_canvas.create_line(xa, ya, xb, yb, fill='red', width=2, tag='fg1')
                         self.ground_visualisations.append(ground_visu_id)
 

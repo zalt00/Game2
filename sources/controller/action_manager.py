@@ -514,12 +514,6 @@ class GameActionManager(ActionManager):
     def manually_raise_error(self):
         raise RuntimeError('Error manually raised')
 
-    def activate_debug_draw(self):
-        self.activate_deactivate_debug_draw(True)
-
-    def deactivate_debug_draw(self):
-        self.activate_deactivate_debug_draw(False)
-
     def sleep(self):
         time.sleep(2)
 
