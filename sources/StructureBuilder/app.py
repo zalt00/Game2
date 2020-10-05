@@ -6,6 +6,8 @@ from pygame.locals import *
 from .structbuilder_resource_loader import ResourcesLoader
 import tkinter as tk
 from tkinter.filedialog import asksaveasfilename, askopenfilename
+import json
+import os
 pygame.init()
 
 
@@ -85,6 +87,10 @@ class App:
 
         self.point_a = []
         self.current_collision_segments = []
+
+        self.current_color = (1, 151, 181, 255), (237, 68, 99, 255)
+        self.current_color_id = 0
+        self.colors = [((1, 151, 181, 255), (237, 68, 99, 255)), ((72, 239, 26, 255), (172, 26, 239, 255))]
 
     def change_tile(self, i):
         self.tile_rect.x = i * self.tw
@@ -254,6 +260,14 @@ class App:
             self.cursor[0] += 1
 
         elif alt:
+            if ctrl:
+                if key == K_s:
+                    self.save_collision_data()
+                elif key == K_l:
+                    self.load_collision_data()
+                elif key == K_q:
+                    self.change_color()
+
             if key in (K_KP4, K_KP6, K_KP8, K_KP2):
                 if ctrl:
                     dx2, dy2 = self.kp_to_direction[key]
@@ -283,6 +297,9 @@ class App:
 
         elif key == K_SPACE:
             self.get_position_infos()
+
+        elif key == K_n:
+            print(*[f'\n- {repr(v[0])}' for v in self.current_collision_segments], sep='')
 
         elif key in (K_KP1, K_KP2, K_KP3, K_KP4, K_KP5, K_KP6, K_KP7, K_KP8, K_KP9):
             pos_infos = self.get_position_infos(False)
@@ -424,7 +441,7 @@ class App:
         rl_pos_b = list(segment[1])
         rl_pos_b[0] += (x2 + 0.5) * self.tw
         rl_pos_b[1] = -rl_pos_b[1] + (y2 + 1) * self.th
-        pygame.draw.line(self.collision_segments_surf, (1, 151, 181, 255), rl_pos_a, rl_pos_b, 1)
+        pygame.draw.line(self.collision_segments_surf, self.current_color[0], rl_pos_a, rl_pos_b, 1)
 
         self.current_collision_segments.append((segment, (rl_pos_a, rl_pos_b)))
         self.update_color()
@@ -461,18 +478,60 @@ class App:
 
             print(*[f'\n- {repr(v[0])}' for v in self.current_collision_segments], sep='')
 
-    def update_color(self):
+    def update_color(self, identify_last_segment=True):
         if len(self.current_collision_segments) != 0:
             if len(self.current_collision_segments) > 1:
                 _, (rl_pos_a, rl_pos_b) = self.current_collision_segments[-2]
-                pygame.draw.line(self.collision_segments_surf, (1, 151, 181, 255), rl_pos_a, rl_pos_b, 1)
+                pygame.draw.line(self.collision_segments_surf, self.current_color[0], rl_pos_a, rl_pos_b, 1)
 
             _, (rl_pos_a, rl_pos_b) = self.current_collision_segments[-1]
-            pygame.draw.line(self.collision_segments_surf, (237, 68, 99, 255), rl_pos_a, rl_pos_b, 1)
+            if identify_last_segment:
+                pygame.draw.line(self.collision_segments_surf, self.current_color[1], rl_pos_a, rl_pos_b, 1)
+            else:
+                pygame.draw.line(self.collision_segments_surf, self.current_color[0], rl_pos_a, rl_pos_b, 1)
 
     def redraw(self):
         for _, (rl_pos_a, rl_pos_b) in self.current_collision_segments:
-            pygame.draw.line(self.collision_segments_surf, (1, 151, 181, 255), rl_pos_a, rl_pos_b, 1)
+            pygame.draw.line(self.collision_segments_surf, self.current_color[0], rl_pos_a, rl_pos_b, 1)
         self.update_color()
+
+    def save_collision_data(self, filename=None):
+        if filename is None:
+            filename = input('enter the name of the file: ')
+        if filename[1] != ':':
+            filename = '{BASE}/sources/structurebuilder/'.format(**dict(os.environ)) + filename
+        if not filename.endswith('.json'):
+            filename += '.json'
+
+        with open(filename, 'w') as file:
+            json.dump((self.current_collision_segments, self.nwpos, self.sepos), file)
+
+    def load_collision_data(self):
+        filename = input('enter the name of the file: ')
+        if filename[1] != ':':
+            filename = '{BASE}/sources/structurebuilder/'.format(**dict(os.environ)) + filename
+        if not filename.endswith('.json'):
+            filename += '.json'
+
+        try:
+            with open(filename, 'r') as file:
+                self.current_collision_segments, self.nwpos, self.sepos = json.load(file)
+        except FileNotFoundError:
+            print('no file has this name')
+        else:
+            self.redraw()
+
+    def change_color(self):
+        self.update_color(False)
+        self.save_collision_data('_cache.json')
+
+        self.current_color_id += 1
+        self.current_color_id %= len(self.colors)
+        self.current_color = self.colors[self.current_color_id]
+
+        self.current_collision_segments = []
+
+        self.redraw()
+
 
 
