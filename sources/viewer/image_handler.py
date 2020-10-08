@@ -33,28 +33,32 @@ class EntityImageHandler(ImageHandler):
 
 
 class TBEntityImageHandler(EntityImageHandler):
+    def __init__(self, res, end_animation_callback):
+        super(TBEntityImageHandler, self).__init__(res, end_animation_callback)
+
+        self.animation_changed = True
+
+    def on_animation_end(self, entity):
+        self.end_animation_callback(entity.state)
+
     def update_image(self, entity, n=1):
         if entity.state != self.previous_state:
             self.previous_state = entity.state
-            self.advance = 0
+            self.animation_changed = True
 
-        self.advance += n
-        a = self.advance // 6
-        sheet = self.res.sheets[entity.state]
-        try:
-            img = sheet[a]
-        except IndexError:
-            self.advance = 0
-            try:
-                self.end_animation_callback(entity.state)
-            except TypeError:
-                self.end_animation_callback()
-            return self.update_image(entity)
-        else:
-            if entity.direction == -1:
-                img = img.get_transform(flip_x=True)
-            img.anchor_x = self.res.dec[0]
-            return img
+        if self.animation_changed:
+
+            if entity.direction == 1:
+                animation = self.res.sheets[entity.state]
+            else:
+                animation = self.res.flipped_sheets[entity.state]
+            self.animation_changed = False
+            return animation
+        return None
+
+    def get_state_duration(self, state):
+        animation = self.res.sheets[state]
+        return animation.get_duration()
 
 
 class StructureImageHandler(ImageHandler):
@@ -114,10 +118,9 @@ class ParticleImageHandler(ImageHandler):
                 self.dead = True
                 self.end_of_life()
 
-        sheet = self.res.sheets[entity.state]
-        img = sheet[0]
-        if entity.direction == -1:
-            img = img.get_transform(flip_x=True)
-        img.anchor_x = self.res.dec[0]
+        if entity.direction == 1:
+            img = self.res.sheets[entity.state]
+        else:
+            img = self.res.flipped_sheets[entity.state]
         return img
 

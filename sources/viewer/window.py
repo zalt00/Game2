@@ -74,7 +74,7 @@ class Window(pyglet.window.Window):
         self._screen_offset[1] = value[1]
 
     def on_draw(self):
-        self.update()
+        self._update_image()
         self.current_page.draw()
         if self.current_transition is not None:
             if self.current_transition.state == 2:
@@ -141,13 +141,13 @@ class Window(pyglet.window.Window):
         return sprite
 
     def add_entity(self, page, layer, position_handler, res, physics_updater, particle_handler,
-                   end_animation_callback):
+                   end_of_state_callback):
         if isinstance(res, str):
             res = self.resource_loader.load(res)
         batch = page.batch
-        image_handler = ihdlr.TBEntityImageHandler(res, end_animation_callback)
+        image_handler = ihdlr.TBEntityImageHandler(res, lambda *_, **__: None)
         sprite = self._add_sprite(batch, 'Entity', layer, position_handler, image_handler,
-                                  physics_updater, particle_handler)
+                                  physics_updater, particle_handler, end_of_state_callback)
         return sprite
 
     def add_structure(self, page, layer, position_handler, res):
@@ -244,8 +244,14 @@ class Window(pyglet.window.Window):
     def update(self, *_, **__):
         pass
 
-    def _update(self, *_, **__):
-        self.update(*_, **__)
+    def update_image(self, *_, **__):
+        pass
+
+    def _update_image(self, *args, **kwargs):
+        self.update_image(*args, **kwargs)
+
+    def _update(self, *args, **kwargs):
+        self.update(*args, **kwargs)
 
     def after_draw(self, *_, **__):
         pass

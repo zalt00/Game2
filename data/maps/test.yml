@@ -16,6 +16,38 @@ background_data:
   - -550
   res: forest/forest.bg
 objects_data:
+  base_ground_structure:
+    ground:
+    - - - -416.0
+        - 123
+      - - 416.0
+        - 123
+    is_built: false
+    layer: 1
+    name: base_ground
+    pos:
+    - 1668
+    - -96
+    res: forest/structure.st
+    state: base
+    type: structure
+    walls: []
+  ground-2_structure:
+    ground:
+    - - - -416.0
+        - 123
+      - - 416.0
+        - 123
+    is_built: false
+    layer: 1
+    name: ground-2
+    pos:
+    - 100
+    - -32
+    res: forest/structure.st
+    state: base
+    type: structure
+    walls: []
   player:
     res: player/white_guy.obj
     type: player
@@ -60,39 +92,35 @@ objects_data:
       - y
     - - window
       - current_framerate
-  structure2_structure:
+  structure-1_structure:
     ground:
     - - - -368.0
         - 91
-      - - -196.0
+      - - -200.0
         - 91
-    - - - -196.0
+    - - - -200.0
         - 219
-      - - -92.0
+      - - -88.0
         - 219
-    - - - -92.0
+    - - - -88.0
         - 91
-      - - 8.0
+      - - 12.0
         - 91
-    - - - 8.0
+    - - - 12.0
         - 59
-      - - 128.0
+      - - 144.0
         - 59
-    - - - 128.0
-        - 75.0
-      - - 164.0
-        - 75.0
-    - - - 164.0
-        - 107.0
-      - - 188.0
-        - 107.0
+    - - - 144.0
+        - 91
+      - - 184.0
+        - 91
     - - - 172.0
         - 315
-      - - 356.0
+      - - 360.0
         - 315
     is_built: false
     layer: 1
-    name: structure2
+    name: structure-1
     pos:
     - 884
     - 0
@@ -100,58 +128,38 @@ objects_data:
     state: base
     type: structure
     walls:
-    - - - -192.0
+    - - - -200.0
         - 91
-      - - -192.0
+      - - -200.0
         - 219
-    - - - -96.0
+    - - - -88.0
         - 219
-      - - -96.0
+      - - -88.0
         - 91
-    - - - 16.0
+    - - - 12.0
         - 91
-      - - 16.0
+      - - 12.0
         - 59
-    - - - 128.0
+    - - - 144.0
         - 59
-      - - 128.0
-        - 75.0
-    - - - 160.0
-        - 75.0
-      - - 160.0
-        - 107.0
-    - - - 192.0
-        - 107.0
-      - - 192.0
-        - 299.0
-    - - - 192.0
-        - 299.0
-      - - 176.0
-        - 299.0
-    - - - 176.0
-        - 299.0
-      - - 176.0
+      - - 144.0
+        - 91
+    - - - 184.0
+        - 91
+      - - 184.0
+        - 291
+    - - - 184.0
+        - 291.0
+      - - 172.0
+        - 291.0
+    - - - 172.0
         - 315
-    - - - 352.0
+      - - 172.0
+        - 291.0
+    - - - 360.0
         - 315
-      - - 352.0
+      - - 360.0
         - 27
-  structure4_structure:
-    ground:
-    - - - -416.0
-        - 123
-      - - 416.0
-        - 123
-    is_built: false
-    layer: 1
-    name: structure4
-    pos:
-    - 100
-    - -32
-    res: forest/structure.st
-    state: base
-    type: structure
-    walls: []
 palette: forest/forest_structure_tilesets.stsp
 space: true
 triggers_data:
@@ -165,3 +173,33 @@ triggers_data:
     enabled: true
     id: 0
     top: -200
+  left_border:
+    actions:
+    - fade_in: 30
+      fade_out: 30
+      total_duration: 100
+      type_: AbsoluteMovecam
+      x: -1216
+      y: 0
+    - target: 1
+      type_: DisableTrigger
+    - target: 2
+      type_: EnableTrigger
+    enabled: true
+    id: 1
+    left: 1280
+  right_border:
+    actions:
+    - fade_in: 30
+      fade_out: 30
+      total_duration: 100
+      type_: AbsoluteMovecam
+      x: 0
+      y: 0
+    - target: 2
+      type_: DisableTrigger
+    - target: 1
+      type_: EnableTrigger
+    enabled: false
+    id: 2
+    right: 1216

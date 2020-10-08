@@ -164,6 +164,7 @@ class Object:
     def __init__(self, data, directory):
         self.data = data
         self.sheets = {}
+        self.flipped_sheets = {}
 
         scale = 2 ** self.data['scale2x']
         self.width = self.data['dimensions'][0] * scale
@@ -177,8 +178,13 @@ class Object:
             path = os.path.join(directory, fn).replace('\\', '/')
             img = pyglet.resource.image(path)
 
-            img_grid = pyglet.image.ImageGrid(img, 1, img.width // (self.data["dimensions"][0])).get_texture_sequence()
-            self.sheets[name] = img_grid
+            img_grid = pyglet.image.ImageGrid(img, 1, img.width // (self.data["dimensions"][0]))
+
+            animation = pyglet.image.Animation.from_image_sequence(img_grid, 0.1, loop=True)
+            for frame in animation.frames:
+                frame.image.anchor_x = self.dec[0]
+            self.sheets[name] = animation
+            self.flipped_sheets[name] = animation.get_transform(True)
 
 
 class Background:

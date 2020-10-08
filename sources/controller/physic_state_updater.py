@@ -1,8 +1,10 @@
 # -*- coding:Utf-8 -*-
 
+from time import perf_counter
 
-class PhysicsUpdater:
-    def __init__(self, body, landing_callback, save_position_callback, space):
+
+class PhysicStateUpdater:
+    def __init__(self, body, landing_callback, save_position_callback, space, state_duration):
         self.body = body
         self.space = space
         self.on_ground = False
@@ -18,6 +20,20 @@ class PhysicsUpdater:
         self.space.add_collision_handler(0, 2).post_solve = self.collision_with_structure
         self.space.add_collision_handler(0, 1).separate = self.separate_from_ground
         self.space.add_collision_handler(0, 2).separate = self.separate
+
+        self.state_duration = state_duration
+
+        self.current_state_name = 'idle'
+        self.current_state_duration = 0
+        self.t0 = 0
+
+    def change_physic_state(self, entity, state):
+        duration = self.state_duration.get(state, None)
+        if duration is None:
+            duration = entity.image_handler.get_state_duration(state)
+        self.current_state_duration = duration
+        self.current_state_name = state
+        self.t0 = perf_counter()
 
     def separate_from_ground(self, *_, **__):
         self.separate()
@@ -98,4 +114,9 @@ class PhysicsUpdater:
             entity.is_on_ground = on_ground
             if landed:
                 self.land()
+
+            # updates the physic state of the entity
+            t1 = perf_counter()
+            if t1 - self.t0 >= self.current_state_duration:
+                entity.end_of_state(self.current_state_name)
 

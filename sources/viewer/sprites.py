@@ -48,7 +48,13 @@ class BaseSprite(pyglet.sprite.Sprite, metaclass=SpriteMetaclass, instantiable=F
             if hasattr(image_handler.res, 'scale'):
                 self.scale = image_handler.res.scale
 
-    def update_(self, n=1):
+    def on_animation_end(self):
+        try:
+            self.image_handler.on_animation_end(self)
+        except AttributeError:
+            pass
+
+    def update_position(self):
         if self._hide_next_update:
             self.hide(False)
             self._hide_next_update = False
@@ -57,13 +63,22 @@ class BaseSprite(pyglet.sprite.Sprite, metaclass=SpriteMetaclass, instantiable=F
             self._show_next_update = False
 
         if not self.static or self.position_changed:
-            self.x, self.y = self.position_handler.update_position(self)
-        if self.affected_by_screen_offset:
-            self.x += self.screen_offset[0]
-            self.y += self.screen_offset[1]
+            position = list(self.position_handler.update_position(self))
+            if self.affected_by_screen_offset:
+                position[0] += self.screen_offset[0]
+                position[1] += self.screen_offset[1]
+            self.position = position
+
+    def update_image(self):
         if self.animated or self.image_changed:
-            self.image = self.image_handler.update_image(self, n)
+            image = self.image_handler.update_image(self)
+            if image is not None:
+                self.image = image
         self.position_changed = self.image_changed = False
+
+    def update_(self, n=1):
+        self.update_position()
+        self.update_image()
 
     def hide(self, wait_for_next_update=False):
         if wait_for_next_update:
@@ -84,7 +99,7 @@ class BaseSprite(pyglet.sprite.Sprite, metaclass=SpriteMetaclass, instantiable=F
 
 class Entity(BaseSprite, metaclass=SpriteMetaclass):
     def __init__(self, batch, layer_group, position_handler,
-                 image_handler, screen_offset, physics_updater, particles_handler):
+                 image_handler, screen_offset, physic_state_updater, particles_handler, end_of_state_callback):
 
         self.secondary_state = ''
 
@@ -96,14 +111,29 @@ class Entity(BaseSprite, metaclass=SpriteMetaclass):
 
         self.is_on_ground = False
 
-        self.physics_updater = physics_updater
+        self.physic_state_updater = physic_state_updater
         self.particles_handler = particles_handler
+
+        self._state = 'idle'
+        self.end_of_state = end_of_state_callback
 
         super().__init__(batch, layer_group, position_handler, image_handler, screen_offset)
 
-    def update_(self, n=1):
-        self.physics_updater.update_(self)
-        super().update_()
+    @property
+    def state(self):
+        return self._state
+
+    @state.setter
+    def state(self, new_state):
+        self.physic_state_updater.change_physic_state(self, new_state)
+        self._state = new_state
+
+    def update_position(self):
+        self.physic_state_updater.update_(self)
+        super(Entity, self).update_position()
+
+    def update_image(self):
+        super(Entity, self).update_image()
         self.particles_handler.update_(self)
 
 
@@ -126,7 +156,12 @@ class BgLayer(BaseSprite, metaclass=SpriteMetaclass):
 
 
 class Structure(BaseSprite, metaclass=SpriteMetaclass):
-    pass
+    def __init__(self, *args, **kwargs):
+        super(Structure, self).__init__(*args, **kwargs)
+        self.animated = False
+
+    def __repr__(self):
+        return f'Structure(image={self.image}, position={self.position})'
 
 
 class Button(BaseSprite, metaclass=SpriteMetaclass):
@@ -200,7 +235,11 @@ class GeneratedButton(metaclass=SpriteMetaclass):
         self.width = width
         self.height = height
 
-    def update_(self, *_, **__):
+    def update_(self):
+        self.update_position()
+        self.update_image()
+
+    def update_image(self, *_, **__):
         #  un peu contradictoire avec la manière de faire des autres sprites, mais bon c'est vraiment pour un truc
         #  très spécifique
         if self.state == 'idle':
@@ -211,6 +250,7 @@ class GeneratedButton(metaclass=SpriteMetaclass):
         for line in self.rectangle:
             line.color = color[:-1]
 
+    def update_position(self):
         x, y = self.position_handler.update_position(self)
         self.label.x = x
         self.label.y = y
@@ -246,15 +286,24 @@ class Text(pyglet.text.Label, metaclass=SpriteMetaclass):
         self.get_text = text_getter
 
         text = self.get_text()
-
+        self.a = 0
         super(Text, self).__init__(text, font, size, batch=batch, group=layer_group, color=color, multiline=True, width=800)
 
         self.position_handler = position_handler
 
         self.update_()
 
-    def update_(self, *_, **__):
+    def update_position(self):
         self.x, self.y = self.position_handler.update_position(self)
-        text = self.get_text()
-        self.text = text
+
+    def update_image(self):
+        self.a += 1
+        self.a %= 12
+        if self.a == -1:
+            text = self.get_text()
+            self.text = text
+
+    def update_(self, *_, **__):
+        self.update_position()
+        self.update_image()
 

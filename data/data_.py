@@ -355,7 +355,7 @@ class Data(DataContainer):
     class Game(DataContainer):
 
         current_map_id = SaveComponent(4)
-        maps = ('data/maps/garbage.yml',)
+        maps = ('data/maps/test.yml',)
 
         class BasePlayerData:
             height = 50
@@ -363,6 +363,12 @@ class Data(DataContainer):
             name = "player"
             pos_x = SaveComponent(2)
             pos_y = SaveComponent(3)
+
+            class StateDuration(DataContainer):
+                idle = 0.01
+                fall = 0.01
+                jump = 0.01
+                dash = 0.08
 
         class BaseBGData:
             camera_pos_x = SaveComponent(0)

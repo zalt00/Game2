@@ -3,7 +3,7 @@
 from .position_handler import StaticPositionHandler, PlayerPositionHandler, BgLayerPositionHandler
 from .action_manager import GameActionManager,\
     MainMenuActionManager, OptionsActionManager, CharacterSelectionActionManager
-from .physics_updater import PhysicsUpdater
+from .physic_state_updater import PhysicStateUpdater
 from .particles_handler import ParticleHandler
 from .text_getter import FormatTextGetter, SimpleTextGetter
 from .space import GameSpace
@@ -581,7 +581,8 @@ class Game:
                                           [0.35, 0.35, 0.3, 0.15, 0.15, 0.15])
         #####
 
-        self.window.update = self.update
+        self.window.update = self.update_positions
+        self.window.update_image = self.update_images
         self.window.quit = self.dump_save
 
     def pause(self):
@@ -612,7 +613,8 @@ class Game:
         self.player = self.window.add_entity(
             self.viewer_page, 0, PlayerPositionHandler(self.space.objects[name][0], self.triggers),
             additional_data['res'],
-            PhysicsUpdater(self.space.objects[name][0], self.action_manager.land, self.save_position, self.space),
+            PhysicStateUpdater(self.space.objects[name][0], self.action_manager.land, self.save_position, self.space,
+                               player_data.StateDuration),
             ParticleHandler(self.spawn_particle), self.action_manager.set_state)
 
         self.viewer_page.entities.add(self.player)
@@ -665,11 +667,35 @@ class Game:
                 self.space.step(1/60/4)
                 if self.count == 3:
                     self.count = 0
-                    for sprite in self.viewer_page.get_all_sprites():
-                        sprite.update_(1)
+                    sprites = self.viewer_page.get_all_sprites()
+                    for sprite in sprites:
+                        sprite.update_position()
+
+                    for sprite in sprites:
+                        sprite.update_image()
                 else:
                     self.count += 1
             self.number_of_space_updates += n1
+
+    def update_positions(self, *_, **__):
+        if not self.paused:
+            n1 = round((perf_counter() - self.t1) * 60 * 4) - self.number_of_space_updates
+
+            for i in range(n1):
+                self.space.step(1/60/4)
+                if self.count == 3:
+                    self.count = 0
+                    sprites = self.viewer_page.get_all_sprites()
+                    for sprite in sprites:
+                        sprite.update_position()
+                else:
+                    self.count += 1
+            self.number_of_space_updates += n1
+
+    def update_images(self):
+        sprites = self.viewer_page.get_all_sprites()
+        for sprite in sprites:
+            sprite.update_image()
 
     def loading_update(self, *_, **__):
         self.loading_finished_check()
@@ -687,17 +713,6 @@ class Game:
         if self.draw_options is not None:
             self.space.debug_draw(self.draw_options)
 
-    def update_space(self, *_, **__):
-        n1 = round((perf_counter() - self.t1) * 60 * 4) - self.number_of_space_updates
-
-        for i in range(n1):
-            self.space.step(1/60/4)
-            if self.count == 3:
-                self.count = 0
-                self.window.global_group.update(1)
-            else:
-                self.count += 1
-        self.number_of_space_updates += n1
 
 
 
