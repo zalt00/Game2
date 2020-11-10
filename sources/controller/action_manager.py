@@ -650,5 +650,4 @@ class GameActionManager(ActionManager):
                 self.next_state = 'fall'
             if self.still_walking:
                 self.player.air_control = self.player.direction
-            
 

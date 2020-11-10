@@ -367,7 +367,7 @@ class Data(DataContainer):
             class StateDuration(DataContainer):
                 idle = 0.01
                 fall = 0.01
-                jump = 0.01
+                jump = 0.1
                 dash = 0.08
 
         class BaseBGData:

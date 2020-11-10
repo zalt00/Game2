@@ -37,6 +37,7 @@ class TBEntityImageHandler(EntityImageHandler):
         super(TBEntityImageHandler, self).__init__(res, end_animation_callback)
 
         self.animation_changed = True
+        self.direction_changed = True
 
     def on_animation_end(self, entity):
         self.end_animation_callback(entity.state)
@@ -46,13 +47,14 @@ class TBEntityImageHandler(EntityImageHandler):
             self.previous_state = entity.state
             self.animation_changed = True
 
-        if self.animation_changed:
+        if self.animation_changed or self.direction_changed:
 
             if entity.direction == 1:
                 animation = self.res.sheets[entity.state]
             else:
                 animation = self.res.flipped_sheets[entity.state]
             self.animation_changed = False
+            self.direction_changed = False
             return animation
         return None
 

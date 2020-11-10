@@ -25,6 +25,8 @@ class BaseSprite(pyglet.sprite.Sprite, metaclass=SpriteMetaclass, instantiable=F
         self.state = state
         self.screen_offset = screen_offset
 
+        self.__position = (0, 0)
+
         super().__init__(pyglet.image.Texture.create(0, 0), batch=batch, group=layer_group)
 
         self.image_handler = image_handler
@@ -54,7 +56,7 @@ class BaseSprite(pyglet.sprite.Sprite, metaclass=SpriteMetaclass, instantiable=F
         except AttributeError:
             pass
 
-    def update_position(self):
+    def update_position(self, last_update=True):
         if self._hide_next_update:
             self.hide(False)
             self._hide_next_update = False
@@ -67,7 +69,9 @@ class BaseSprite(pyglet.sprite.Sprite, metaclass=SpriteMetaclass, instantiable=F
             if self.affected_by_screen_offset:
                 position[0] += self.screen_offset[0]
                 position[1] += self.screen_offset[1]
-            self.position = position
+            self.__position = position
+            if last_update:
+                self.position = position
 
     def update_image(self):
         if self.animated or self.image_changed:
@@ -106,7 +110,6 @@ class Entity(BaseSprite, metaclass=SpriteMetaclass):
         self.air_control = 0
         self.can_air_control = True
 
-        self.direction = 1
         self.thrust = Vec2d(0, 0)
 
         self.is_on_ground = False
@@ -116,6 +119,8 @@ class Entity(BaseSprite, metaclass=SpriteMetaclass):
 
         self._state = 'idle'
         self.end_of_state = end_of_state_callback
+
+        self._direction = 1
 
         super().__init__(batch, layer_group, position_handler, image_handler, screen_offset)
 
@@ -128,9 +133,22 @@ class Entity(BaseSprite, metaclass=SpriteMetaclass):
         self.physic_state_updater.change_physic_state(self, new_state)
         self._state = new_state
 
-    def update_position(self):
+    @property
+    def direction(self):
+        return self._direction
+
+    @direction.setter
+    def direction(self, value):
+        if value != self.direction:
+            self._direction = value
+            try:
+                self.image_handler.direction_changed = True
+            except AttributeError:
+                pass
+
+    def update_position(self, last_update=True):
         self.physic_state_updater.update_(self)
-        super(Entity, self).update_position()
+        super(Entity, self).update_position(last_update)
 
     def update_image(self):
         super(Entity, self).update_image()
@@ -179,11 +197,24 @@ class Button(BaseSprite, metaclass=SpriteMetaclass):
 class Particle(BaseSprite, metaclass=SpriteMetaclass):
     def __init__(self, batch, layer_group, position_handler, image_handler, screen_offset, state, direction):
         self.direction = direction
+        self.__position = (0, 0)
         super().__init__(batch, layer_group, position_handler, image_handler, screen_offset, state)
+
+    def update_position(self, last_update=True):
+        if not self.visible:
+            super(Particle, self).update_position(last_update)
+            self.__position = self.position
+
+    @pyglet.sprite.Sprite.visible.setter
+    def visible(self, value):
+        if value:
+            self.position = self.__position
+        pyglet.sprite.Sprite.visible.fset(self, value)
 
     def change_position(self, x, y):
         self.position_handler.pos = [x, y]
         self.position_changed = True
+        self.__position = x, y
 
 
 class GeneratedButton(metaclass=SpriteMetaclass):
@@ -250,7 +281,7 @@ class GeneratedButton(metaclass=SpriteMetaclass):
         for line in self.rectangle:
             line.color = color[:-1]
 
-    def update_position(self):
+    def update_position(self, _=None):
         x, y = self.position_handler.update_position(self)
         self.label.x = x
         self.label.y = y

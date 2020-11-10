@@ -51,47 +51,6 @@ objects_data:
   player:
     res: player/white_guy.obj
     type: player
-  player_debug_values:
-    color: '#ffffff'
-    pos:
-    - 20
-    - 640
-    size: 28
-    text: 'x velocity: {}
-
-      y velocity: {}
-
-      x coordinate: {}
-
-      y coordinate: {}
-
-      framerate: {}
-
-      '
-    type: text
-    values:
-    - - player
-      - position_handler
-      - body
-      - velocity
-      - x
-    - - player
-      - position_handler
-      - body
-      - velocity
-      - y
-    - - player
-      - position_handler
-      - body
-      - position
-      - x
-    - - player
-      - position_handler
-      - body
-      - position
-      - y
-    - - window
-      - current_framerate
   structure-1_structure:
     ground:
     - - - -368.0

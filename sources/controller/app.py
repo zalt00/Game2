@@ -484,8 +484,6 @@ class Game:
         else:
             self.draw_options = None
 
-        #pygame.mouse.set_visible(False)
-
         self.space = GameSpace(0, 0)
 
         ### BG ###
@@ -670,7 +668,6 @@ class Game:
                     sprites = self.viewer_page.get_all_sprites()
                     for sprite in sprites:
                         sprite.update_position()
-
                     for sprite in sprites:
                         sprite.update_image()
                 else:
@@ -681,13 +678,14 @@ class Game:
         if not self.paused:
             n1 = round((perf_counter() - self.t1) * 60 * 4) - self.number_of_space_updates
 
+            sprites = self.viewer_page.get_all_sprites()
             for i in range(n1):
                 self.space.step(1/60/4)
                 if self.count == 3:
                     self.count = 0
-                    sprites = self.viewer_page.get_all_sprites()
                     for sprite in sprites:
-                        sprite.update_position()
+                        last = i + 4 - self.count >= (n1 // 3 - 1)
+                        sprite.update_position(last)
                 else:
                     self.count += 1
             self.number_of_space_updates += n1
