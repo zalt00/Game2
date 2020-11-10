@@ -421,7 +421,9 @@ class Menu:
 
 class Game:
     def __init__(self, window, model, return_to_main_menu, loading_finished_check, current_save_id, debug=False):
+
         self.window = window
+
         self.model = model
         self.state = 'idle'
         self.return_to_main_menu = return_to_main_menu

@@ -98,13 +98,13 @@ class Data(DataContainer):
 ######################################################################################################
     
     class Menu(DataContainer):
-        pages = ('MainMenu', 'Options', ' CharacterSelectionMenu')
+        pages = ('MainMenu', 'Options', 'CharacterSelectionMenu')
 
         y_offset = -50
 
         class Options(DataContainer):
-            bg_res = 'forest/forest.bg'
-            bg_pos = (0, -500)
+            bg_res = 'black_forest.bg'
+            bg_pos = (0, 0)
             action_manager = 'OptionsActionManager'
 
             class Objects(DataContainer):
@@ -257,8 +257,8 @@ class Data(DataContainer):
                     pos = (1092, 150)
 
         class MainMenu(DataContainer):
-            bg_res = 'forest/forest.bg'
-            bg_pos = (0, -500)
+            bg_res = 'black_forest.bg'
+            bg_pos = (0, 0)
 
             action_manager = 'MainMenuActionManager'
 
@@ -296,8 +296,8 @@ class Data(DataContainer):
                     button_name = 'options_button'
 
         class CharacterSelectionMenu(DataContainer):
-            bg_res = 'forest/forest.bg'
-            bg_pos = (0, -500)
+            bg_res = 'black_forest.bg'
+            bg_pos = (0, 0)
 
             action_manager = 'CharacterSelectionActionManager'
 

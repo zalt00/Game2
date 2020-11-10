@@ -3,13 +3,13 @@
   "scale": 2,
 
   "background": [
-    {"filename": "Layer_02.png", "relative_pos":  [0, 0], "layer":  4},
-    {"filename": "Layer_03.png", "relative_pos":  [0, 0], "layer":  3},
-    {"filename": "Layer_04.png", "relative_pos":  [0, 0], "layer":  2},
-    {"filename": "Layer_05.png", "relative_pos":  [0, 0], "layer":  1}
+    {"filename": "Layer_02.png", "relative_pos":  [0, 0], "layer":  -2},
+    {"filename": "Layer_03.png", "relative_pos":  [0, 0], "layer":  -3},
+    {"filename": "Layer_04.png", "relative_pos":  [0, 0], "layer":  -4},
+    {"filename": "Layer_05.png", "relative_pos":  [0, 0], "layer":  -5}
   ],
 
   "foreground": [
-    {"filename": "Layer_01.png", "relative_pos":  [0, 0], "layer":  5}
+    {"filename": "Layer_01.png", "relative_pos":  [0, 0], "layer":  -1}
   ]
 }
