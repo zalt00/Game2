@@ -15,6 +15,7 @@ from time import perf_counter
 import yaml
 import threading
 from viewer.transition import Transition
+from .camera_handler import CameraHandler
 from utils.logger import logger
 from pyglet.window import key
 
@@ -438,6 +439,7 @@ class Game:
 
         self.t1 = self.count = self.number_of_space_updates = self.space = \
             self.player = self.entities = self.structures = self.triggers = self.ag = self.action_manager = None
+        self.camera_handler = None
         self.draw_options = None
 
         self.viewer_page = None
@@ -492,11 +494,8 @@ class Game:
         dynamic = True
         n_layers = self.window.get_number_of_layers(self.level_res)
         pos = self.level['background_data']['pos']
-        if not dynamic:
-            position_handler = StaticPositionHandler(pos)
-            pos_hdlrs = [position_handler for _ in range(n_layers)]
-        else:
-            pos_hdlrs = [BgLayerPositionHandler(pos, self.window.screen_offset) for _ in range(n_layers)]
+        position_handler = BgLayerPositionHandler(pos, self.window.screen_offset)
+        pos_hdlrs = [position_handler for _ in range(n_layers)]
 
         bg_layers = self.window.add_bg(
             self.viewer_page,
@@ -513,38 +512,30 @@ class Game:
             )
             pos_hdlr = BgLayerPositionHandler(
                 self.level['background_data']['bg_decoration_objects_pos'],
-                [0, 0]
+                self.window.screen_offset
             )
             pos_hdlrs.append(pos_hdlr)
             decoration_layer = self.window.add_bg_layer(
                 self.viewer_page, self.level['background_data']['bg_decoration_layer_id'], pos_hdlr, layer_res)
             self.viewer_page.bg_layers.add(decoration_layer)
 
-        # pos2 = pos[0] + self.window.get_length(self.level_res) * 2, pos[1]
-        # ph = BgLayerPositionHandler(pos2, self.window.screen_dec)
-        # pos_hdlrs.append(ph)
-        # self.window.add_bg_layer(self.level_res, 4, ph, foreground=True)
         ######
 
         self.entities = dict()
         self.structures = dict()
 
+        ### CAMERA ###
+        self.camera_handler = CameraHandler((
+            self.model.Game.BaseBGData.camera_pos_x.get(self.current_save_id),
+            self.model.Game.BaseBGData.camera_pos_y.get(self.current_save_id)
+        ))
+
         ### TRIGGERS ###
         self.triggers = [None] * len(self.level['triggers_data'])
-        self.ag = GameActionGetter(self.triggers, self.window, pos_hdlrs, self.entities)
+        self.ag = GameActionGetter(self.triggers, self.window, self.camera_handler, self.entities)
         for trigdata in self.level['triggers_data'].values():
             self.triggers[trigdata['id']] = Trigger(trigdata, self.ag)
-        #####
 
-        ### CAMERA ###
-
-        self.ag('AbsoluteMovecam',
-                x=self.model.Game.BaseBGData.camera_pos_x.get(self.current_save_id),
-                y=self.model.Game.BaseBGData.camera_pos_y.get(self.current_save_id),
-                total_duration=1,
-                fade_in=0,
-                fade_out=0
-                )()
         #####
 
         action_manager = GameActionManager(
@@ -685,6 +676,7 @@ class Game:
                 self.space.step(1/60/4)
                 if self.count == 3:
                     self.count = 0
+                    self.window.screen_offset = self.camera_handler.update_camera_position(1)
                     for sprite in sprites:
                         last = i + 4 - self.count >= (n1 // 3 - 1)
                         sprite.update_position(last)

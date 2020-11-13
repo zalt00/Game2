@@ -10,10 +10,10 @@ class ActionGetter:
 
 
 class GameActionGetter(ActionGetter):
-    def __init__(self, triggers, window, pos_handlers, entities):
+    def __init__(self, triggers, window, camera_handler, entities):
         self.triggers = triggers
         self.window = window
-        self.pos_hdlrs = pos_handlers
+        self.camera_handler = camera_handler
         self.entities = entities
 
     @dataclass
@@ -26,10 +26,8 @@ class GameActionGetter(ActionGetter):
         fade_out: int
 
         def __call__(self):
-            for p in self.ag.pos_hdlrs:
-                p.add_trajectory((self.x, self.y), self.total_duration, self.fade_in, self.fade_out)
-#            self.ag.window.bg_pos[:] = self.x, self.y
-    
+            self.ag.camera_handler.add_trajectory((self.x, self.y), self.total_duration, self.fade_in, self.fade_out)
+
     @dataclass
     class EnableTrigger:
         ag: Any
