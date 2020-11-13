@@ -28,6 +28,9 @@ class CameraHandler:
         self.trajectory = None
         self.trajectory_queue = Queue()
 
+    def move_to(self, x, y):
+        self.pos[:] = x, y
+
     def update_camera_position(self, n):
         if self.trajectory is not None:
             end = False

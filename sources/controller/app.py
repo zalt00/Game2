@@ -525,10 +525,9 @@ class Game:
         self.structures = dict()
 
         ### CAMERA ###
-        self.camera_handler = CameraHandler((
-            self.model.Game.BaseBGData.camera_pos_x.get(self.current_save_id),
-            self.model.Game.BaseBGData.camera_pos_y.get(self.current_save_id)
-        ))
+        self.camera_handler = CameraHandler((0, 0))
+        self.camera_handler.move_to(x=self.model.Game.BaseBGData.camera_pos_x.get(self.current_save_id),
+                                    y=self.model.Game.BaseBGData.camera_pos_y.get(self.current_save_id))
 
         ### TRIGGERS ###
         self.triggers = [None] * len(self.level['triggers_data'])
