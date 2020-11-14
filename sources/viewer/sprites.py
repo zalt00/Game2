@@ -44,7 +44,11 @@ class BaseSprite(pyglet.sprite.Sprite, metaclass=SpriteMetaclass, instantiable=F
         self._show_next_update = False
 
         self.image = image_handler.update_image(self)
-        self.x, self.y = position_handler.update_position(self)
+        position = list(position_handler.update_position(self))
+        if self.affected_by_screen_offset:
+            position[0] += self.screen_offset[0]
+            position[1] += self.screen_offset[1]
+        self.position = position
 
         if hasattr(image_handler, 'res'):
             if hasattr(image_handler.res, 'scale'):
@@ -201,7 +205,7 @@ class Particle(BaseSprite, metaclass=SpriteMetaclass):
         super().__init__(batch, layer_group, position_handler, image_handler, screen_offset, state)
 
     def update_position(self, last_update=True):
-        if not self.visible:
+        if self.visible or self._show_next_update:
             super(Particle, self).update_position(last_update)
             self.__position = self.position
 

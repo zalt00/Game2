@@ -321,7 +321,7 @@ class OptionsActionManager(BaseMenuActionManager):
     def __init__(self, window, buttons, classic_buttons, classic_buttons_order, panels,
                  panel_order, additional_texts, additional_structures,
                  close_options_callback, change_kb_ctrls_callback, change_con_ctrls_callback,
-                 set_ctrl_callback, options_data, reinit_page_callback):
+                 set_ctrl_callback, options_data, reinit_page_callback, set_fullscreen_callback):
 
         super(OptionsActionManager, self).__init__(window, buttons, classic_buttons, classic_buttons_order, panels,
                                                    panel_order, additional_texts, additional_structures)
@@ -332,6 +332,8 @@ class OptionsActionManager(BaseMenuActionManager):
         self.change_kb_ctrls = change_kb_ctrls_callback
         self.change_con_ctrls = change_con_ctrls_callback
         self._set_ctrl = set_ctrl_callback
+
+        self.set_fullscreen = set_fullscreen_callback
 
         self.do_handlers[self.MOUSEMOTION] = self.update_buttons
         self.do_handlers[self.LEFT_CLICK] = self.left_click
@@ -355,6 +357,12 @@ class OptionsActionManager(BaseMenuActionManager):
 
         self.set_panel_to_video()
         self.update_buttons2()
+
+        self.apply_additional_actions = {}
+
+    def change_change_display_mode(self, arg):
+        self.change_option(arg)
+        self.apply_additional_actions['set_fullscreen'] = [not arg[0]]
 
     def change_option(self, arg):
         if len(arg) == arg[0] + 3:
@@ -380,6 +388,9 @@ class OptionsActionManager(BaseMenuActionManager):
         self._set_panel_to('Video')
 
     def apply(self):
+        for action_type, args in self.apply_additional_actions.items():
+            getattr(self, action_type)(*args)
+        self.apply_additional_actions = {}
         SaveComponent.dump()
         self.close_options()
 

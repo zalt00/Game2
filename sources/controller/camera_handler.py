@@ -6,7 +6,7 @@ from .trajectory import CameraMovementTrajectory
 
 
 class CameraHandler:
-    def __init__(self, pos):
+    def __init__(self, pos, player):
         self.pos = list(pos)
         self.base_pos = tuple(pos)
         self.trajectory = None
@@ -14,6 +14,12 @@ class CameraHandler:
         self.advance = 0
         self.end_trajectory = None
         self.trajectory_queue = Queue()
+        self.player = player
+        self.relative_pos = [0, 0]
+        self.locked = [False, False]
+        self.lock_mode = ''
+        self.possible_modes = {'follow', 'strict'}
+        self.follow_sensitivity = 15
 
     def add_trajectory(self, target, total_duration, fade_in, fade_out):
         if self.trajectory is None:
@@ -30,6 +36,17 @@ class CameraHandler:
 
     def move_to(self, x, y):
         self.pos[:] = x, y
+
+    def lock_camera(self, x_bool, y_bool, mode):
+        if x_bool:
+            self.relative_pos[0] = self.pos[0] + self.player.position_handler.body.position.x
+        if y_bool:
+            self.relative_pos[1] = self.pos[1] + self.player.position_handler.body.position.y
+        self.locked[:] = x_bool, y_bool
+        if mode in self.possible_modes:
+            self.lock_mode = mode
+        else:
+            self.lock_mode = 'strict'
 
     def update_camera_position(self, n):
         if self.trajectory is not None:
@@ -53,6 +70,26 @@ class CameraHandler:
                     self.trajectory = None
                 else:
                     self.add_trajectory(*self.trajectory_queue.get())
+
+            if self.locked[0]:
+                self.relative_pos[0] = self.pos[0] + self.player.position_handler.body.position.x
+            if self.locked[1]:
+                self.relative_pos[1] = self.pos[1] + self.player.position_handler.body.position.y
+        else:
+            if self.locked[0]:
+                if self.lock_mode == 'strict':
+                    self.pos[0] = self.relative_pos[0] - self.player.position_handler.body.position.x
+                elif self.lock_mode == 'follow':
+                    dif = self.relative_pos[0] - self.player.position_handler.body.position.x - self.pos[0]
+                    if abs(dif) > 1:
+                        self.pos[0] += dif / self.follow_sensitivity
+            if self.locked[1]:
+                if self.lock_mode == 'strict':
+                    self.pos[1] = self.relative_pos[1] - self.player.position_handler.body.position.y
+                elif self.lock_mode == 'follow':
+                    dif = self.relative_pos[1] - self.player.position_handler.body.position.y - self.pos[1]
+                    if abs(dif) > 1:
+                        self.pos[1] += dif / self.follow_sensitivity
         return self.pos
 
 

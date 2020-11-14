@@ -37,6 +37,8 @@ class Window(pyglet.window.Window):
 
         self.current_framerate = 60
 
+        self.paused = False
+
         pyglet.clock.schedule_interval(self._update, 1 / 120.0)
 
     def init_joysticks(self):
@@ -74,7 +76,8 @@ class Window(pyglet.window.Window):
         self._screen_offset[1] = value[1]
 
     def on_draw(self):
-        self._update_image()
+        if not self.paused:
+            self._update_image()
         self.current_page.draw()
         if self.current_transition is not None:
             if self.current_transition.state == 2:
@@ -255,3 +258,6 @@ class Window(pyglet.window.Window):
 
     def after_draw(self, *_, **__):
         pass
+
+    def set_display_mode(self, fullscreen):
+        self.set_fullscreen(fullscreen, width=self.width, height=self.height)

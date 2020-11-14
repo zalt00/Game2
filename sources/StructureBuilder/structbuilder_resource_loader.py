@@ -106,6 +106,11 @@ class StructTSPalette:
 
         self.rd_previous = -1
 
+        self.eraser = pygame.image.load(os.path.join(directory, self.data['eraser']).replace('\\', '/')).convert_alpha()
+        self.random_icon = pygame.image.load(
+            os.path.join(directory, self.data['random']).replace('\\', '/')).convert_alpha()
+
+
     def parse(self, s):
         """parses a string buffer element and returns an image"""
         key = s[:2]

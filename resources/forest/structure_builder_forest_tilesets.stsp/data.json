@@ -1,0 +1,31 @@
+{
+  "tile size": [16, 16],
+  "eraser": "transparent_tile.png",
+  "random": "random.png",
+  "tile sets data": {
+    "CG": {"calibration_squares": false, "filename": "./../forest_structure_tilesets.stsp/classic_ground.png"},
+    "CN": {"calibration_squares": false, "filename": "./../forest_structure_tilesets.stsp/connectors.png"},
+    "DH": {"calibration_squares": true, "filename": "./../forest_structure_tilesets.stsp/dirty_grass.png"},
+    "DG": {"calibration_squares": false, "filename": "./../forest_structure_tilesets.stsp/dirty_ground.png"},
+    "FH": {"calibration_squares": true, "filename": "./../forest_structure_tilesets.stsp/fluffy_grass.png"},
+    "FG": {"calibration_squares": false, "filename": "./../forest_structure_tilesets.stsp/fluffy_ground.png"},
+    "CH": {"calibration_squares": true, "filename": "./../forest_structure_tilesets.stsp/grass.png"},
+    "HG": {"calibration_squares": false, "filename": "./../forest_structure_tilesets.stsp/htree_ground.png"},
+    "HM": {"calibration_squares": false, "filename": "./../forest_structure_tilesets.stsp/htree_middle.png"},
+    "HT": {"calibration_squares": true, "filename": "./../forest_structure_tilesets.stsp/htree_top.png"},
+    "TH": {"calibration_squares": true, "filename": "./../forest_structure_tilesets.stsp/platform_top_grass.png"},
+    "TG": {"calibration_squares": false, "filename": "./../forest_structure_tilesets.stsp/platform_top_ground.png"},
+    "HR": {"calibration_squares": true, "filename": "./../forest_structure_tilesets.stsp/reversed_htree_top.png"},
+    "SK": {"calibration_squares": true, "filename": "./../forest_structure_tilesets.stsp/spikes.png"},
+    "CU": {"calibration_squares": false, "filename": "./../forest_structure_tilesets.stsp/underground.png"},
+    "VT": {"calibration_squares": true, "filename": "./../forest_structure_tilesets.stsp/vtree.png"},
+    "VG": {"calibration_squares": false, "filename": "./../forest_structure_tilesets.stsp/vtree_ground.png"},
+    "CW": {"calibration_squares": false, "filename": "./../forest_structure_tilesets.stsp/wall.png"},
+    "WG": {"calibration_squares": true, "filename": "./../forest_structure_tilesets.stsp/wood_ground.png"},
+    "WP": {"calibration_squares": false, "filename": "./../forest_structure_tilesets.stsp/wooden_platform.png"},
+    "WU": {"calibration_squares": false, "filename": "./../forest_structure_tilesets.stsp/wall_underground.png"},
+    "LU": {"calibration_squares": false, "filename": "./../forest_structure_tilesets.stsp/deep_underground.png"},
+    "WW": {"calibration_squares": false, "filename": "./../forest_structure_tilesets.stsp/wood_wall.png"},
+    "HO": {"calibration_squares": false, "filename": "./../forest_structure_tilesets.stsp/holes.png"}
+  }
+}

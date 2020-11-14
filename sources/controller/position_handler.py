@@ -80,11 +80,13 @@ class EntityPositionHandler:
 class PlayerPositionHandler(EntityPositionHandler):
     def __init__(self, body, triggers):
         self.triggers = triggers
+        self.do_update_triggers = False
         super().__init__(body)
 
     def update_position(self, entity, n=1):
         x, y = super().update_position(entity, n)
-        self.update_triggers()
+        if self.do_update_triggers:
+            self.update_triggers()
         return x, y
 
     def update_triggers(self):

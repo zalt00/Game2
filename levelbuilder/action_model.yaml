@@ -18,3 +18,12 @@ TPEntity:
     type_: TPEntity
     npos: [0, 0]
     entity_name: entity_name
+
+LockCamera:
+    type_: LockCamera
+    x: false
+    y: false
+    mode: strict
+
+CameraSettings:
+    type_: CameraSettings

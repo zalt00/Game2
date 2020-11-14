@@ -147,6 +147,20 @@ triggers_data:
     enabled: true
     id: 1
     left: 1280
+  lock_cam:
+    actions:
+    - mode: follow
+      type_: LockCamera
+      x: true
+      y: false
+    - target: 3
+      type_: DisableTrigger
+    - follow_sensitivity: 15
+      type_: CameraSettings
+    enabled: true
+    id: 3
+    left: 185
+    right: 500
   right_border:
     actions:
     - fade_in: 30

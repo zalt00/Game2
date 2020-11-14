@@ -21,22 +21,4 @@ objects_data:
         type: player
         res: player/white_guy.obj
 
-    player_debug_values:
-        type: text
-        pos: [20, 640]
-        text: |
-            x velocity: {}
-            y velocity: {}
-            x coordinate: {}
-            y coordinate: {}
-            framerate: {}
-        values:
-            - [player, position_handler, body, velocity, x]
-            - [player, position_handler, body, velocity, y]
-            - [player, position_handler, body, position, x]
-            - [player, position_handler, body, position, y]
-            - [window, current_framerate]
-        color: "#ffffff"
-        size: 28
-
 triggers_data: {}

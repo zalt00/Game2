@@ -260,7 +260,8 @@ class Menu:
                 self.change_con_ctrls,
                 self.set_ctrl,
                 self.model.Options,
-                self.reinit_page
+                self.reinit_page,
+                self.window.set_display_mode
             )
         elif self.page.action_manager == 'CharacterSelectionActionManager':
             actionmanager = CharacterSelectionActionManager(
@@ -444,7 +445,7 @@ class Game:
 
         self.viewer_page = None
 
-        self.paused = False
+        self._paused = False
         self.debug_draw_activated = False
 
         SaveComponent.load()
@@ -453,6 +454,15 @@ class Game:
         self.level_res = self.level['background_data']['res']
 
         self.window.reset_event_manager()
+
+    @property
+    def paused(self):
+        return self._paused
+
+    @paused.setter
+    def paused(self, v):
+        self._paused = bool(v)
+        self.window.paused = self.paused
 
     def load_resources(self):
         self.window.update = self.loading_update
@@ -525,7 +535,7 @@ class Game:
         self.structures = dict()
 
         ### CAMERA ###
-        self.camera_handler = CameraHandler((0, 0))
+        self.camera_handler = CameraHandler((0, 0), None)
         self.camera_handler.move_to(x=self.model.Game.BaseBGData.camera_pos_x.get(self.current_save_id),
                                     y=self.model.Game.BaseBGData.camera_pos_y.get(self.current_save_id))
 
@@ -607,6 +617,9 @@ class Game:
                                player_data.StateDuration),
             ParticleHandler(self.spawn_particle), self.action_manager.set_state)
 
+        self.camera_handler.player = self.player
+        self.player.position_handler.do_update_triggers = True
+
         self.viewer_page.entities.add(self.player)
         self.action_manager.player = self.player
 
@@ -617,9 +630,9 @@ class Game:
         if len(self.dash_particles) != 0 and len(self.dash_particles) > particle_id:
             particle = self.dash_particles[particle_id]
             particle.direction = direction
-            particle.change_position(*pos)
             particle.image_changed = True
             particle.show()
+            particle.change_position(*pos)
             particle.image_handler.revive()
         else:
             position_handler = StaticPositionHandler(pos)
@@ -667,11 +680,11 @@ class Game:
             self.number_of_space_updates += n1
 
     def update_positions(self, *_, **__):
-        if not self.paused:
-            n1 = round((perf_counter() - self.t1) * 60 * 4) - self.number_of_space_updates
+        n1 = round((perf_counter() - self.t1) * 60 * 4) - self.number_of_space_updates
 
-            sprites = self.viewer_page.get_all_sprites()
-            for i in range(n1):
+        sprites = self.viewer_page.get_all_sprites()
+        for i in range(n1):
+            if not self.paused:
                 self.space.step(1/60/4)
                 if self.count == 3:
                     self.count = 0
@@ -681,7 +694,7 @@ class Game:
                         sprite.update_position(last)
                 else:
                     self.count += 1
-            self.number_of_space_updates += n1
+        self.number_of_space_updates += n1
 
     def update_images(self):
         sprites = self.viewer_page.get_all_sprites()

@@ -190,7 +190,7 @@ class Data(DataContainer):
                         display_mode=dict(pos=(320, 567 * 1000),
                                           arg=[0, ('buttons/fullscreen.obj', 1), ('buttons/windowed.obj', 0),
                                                'display_mode'],
-                                          action='change_option', res='buttons/fullscreen.obj'),
+                                          action='change_change_display_mode', res='buttons/fullscreen.obj'),
                         resolution=dict(pos=(320, 489 * 1000),
                                         arg=[0, ('buttons/resolutions/1280 x 720.obj', (1280, 720)),
                                              ('buttons/resolutions/1280 x 800.obj', (1280, 800)),

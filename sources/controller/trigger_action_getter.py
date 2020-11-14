@@ -4,6 +4,13 @@ from dataclasses import dataclass
 from typing import Any
 
 
+@dataclass
+class AbstractAction:
+    ag: Any
+    def __call__(self, *_, **__):
+        raise NotImplementedError
+
+
 class ActionGetter:
     def __call__(self, type_, **kwargs):
         return getattr(self, type_)(ag=self, **kwargs)
@@ -17,8 +24,7 @@ class GameActionGetter(ActionGetter):
         self.entities = entities
 
     @dataclass
-    class AbsoluteMovecam:
-        ag: Any
+    class AbsoluteMovecam(AbstractAction):
         x: int
         y: int
         total_duration: int
@@ -29,8 +35,24 @@ class GameActionGetter(ActionGetter):
             self.ag.camera_handler.add_trajectory((self.x, self.y), self.total_duration, self.fade_in, self.fade_out)
 
     @dataclass
-    class EnableTrigger:
-        ag: Any
+    class LockCamera(AbstractAction):
+        x: bool
+        y: bool
+        mode: str
+
+        def __call__(self):
+            self.ag.camera_handler.lock_camera(self.x, self.y, self.mode)
+
+    @dataclass
+    class CameraSettings(AbstractAction):
+        follow_sensitivity: int = -1
+
+        def __call__(self):
+            if self.follow_sensitivity != -1:
+                self.ag.camera_handler.follow_sensitivity = self.follow_sensitivity
+
+    @dataclass
+    class EnableTrigger(AbstractAction):
         target: int
 
         def __call__(self):
@@ -40,8 +62,7 @@ class GameActionGetter(ActionGetter):
                 pass
     
     @dataclass
-    class DisableTrigger:
-        ag: Any
+    class DisableTrigger(AbstractAction):
         target: int
 
         def __call__(self):
@@ -51,8 +72,7 @@ class GameActionGetter(ActionGetter):
                 pass
     
     @dataclass
-    class TPEntity:
-        ag: Any
+    class TPEntity(AbstractAction):
         entity_name: str
         npos: int
 

@@ -11,6 +11,36 @@ import os
 pygame.init()
 
 
+class Tileset:
+    def __init__(self, img, size, eraser, random_icon, tw, th, code):
+        self.tw = tw
+        self.th = th
+        self.base_img = img
+        self.size = size
+        self.eraser = eraser
+        self.random_icon = random_icon
+        self.code = code
+
+        self.tile_size = self.tw, self.th
+
+        r = self.base_img.get_rect()
+        r.width += tw * 2
+
+        new_img = pygame.Surface((r.width, r.height), SRCALPHA)
+        new_img.blit(self.base_img, (0, 0))
+        new_img.blit(self.eraser, (size * tw, 0))
+        new_img.blit(self.random_icon, ((size + 1) * tw, 0))
+
+        self.img = new_img
+
+        self.tile_data = []
+        for i in range(size):
+            self.tile_data.append(code + '{}{}' + '{:0>2}'.format(i))
+        self.tile_data.append('NA0000')
+        self.tile_data.append(code + '{}{}' + 'RD')
+
+        self.index_random = len(self.tile_data) - 1
+
 class App:
     def __init__(self, width, height, res_directory):
         self.screen = pygame.display.set_mode((width, height))
@@ -18,22 +48,18 @@ class App:
         
         self.width = width
 
-        self.tab = [['NA0000'] * 50 for _ in range(50)]
+        self.tab = [['NA0000'] * 100 for _ in range(100)]
 
         self.bg = self.screen.copy().convert_alpha()
         self.bg.fill((255, 255, 255, 0))
 
         self.collision_segments_surf = self.bg.copy()
 
-        self.palette = self.rl.load('forest/forest_structure_tilesets.stsp')
+        self.palette = self.rl.load('forest/structure_builder_forest_tilesets.stsp')
 
-        self.tileset = self.rl.load('forest/basetileset.ts')
-        rect = self.tileset.img.get_rect()
-        self.img = pygame.transform.scale(self.tileset.img, (rect.width * 2, rect.height * 2))
+        self.eraser_img = self.palette.eraser
+        self.random_icon = self.palette.random_icon
 
-        self.tile_data = self.tileset.tile_data
-        self.eraser = self.tileset.eraser
-        
         self.gcursor_img = self.rl.load('cursor.obj').sheets['green']
         self.rcursor_img = self.rl.load('cursor.obj').sheets['red']
         
@@ -92,6 +118,64 @@ class App:
         self.current_color_id = 0
         self.colors = [((1, 151, 181, 255), (237, 68, 99, 255)), ((72, 239, 26, 255), (172, 26, 239, 255))]
 
+        self.tileset_selection_menu_bg = self.screen.copy()
+        self.tileset_selection_menu_bg.fill((190, 190, 190))
+
+        self.tileset_selection_menu = self.screen.copy().convert_alpha()
+        self.tileset_selection_menu.fill((255, 255, 255, 0))
+
+        self.possible_tilesets = None
+
+        self.is_selecting_tileset = False
+        self.current_selection = -1
+
+        self.eraser = self.tileset = self.tile_data = self.img = None
+
+        self.move_gcursor = False
+
+        self.open_tileset_selection_menu()
+
+    def open_tileset_selection_menu(self):
+        self.is_selecting_tileset = True
+        colors = (190, 190, 190), (200, 200, 200)
+        color_id = 0
+        self.possible_tilesets = [data + (code,) for (code, data) in self.palette.tilesets_data.items()]
+        for i, ts_data in enumerate(self.possible_tilesets):
+            r = Rect(0, i * self.th, 1200, self.th)
+            self.tileset_selection_menu_bg.fill(colors[color_id], r)
+            color_id ^= 1
+
+            img = ts_data[0]
+            r = img.get_rect()
+            img = pygame.transform.scale(img, (r.width * 2, r.height * 2))
+            self.tileset_selection_menu.blit(img, (0, i * self.th))
+
+    def get_selected_tileset(self, y):
+        if self.is_selecting_tileset:
+            i = y // self.tw
+            if 0 <= i < len(self.possible_tilesets):
+                return self.possible_tilesets[i], i
+        raise IndexError('no tileset at this location')
+
+    def change_tileset2(self, res_name):
+        self.tileset = self.rl.load(res_name)
+        rect = self.tileset.img.get_rect()
+        self.img = pygame.transform.scale(self.tileset.img, (rect.width * 2, rect.height * 2))
+
+        self.tile_data = self.tileset.tile_data
+        self.eraser = self.tileset.eraser
+
+    def change_tileset(self, i):
+        if self.is_selecting_tileset:
+            img, size, code = self.possible_tilesets[i]
+            tileset = Tileset(img, size, self.eraser_img, self.random_icon, self.tw / 2, self.th / 2, code)
+            rect = tileset.img.get_rect()
+            self.img = pygame.transform.scale(tileset.img, (rect.width * 2, rect.height * 2))
+            self.tileset = tileset
+            self.eraser = size
+
+            self.tile_data = self.tileset.tile_data
+
     def change_tile(self, i):
         self.tile_rect.x = i * self.tw
 
@@ -101,15 +185,20 @@ class App:
         except ValueError:
             pass
         else:
+            i = self.tile_rect.x // self.tw
             pos = coords[0] * self.tw, coords[1] * self.th
-            img = pygame.transform.flip(pygame.transform.rotate(sub_img, rotate), x_flip, y_flip)
+            if i != self.tileset.index_random:
+                img = pygame.transform.flip(pygame.transform.rotate(sub_img, rotate), x_flip, y_flip)
+            else:
+                img = pygame.transform.flip(pygame.transform.rotate(
+                    self.img.subsurface(Rect(0, 0, self.tw, self.th)), rotate), x_flip, y_flip)
 
             r = Rect(*pos, self.tile_rect.width, self.tile_rect.height)
 
             self.bg.fill((255, 255, 255, 0), r)
             self.bg.blit(img, r)
 
-            s = self.tile_data[self.tile_rect.x // self.tw]
+            s = self.tile_data[i]
             self.tab[coords[1]][coords[0]] = s.format(int(x_flip), int(y_flip))
 
     def draw_gcursor(self, coords):
@@ -220,7 +309,7 @@ class App:
         w = len(sub_tab[0])
         h = len(sub_tab)
         txt = "dimensions={} {}\ndec={} {}\nscale={}\nlength={}\nstring-buffer:\n{}".format(
-            tw * w, th * h, tw * w // 2, 0, 2, h, s)
+            int(tw * w), int(th * h), int(tw * w // 2), 0, 2, int(h), s)
         return txt
 
     def erase(self):
@@ -233,6 +322,8 @@ class App:
         if key == K_a:
             self.draw_tile(self.cursor, shift, ctrl, 0)
             self.holded_b = K_a
+        elif key == K_z:
+            self.move_gcursor = True
         elif key == K_DELETE:
             self.erase()
             self.holded_b = K_DELETE
@@ -249,6 +340,9 @@ class App:
         elif key == K_i:
             self.i += 1
             self.change_tile(self.i)
+
+        elif key == K_F1:
+            self.open_tileset_selection_menu()
 
         elif key == K_UP:
             self.cursor[1] -= 1
@@ -339,66 +433,103 @@ class App:
                 if event.type == QUIT:
                     self.stop = True
 
-                elif event.type == KEYDOWN:
-                    self.keydown(event.key, shift, ctrl, alt)
+                elif not self.is_selecting_tileset:
+                    if event.type == KEYDOWN:
+                        self.keydown(event.key, shift, ctrl, alt)
 
-                elif event.type == KEYUP:
-                    self.holded_b = 0
-                
-                elif event.type == MOUSEBUTTONDOWN:
-                    coords = event.pos[0] // self.tw, event.pos[1] // self.th
-                    if event.button == 1:
-                        self.button1down = True
-                        self.cursor[:] = coords
-                    elif event.button == 4:
-                        self.i += 1
-                        self.change_tile(self.i)
-                    elif event.button == 5:
-                        self.i -= 1
-                        self.change_tile(self.i)
-                    elif event.button == 3:
-                        if shift:
-                            self.nwpos[:] = coords
-                            if self.nwpos[0] < self.sepos[0]:
-                                self.sepos[0], self.nwpos[0] = self.nwpos[0], self.sepos[0]
-                            if self.nwpos[1] < self.sepos[1]:
-                                self.sepos[1], self.nwpos[1] = self.nwpos[1], self.sepos[1]
+                    elif event.type == KEYUP:
+                        self.holded_b = 0
+
+                    elif event.type == MOUSEBUTTONDOWN:
+                        coords = event.pos[0] // self.tw, event.pos[1] // self.th
+                        if event.button == 1:
+                            if not self.move_gcursor:
+                                self.button1down = True
+                                self.cursor[:] = coords
+                            else:
+                                self.move_gcursor = False
+                                self.i = coords[0] - self.gc_dec
+                                self.change_tile(self.i)
+                        elif event.button == 4:
+                            self.i += 1
+                            self.change_tile(self.i)
+                        elif event.button == 5:
+                            self.i -= 1
+                            self.change_tile(self.i)
+                        elif event.button == 3:
+                            if shift:
+                                self.nwpos[:] = coords
+                                if self.nwpos[0] < self.sepos[0]:
+                                    self.sepos[0], self.nwpos[0] = self.nwpos[0], self.sepos[0]
+                                if self.nwpos[1] < self.sepos[1]:
+                                    self.sepos[1], self.nwpos[1] = self.nwpos[1], self.sepos[1]
+                            else:
+                                self.sepos[:] = coords
+                                if self.nwpos[0] < self.sepos[0]:
+                                    self.sepos[0], self.nwpos[0] = self.nwpos[0], self.sepos[0]
+                                if self.nwpos[1] < self.sepos[1]:
+                                    self.sepos[1], self.nwpos[1] = self.nwpos[1], self.sepos[1]
+
+                    elif event.type == MOUSEBUTTONUP:
+                        if event.button == 1:
+                            self.button1down = False
+
+                    elif event.type == MOUSEMOTION:
+                        coords = event.pos[0] // self.tw, event.pos[1] // self.th
+                        if self.button1down:
+                            self.cursor[:] = coords
+                            if self.holded_b:
+                                self.keydown(self.holded_b, shift, ctrl, alt)
+
+                else:
+                    if event.type == MOUSEMOTION:
+                        try:
+                            new_selection = self.get_selected_tileset(event.pos[1])
+                        except IndexError:
+                            new_selection = None, None
                         else:
-                            self.sepos[:] = coords
-                            if self.nwpos[0] < self.sepos[0]:
-                                self.sepos[0], self.nwpos[0] = self.nwpos[0], self.sepos[0]
-                            if self.nwpos[1] < self.sepos[1]:
-                                self.sepos[1], self.nwpos[1] = self.nwpos[1], self.sepos[1]
-                            
-                elif event.type == MOUSEBUTTONUP:
-                    if event.button == 1:
-                        self.button1down = False
-                
-                elif event.type == MOUSEMOTION:
-                    coords = event.pos[0] // self.tw, event.pos[1] // self.th                    
-                    if self.button1down:
-                        self.cursor[:] = coords
-                        if self.holded_b:
-                            self.keydown(self.holded_b, shift, ctrl, alt)
+                            r = Rect(0, new_selection[1] * self.th, 1200, self.th)
+                            color = ((147, 162, 191), (157, 172, 201))[new_selection[1] % 2]
+                            self.tileset_selection_menu_bg.fill(color, r)
+
+                        if self.current_selection != -1 and self.current_selection != new_selection[1]:
+                            color = ((190, 190, 190), (200, 200, 200))[self.current_selection % 2]
+                            r = Rect(0, self.current_selection * self.th, 1200, self.th)
+                            self.tileset_selection_menu_bg.fill(color, r)
+                            self.current_selection = -1
+                        if new_selection[1] is not None:
+                            self.current_selection = new_selection[1]
+
+                    elif event.type == MOUSEBUTTONDOWN and event.button == 1:
+                        if self.current_selection != -1:
+                            self.change_tileset(self.current_selection)
+                            self.is_selecting_tileset = False
 
             self.screen.fill((190, 190, 190))
-            self.screen.blit(self.bg, (0, 0))
-            self.screen.blit(self.collision_segments_surf, (0, 0))
+            if self.is_selecting_tileset:
+                self.screen.blit(self.tileset_selection_menu_bg, (0, 0))
+                self.screen.blit(self.tileset_selection_menu, (0, 0))
 
-            if self.i < 0:
-                self.i = 0
-                self.change_tile(self.i)
-
-            if self.i > self.nw:
-                a = (self.nw - self.i + 1)
-                self.gc_dec = a
-                self.screen.blit(self.img, (a * self.tw, 0))
             else:
-                self.gc_dec = 0
-                self.screen.blit(self.img, (0, 0))
-            self.draw_gcursor((self.i + self.gc_dec, 0))
-            self.draw_rcursor(self.cursor)
-            self.draw_senw_cursors()
+                self.screen.blit(self.bg, (0, 0))
+                self.screen.blit(self.collision_segments_surf, (0, 0))
+
+                if self.i < 0:
+                    self.i = 0
+                    self.change_tile(self.i)
+
+                if self.i > self.nw:
+                    a = (self.nw - self.i + 1)
+                    self.gc_dec = a
+                    self.screen.blit(self.img, (a * self.tw, 0))
+                else:
+                    self.gc_dec = 0
+                    self.screen.blit(self.img, (0, 0))
+                if not self.move_gcursor:
+                    self.draw_gcursor((self.i + self.gc_dec, 0))
+                self.draw_rcursor(self.cursor)
+                self.draw_senw_cursors()
+
             self.clock.tick(self.fps)
             
             pygame.display.flip()
