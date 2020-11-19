@@ -2,6 +2,7 @@
 
 import pyglet
 from pymunk import Vec2d
+import numpy as np
 
 
 class SpriteMetaclass(type):
@@ -111,6 +112,10 @@ class Entity(BaseSprite, metaclass=SpriteMetaclass):
 
         self.secondary_state = ''
 
+        self.record_position = False
+        self.position_records = None
+        self.last_index = 0
+
         self.air_control = 0
         self.can_air_control = True
 
@@ -127,6 +132,14 @@ class Entity(BaseSprite, metaclass=SpriteMetaclass):
         self._direction = 1
 
         super().__init__(batch, layer_group, position_handler, image_handler, screen_offset)
+
+    def start_recording_position(self, default_array_size=2000):
+        self.record_position = True
+        self.last_index = 0
+        self.position_records = np.zeros((default_array_size, 2), dtype=np.float)
+
+    def stop_recording_position(self):
+        self.record_position = False
 
     @property
     def state(self):
@@ -153,6 +166,14 @@ class Entity(BaseSprite, metaclass=SpriteMetaclass):
     def update_position(self, last_update=True):
         self.physic_state_updater.update_(self)
         super(Entity, self).update_position(last_update)
+        if self.record_position:
+            if self.last_index >= self.position_records.shape[0]:
+                new_array = np.zeros((self.position_records.shape[0] * 2, 2), dtype=float)
+                new_array[:self.position_records.shape[0], :] = self.position_records
+                self.position_records = new_array
+            self.position_records[self.last_index, :] = self.position_handler.body.position
+            self.last_index += 1
+
 
     def update_image(self):
         super(Entity, self).update_image()
@@ -179,6 +200,7 @@ class BgLayer(BaseSprite, metaclass=SpriteMetaclass):
 
 class Structure(BaseSprite, metaclass=SpriteMetaclass):
     def __init__(self, *args, **kwargs):
+        kwargs['state'] = 'base'
         super(Structure, self).__init__(*args, **kwargs)
         self.animated = False
 

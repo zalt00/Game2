@@ -1,8 +1,6 @@
 {
-  "dec": [0, 0],
-  "dimensions": [582, 269],
-  "scale2x": 1,
-  "animations": {
-    "idle": {"filename":  "idle.png"}
-  }
+    "dec": [0, 0],
+    "dimensions": [582, 269],
+    "scale2x": 1,
+    "image": "options_main_panel.png"
 }

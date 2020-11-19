@@ -484,8 +484,16 @@ class App(tk.Frame):
             self.canvas['cursor'] = 'crosshair'
 
     def create_structure_from_res(self, res_name, layer=0):
-        res = self.rl.load(res_name)
-        res.build({'base': self.palette.build(res)})
+        if res_name.endswith('st'):
+            res = self.rl.load(res_name)
+            res.build({'base': self.palette.build(res)})
+        elif res_name.endswith('json') or res_name.endswith('png'):
+            res_name = os.path.dirname(res_name)
+            res = self.rl.load(res_name)
+        elif res_name.endswith('obj'):
+            res = self.rl.load(res_name)
+        else:
+            raise ValueError(f'invalid resource: "{res_name}"')
 
         # awful, but no choice. Tkinter images are crap.
         pgimg = res.sheets['base']
@@ -618,10 +626,15 @@ class App(tk.Frame):
             struct_data = base['objects_data'][struct.name + '_structure']
             struct_data['type'] = 'structure'
             struct_data['res'] = struct.res_path
-            struct_data['is_built'] = False
+            if struct.res_path.endswith('st'):
+                struct_data['is_built'] = False
+            else:
+                struct_data['is_built'] = True
             struct_data['name'] = struct.name
             struct_data['pos'] = [int(struct.pos[0]), int(-self.ref_height + 720 - self.canvas.bbox(struct_id)[3])]
-            struct_data['walls'], struct_data['ground'] = self.get_collision_infos(struct)
+            collisions_infos = self.get_collision_infos(struct)
+            if collisions_infos is not None:
+                struct_data['walls'], struct_data['ground'] = collisions_infos
             struct_data['state'] = 'base'
             struct_data['layer'] = struct.layer
 

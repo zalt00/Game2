@@ -172,19 +172,25 @@ class Object:
         self.dec = self.data['dec'][0], self.data['dec'][1]
 
         self.scale = scale
+        if 'animations' in self.data:
+            for name, v in self.data['animations'].items():
+                fn = v['filename']
+                path = os.path.join(directory, fn).replace('\\', '/')
+                img = pyglet.resource.image(path)
 
-        for name, v in self.data['animations'].items():
-            fn = v['filename']
+                img_grid = pyglet.image.ImageGrid(img, 1, img.width // (self.data["dimensions"][0]))
+
+                animation = pyglet.image.Animation.from_image_sequence(img_grid, 0.1, loop=True)
+                for frame in animation.frames:
+                    frame.image.anchor_x = self.dec[0]
+                self.sheets[name] = animation
+                self.flipped_sheets[name] = animation.get_transform(True)
+        else:
+            fn = self.data['image']
             path = os.path.join(directory, fn).replace('\\', '/')
             img = pyglet.resource.image(path)
-
-            img_grid = pyglet.image.ImageGrid(img, 1, img.width // (self.data["dimensions"][0]))
-
-            animation = pyglet.image.Animation.from_image_sequence(img_grid, 0.1, loop=True)
-            for frame in animation.frames:
-                frame.image.anchor_x = self.dec[0]
-            self.sheets[name] = animation
-            self.flipped_sheets[name] = animation.get_transform(True)
+            self.sheets['base'] = img
+            self.flipped_sheets['base'] = img.get_transform(flip_x=True)
 
 
 class Background:

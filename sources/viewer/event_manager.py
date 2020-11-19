@@ -125,6 +125,16 @@ class DebugGameEventManager(GameEventManager):
                 self.action_manager.do(self.action_manager.PAUSE)
             except AttributeError:
                 pass
+        elif symbol == pyglet.window.key.F4:
+            try:
+                self.action_manager.do(self.action_manager.RECORD)
+            except AttributeError:
+                pass
+        elif symbol == pyglet.window.key.F12:
+            try:
+                self.action_manager.do(self.action_manager.DEV_COMMAND)
+            except AttributeError:
+                pass
 
 
 class MenuEventManager(EventManager):

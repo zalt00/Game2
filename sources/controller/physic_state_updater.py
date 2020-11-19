@@ -52,13 +52,12 @@ class PhysicStateUpdater:
         self.collide = True
         if len(points) == 2:
             self.x1, self.x2 = points[0].point_a.x, points[1].point_a.x
-        # print()
         for contact_point in points:
-            #print(round(contact_point.point_a.y), round(self.body.position.y - 1), round(contact_point.point_b.y), round(self.body.position.y - 1))
             if (round(contact_point.point_a.y) == round(self.body.position.y - 1)
                     or round(contact_point.point_b.y) == round(self.body.position.y - 1)):
-                self.on_ground = True
-                return True
+                if self.current_state_name != 'jump' or self.body.velocity.y < 1:
+                    self.on_ground = True
+                    return True
         return False
     
     def update_(self, entity, n=1):

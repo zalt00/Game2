@@ -13,7 +13,6 @@ Requirements:
     - `numpy`: scientific package
     - `pyyaml`: small module to read yaml files
  
- 
 Launchers:
  - `launcher.cmd`: classic launcher, cmd not hidden
  - `launcherwoc.cmd`: launcher without console, hides cmd
@@ -24,9 +23,11 @@ Launchers:
 Debug commands:
  - `F1`: toggle debug draw
  - `F2`: raises an error, manually makes the program crash
- - `F3`: toggle the update of the game
+ - `F3`: pause/unpause the game
+ - `F4`: start/stop and save player position recording (saved into `records.npy`)
+ - `F12`: dev debug command
  
- Signaling an issue:
+Signaling an issue:
   - please use the "issues" functionality from github or directly send me a pm
  
 Additional infos:

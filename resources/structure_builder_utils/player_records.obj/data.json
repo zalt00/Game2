@@ -1,0 +1,10 @@
+{
+  "dec": [0, 0],
+  "dimensions": [500, 500],
+  "scale2x": 0,
+  "animations": {
+    "jump": {"filename":  "jump.png"},
+	"walkoff": {"filename": "walkoff.png"},
+	"dash": {"filename": "dash.png"}
+  }
+}

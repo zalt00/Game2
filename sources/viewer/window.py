@@ -223,7 +223,7 @@ class Window(pyglet.window.Window):
         if not res.built:
             s = palette.build(res)
 
-            sheets = {'idle': s}
+            sheets = {'base': s}
             res.build(sheets)
         return self.add_structure(page, layer, position_handler, res)
 

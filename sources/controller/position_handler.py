@@ -21,7 +21,7 @@ class BgLayerPositionHandler:
         self.base_pos = tuple(pos)
 
     def update_position(self, entity, n=1):
-        i = abs(entity.get_layer()) ** 1.5
+        i = abs(entity.get_layer())
 
         if i == 0:
             i = 1

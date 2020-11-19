@@ -26,7 +26,7 @@ objects_data:
     layer: 1
     name: base_ground
     pos:
-    - 1668
+    - 1669
     - -96
     res: forest/structure.st
     state: base
@@ -42,7 +42,7 @@ objects_data:
     layer: 1
     name: ground-2
     pos:
-    - 100
+    - 101
     - -32
     res: forest/structure.st
     state: base
@@ -81,7 +81,7 @@ objects_data:
     layer: 1
     name: structure-1
     pos:
-    - 884
+    - 885
     - 0
     res: forest/level.st
     state: base
@@ -119,6 +119,16 @@ objects_data:
         - 315
       - - 360.0
         - 27
+  structure1_structure:
+    is_built: true
+    layer: -1
+    name: structure1
+    pos:
+    - 526
+    - 52
+    res: forest/decorations/big_tree1.obj
+    state: base
+    type: structure
 palette: forest/forest_structure_tilesets.stsp
 space: true
 triggers_data:

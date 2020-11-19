@@ -20,6 +20,7 @@ class CameraHandler:
         self.lock_mode = ''
         self.possible_modes = {'follow', 'strict'}
         self.follow_sensitivity = 15
+        self.moving_threshold = 2
 
     def add_trajectory(self, target, total_duration, fade_in, fade_out):
         if self.trajectory is None:
@@ -81,14 +82,14 @@ class CameraHandler:
                     self.pos[0] = self.relative_pos[0] - self.player.position_handler.body.position.x
                 elif self.lock_mode == 'follow':
                     dif = self.relative_pos[0] - self.player.position_handler.body.position.x - self.pos[0]
-                    if abs(dif) > 1:
+                    if abs(dif) > self.moving_threshold:
                         self.pos[0] += dif / self.follow_sensitivity
             if self.locked[1]:
                 if self.lock_mode == 'strict':
                     self.pos[1] = self.relative_pos[1] - self.player.position_handler.body.position.y
                 elif self.lock_mode == 'follow':
                     dif = self.relative_pos[1] - self.player.position_handler.body.position.y - self.pos[1]
-                    if abs(dif) > 1:
+                    if abs(dif) > self.moving_threshold:
                         self.pos[1] += dif / self.follow_sensitivity
         return self.pos
 

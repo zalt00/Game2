@@ -50,6 +50,15 @@ class App:
 
         self.tab = [['NA0000'] * 100 for _ in range(100)]
 
+        self.player_records = self.rl.load('structure_builder_utils/player_records.obj')
+        self.jump_record = self.player_records.sheets['jump']
+        self.walkoff_record = self.player_records.sheets['walkoff']
+        self.dash_record = self.player_records.sheets['dash']
+        self.show_jump_record = False
+        self.show_walkoff_record = False
+        self.show_dash_record = False
+        self.flip_record = False
+
         self.bg = self.screen.copy().convert_alpha()
         self.bg.fill((255, 255, 255, 0))
 
@@ -118,11 +127,14 @@ class App:
         self.current_color_id = 0
         self.colors = [((1, 151, 181, 255), (237, 68, 99, 255)), ((72, 239, 26, 255), (172, 26, 239, 255))]
 
-        self.tileset_selection_menu_bg = self.screen.copy()
+        self.tileset_selection_menu = pygame.Surface((width, len(self.palette.tilesets_data) * self.palette.th * 2),
+                                                     SRCALPHA)
+        self.tileset_selection_menu.fill((255, 255, 255, 0))
+
+        self.tileset_selection_menu_bg = self.tileset_selection_menu.copy()
         self.tileset_selection_menu_bg.fill((190, 190, 190))
 
-        self.tileset_selection_menu = self.screen.copy().convert_alpha()
-        self.tileset_selection_menu.fill((255, 255, 255, 0))
+        self.tileset_selection_menu_y = 0
 
         self.possible_tilesets = None
 
@@ -152,7 +164,7 @@ class App:
 
     def get_selected_tileset(self, y):
         if self.is_selecting_tileset:
-            i = y // self.tw
+            i = (y - self.tileset_selection_menu_y) // self.tw
             if 0 <= i < len(self.possible_tilesets):
                 return self.possible_tilesets[i], i
         raise IndexError('no tileset at this location')
@@ -327,6 +339,15 @@ class App:
         elif key == K_DELETE:
             self.erase()
             self.holded_b = K_DELETE
+
+        elif key == K_j:
+            self.show_jump_record ^= True
+        elif key == K_h:
+            self.show_walkoff_record ^= True
+        elif key == K_g:
+            self.show_dash_record ^= True
+        elif key == K_k:
+            self.flip_record ^= True
 
         elif key == K_u:
             self.i -= 1
@@ -504,11 +525,15 @@ class App:
                         if self.current_selection != -1:
                             self.change_tileset(self.current_selection)
                             self.is_selecting_tileset = False
+                    elif event.type == MOUSEBUTTONDOWN and event.button == 4:
+                        self.tileset_selection_menu_y += 16
+                    elif event.type == MOUSEBUTTONDOWN and event.button == 5:
+                        self.tileset_selection_menu_y -= 16
 
             self.screen.fill((190, 190, 190))
             if self.is_selecting_tileset:
-                self.screen.blit(self.tileset_selection_menu_bg, (0, 0))
-                self.screen.blit(self.tileset_selection_menu, (0, 0))
+                self.screen.blit(self.tileset_selection_menu_bg, (0, self.tileset_selection_menu_y))
+                self.screen.blit(self.tileset_selection_menu, (0, self.tileset_selection_menu_y))
 
             else:
                 self.screen.blit(self.bg, (0, 0))
@@ -529,6 +554,27 @@ class App:
                     self.draw_gcursor((self.i + self.gc_dec, 0))
                 self.draw_rcursor(self.cursor)
                 self.draw_senw_cursors()
+
+                if self.show_jump_record:
+                    x, y = pygame.mouse.get_pos()
+                    if self.flip_record:
+                        self.screen.blit(pygame.transform.flip(self.jump_record, 1, 0), (x - 250, y - 250))
+                    else:
+                        self.screen.blit(self.jump_record, (x - 250, y - 250))
+
+                if self.show_walkoff_record:
+                    x, y = pygame.mouse.get_pos()
+                    if self.flip_record:
+                        self.screen.blit(pygame.transform.flip(self.walkoff_record, 1, 0), (x - 250, y - 250))
+                    else:
+                        self.screen.blit(self.walkoff_record, (x - 250, y - 250))
+
+                if self.show_dash_record:
+                    x, y = pygame.mouse.get_pos()
+                    if self.flip_record:
+                        self.screen.blit(pygame.transform.flip(self.dash_record, 1, 0), (x - 250, y - 250))
+                    else:
+                        self.screen.blit(self.dash_record, (x - 250, y - 250))
 
             self.clock.tick(self.fps)
             

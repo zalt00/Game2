@@ -46,10 +46,13 @@ class GameActionGetter(ActionGetter):
     @dataclass
     class CameraSettings(AbstractAction):
         follow_sensitivity: int = -1
+        moving_threshold: int = -1
 
         def __call__(self):
             if self.follow_sensitivity != -1:
                 self.ag.camera_handler.follow_sensitivity = self.follow_sensitivity
+            if self.moving_threshold != -1:
+                self.ag.camera_handler.moving_threshold = self.moving_threshold
 
     @dataclass
     class EnableTrigger(AbstractAction):

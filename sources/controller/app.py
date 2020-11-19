@@ -598,7 +598,9 @@ class Game:
             struct = self.window.build_structure(
                 self.viewer_page, layer, pos_handler, data['res'], self.level['palette'])
         self.viewer_page.structures.add(struct)
-        self.space.add_structure(data['pos'], data['walls'], data['ground'], name)
+
+        if 'walls' in data:
+            self.space.add_structure(data['pos'], data['walls'], data['ground'], name)
 
         self.structures[name] = struct
 

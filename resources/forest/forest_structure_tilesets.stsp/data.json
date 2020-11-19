@@ -25,6 +25,23 @@
     "WU": {"calibration_squares": false, "filename": "wall_underground.png"},
     "LU": {"calibration_squares": false, "filename": "deep_underground.png"},
     "WW": {"calibration_squares": false, "filename": "wood_wall.png"},
-    "HO": {"calibration_squares": false, "filename": "holes.png"}
+    "HO": {"calibration_squares": false, "filename": "holes.png"},
+    "DO": {"calibration_squares": false, "filename": "decorative_objects.png"},
+    "BG": {"calibration_squares": false, "filename": "back_ground.png"},
+    "BU": {"calibration_squares": false, "filename": "back_underground.png"},
+    "BR": {"calibration_squares": false, "filename": "back_rocks.png"},
+    "BW": {"calibration_squares": false, "filename": "back_walls.png"},
+    "BC": {"calibration_squares": false, "filename": "back_connectors.png"},
+    "BH": {"calibration_squares": true, "filename": "back_grass.png"},
+    "BS": {"calibration_squares": false, "filename": "back_slopes.png"},
+    "BO": {"calibration_squares": false, "filename": "back_holes.png"},
+    "BV": {"calibration_squares": true, "filename": "back_wall_grass.png"},
+    "RW": {"calibration_squares": false, "filename": "rotated_walls.png"},
+    "RV": {"calibration_squares": true, "filename": "rotated_wall_grass.png"},
+    "RH": {"calibration_squares": true, "filename": "rotated_grass.png"},
+    "RR": {"calibration_squares": false, "filename": "rotated_rocks.png"},
+    "RS": {"calibration_squares": false, "filename": "rotated_slopes.png"},
+    "RC": {"calibration_squares": false, "filename": "rotated_connectors.png"},
+    "RU": {"calibration_squares": false, "filename": "rotated_underground.png"}
   }
 }

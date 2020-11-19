@@ -4,6 +4,8 @@
 from pymunk.vec2d import Vec2d
 from utils.save_modifier import SaveComponent
 import time
+import numpy as np
+from utils.logger import logger
 
 
 class ActionManager:
@@ -448,8 +450,9 @@ class CharacterSelectionActionManager(BaseMenuActionManager):
                  panel_order, additional_texts, additional_structures, start_game_callback,
                  return_to_mainmenu_callback):
 
-        super(CharacterSelectionActionManager, self).__init__(window, buttons, classic_buttons, classic_buttons_order, panels,
-                                                              panel_order, additional_texts, additional_structures)
+        super(CharacterSelectionActionManager, self).__init__(window, buttons, classic_buttons, classic_buttons_order,
+                                                              panels, panel_order, additional_texts,
+                                                              additional_structures)
 
         self.start_game = start_game_callback
         self.return_to_mainmenu_callback = return_to_mainmenu_callback
@@ -484,6 +487,8 @@ class GameActionManager(ActionManager):
     TOGGLE_DEBUG_DRAW = 11
     MANUALLY_RAISE_ERROR = 13
     PAUSE = 14
+    DEV_COMMAND = 15
+    RECORD = 16
     
     def __init__(self, player,
                  return_to_main_menu, save_callback, toggle_debug_draw_callback, pause_callback):
@@ -514,6 +519,10 @@ class GameActionManager(ActionManager):
         self.do_handlers[self.MANUALLY_RAISE_ERROR] = self.manually_raise_error
         self.do_handlers[self.PAUSE] = self.pause
 
+        self.do_handlers[self.DEV_COMMAND] = self.dev_command
+
+        self.do_handlers[self.RECORD] = self.record
+
         self.still_walking = False
         self.still_running = False
         
@@ -521,6 +530,18 @@ class GameActionManager(ActionManager):
         self.next_direction = 1
         
         self.already_dashed = True
+
+    def dev_command(self):
+        logger.info('dev debug command')
+
+    def record(self):
+        if self.player.record_position:
+            logger.debug('stop recording player position, it will be saved to "record.npy"')
+            self.player.stop_recording_position()
+            np.save('records.npy', self.player.position_records[:self.player.last_index])
+        else:
+            logger.debug('start recording player position')
+            self.player.start_recording_position()
 
     def manually_raise_error(self):
         raise RuntimeError('Error manually raised')
@@ -540,7 +561,7 @@ class GameActionManager(ActionManager):
         self.already_dashed = False
 
     def jump(self):
-        if self.player.state in ('walk', 'run'):
+        if self.player.state in ('walk', 'run', 'idle'):
             self.player.secondary_state = ''
             self.player.state = 'jump'
         else:
