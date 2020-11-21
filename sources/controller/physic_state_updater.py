@@ -81,8 +81,20 @@ class PhysicStateUpdater:
                 if self.body.width // 2 < round(abs(self.x1 - self.x2)):
                     self.save_position()
 
-            # animation util
+            # prevents a "flicker" effect when the player leaves the ground for 1 or 2 ticks (it sometimes happens
+            # when the player simply runs on a structure after a weird landing)
+            if not self.on_ground:
+                if self.a > 3:
+                    on_ground = False
+                else:
+                    self.a += 1
+                    on_ground = True
             else:
+                self.a = 0
+                on_ground = True
+
+            # animation util
+            if not on_ground:
                 if self.body.velocity.y < 0:
                     if entity.state == 'jump':
                         entity.state = 'fall'
@@ -96,18 +108,6 @@ class PhysicStateUpdater:
             
             if not entity.is_on_ground and entity.state in ('walk', 'run'):
                 entity.state = 'fall'
-
-            # prevents a "flicker" effect when the player leaves the ground for 1 or 2 ticks (it sometimes happens
-            # when the player simply runs on a structure after a weird landing)
-            if not self.on_ground:
-                if self.a > 3:
-                    on_ground = False
-                else:
-                    self.a += 1
-                    on_ground = True
-            else:
-                self.a = 0
-                on_ground = True
 
             landed = (not entity.is_on_ground) and on_ground
             entity.is_on_ground = on_ground

@@ -51,6 +51,16 @@ objects_data:
   player:
     res: player/white_guy.obj
     type: player
+  spikes_structure:
+    is_built: false
+    layer: -1
+    name: spikes
+    pos:
+    - 961
+    - 64
+    res: forest/spikes.st
+    state: base
+    type: structure
   structure-1_structure:
     ground:
     - - - -368.0

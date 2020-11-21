@@ -16,7 +16,7 @@
     "TH": {"calibration_squares": true, "filename": "./../forest_structure_tilesets.stsp/platform_top_grass.png"},
     "TG": {"calibration_squares": false, "filename": "./../forest_structure_tilesets.stsp/platform_top_ground.png"},
     "HR": {"calibration_squares": true, "filename": "./../forest_structure_tilesets.stsp/reversed_htree_top.png"},
-    "SK": {"calibration_squares": true, "filename": "./../forest_structure_tilesets.stsp/spikes.png"},
+    "SK": {"calibration_squares": false, "filename": "./../forest_structure_tilesets.stsp/spikes.png"},
     "CU": {"calibration_squares": false, "filename": "./../forest_structure_tilesets.stsp/underground.png"},
     "VT": {"calibration_squares": true, "filename": "./../forest_structure_tilesets.stsp/vtree.png"},
     "VG": {"calibration_squares": false, "filename": "./../forest_structure_tilesets.stsp/vtree_ground.png"},
@@ -43,6 +43,8 @@
     "RR": {"calibration_squares": false, "filename": "./../forest_structure_tilesets.stsp/rotated_rocks.png"},
     "RS": {"calibration_squares": false, "filename": "./../forest_structure_tilesets.stsp/rotated_slopes.png"},
     "RC": {"calibration_squares": false, "filename": "./../forest_structure_tilesets.stsp/rotated_connectors.png"},
-    "RU": {"calibration_squares": false, "filename": "./../forest_structure_tilesets.stsp/rotated_underground.png"}
+    "RU": {"calibration_squares": false, "filename": "./../forest_structure_tilesets.stsp/rotated_underground.png"},
+    "MP": {"calibration_squares": true, "filename":  "./../forest_structure_tilesets.stsp/moving_platform.png"},
+    "UP": {"calibration_squares":  false, "filename":  "./../forest_structure_tilesets.stsp/underground_plants.png"}
     }
 }

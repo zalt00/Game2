@@ -32,6 +32,10 @@ class Structure:
     scale: int = 1
     layer: int = 0
 
+    def copy(self):
+        return Structure(self.res_path, self.img, list(self.pos), self.state, self.pilimage, self.name, self.scale,
+                         self.layer)
+
 
 class App(tk.Frame):
     def __init__(self, root, *args, **kwargs):
@@ -49,7 +53,10 @@ class App(tk.Frame):
         cfg = ConfigParser()
         cfg.read('config.ini', encoding="utf-8")
 
+        self.history = []
+
         self.resources_base_dir = cfg['env']['resources_base_dir'].format(**dict(os.environ))
+        self.maps_base_dir = cfg['env']['maps_base_dir'].format(**dict(os.environ))
 
         self.rl = ResourcesLoader(self.resources_base_dir)
         self.palette_res_name = 'forest/forest_structure_tilesets.stsp'
@@ -222,6 +229,7 @@ class App(tk.Frame):
         self.bind_all('<Control-c>', self.copy_struct)
         self.bind_all('<Control-v>', self.paste_struct)
         self.bind_all('<Control-s>', self.save)
+        self.bind_all('<Control-z>', self.undo)
         self.bind_all('<FocusIn>', self.widget_focusin_handler)
         self.bind_all('<FocusOut>', self.widget_focusout_handler)
 
@@ -286,50 +294,63 @@ class App(tk.Frame):
             self.state = 'idle'
             
         elif 16 < evt.x_root <= 1280 and evt.y_root <= 750:
-            s = self.canvas.find_overlapping(*self.cursor_pos, *self.cursor_pos)
-            if len(s) > 0:
-                s = set(s)
-                if self.bg_id is not None:
-                    for id_ in self.bg_id:
+            if evt.state & 0x0001 and self.focus_on is not None:
+                self.root.title(self.document_name + '*')
+
+                x, y = self.canvas.canvasx(evt.x), self.canvas.canvasy(evt.y)
+                struct_id = self.focus_on[1]
+                x1, y1 = self.canvas.coords(struct_id)
+                self.focus_dec = x1 - x, y1 - y
+                struct = self.structures[struct_id]
+                self.history.append((struct_id, struct.copy()))
+                self.select_structure(struct, struct_id)
+                self.state = 'moving structure'
+            else:
+                s = self.canvas.find_overlapping(*self.cursor_pos, *self.cursor_pos)
+                if len(s) > 0:
+                    s = set(s)
+                    if self.bg_id is not None:
+                        for id_ in self.bg_id:
+                            try:
+                                s.remove(id_)
+                            except KeyError:
+                                pass
+
+                    for id_ in self.triggers_visualisation_rectangles:
                         try:
                             s.remove(id_)
                         except KeyError:
                             pass
 
-                for id_ in self.triggers_visualisation_rectangles:
                     try:
-                        s.remove(id_)
+                        s.remove(self.selection_rect_id)
                     except KeyError:
                         pass
 
-                try:
-                    s.remove(self.selection_rect_id)
-                except KeyError:
-                    pass
+                    try:
+                        s.remove(self.ref_visual_line_bottom)
+                    except KeyError:
+                        pass
 
-                try:
-                    s.remove(self.ref_visual_line_bottom)
-                except KeyError:
-                    pass
+                    try:
+                        s.remove(self.ref_visual_line_top)
+                    except KeyError:
+                        pass
 
-                try:
-                    s.remove(self.ref_visual_line_top)
-                except KeyError:
-                    pass
+                    s = tuple(s)
+                    if len(s) == 0:
+                        self.remove_focus(evt)
+                    else:
+                        self.root.title(self.document_name + '*')
 
-                s = tuple(s)
-                if len(s) == 0:
-                    self.remove_focus(evt)
-                else:
-                    self.root.title(self.document_name + '*')
-
-                    x, y = self.canvas.canvasx(evt.x), self.canvas.canvasy(evt.y)
-                    struct_id = s[0]
-                    x1, y1 = self.canvas.coords(struct_id)
-                    self.focus_dec = x1 - x, y1 - y
-                    struct = self.structures[struct_id]
-                    self.select_structure(struct, struct_id)
-                    self.state = 'moving structure'
+                        x, y = self.canvas.canvasx(evt.x), self.canvas.canvasy(evt.y)
+                        struct_id = s[0]
+                        x1, y1 = self.canvas.coords(struct_id)
+                        self.focus_dec = x1 - x, y1 - y
+                        struct = self.structures[struct_id]
+                        self.history.append((struct_id, struct.copy()))
+                        self.select_structure(struct, struct_id)
+                        self.state = 'moving structure'
 
         else:
             selection = self.structure_list.curselection()
@@ -644,7 +665,8 @@ class App(tk.Frame):
             yaml.safe_dump(base, file)
 
     def import_level(self):
-        filename = askopenfilename()
+        print(self.maps_base_dir)
+        filename = askopenfilename(initialdir=self.maps_base_dir)
         if filename:
             with open(filename) as datafile:
                 data = yaml.safe_load(datafile)
@@ -840,6 +862,13 @@ class App(tk.Frame):
             s = yaml.safe_dump(trigger_data)
             self.trigger_data_text.delete("0.0", "end")
             self.trigger_data_text.insert("0.0", s)
+
+    def undo(self, evt):
+        if len(self.history) != 0:
+            struct_id, struct = self.history.pop()
+            self.structures[struct_id] = struct
+            self.canvas.coords(struct_id, *struct.pos)
+            self.mouse_motion(evt)
 
     def widget_focusin_handler(self, evt):
         widget = evt.widget

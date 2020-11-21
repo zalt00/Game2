@@ -15,7 +15,7 @@
     "TH": {"calibration_squares": true, "filename": "platform_top_grass.png"},
     "TG": {"calibration_squares": false, "filename": "platform_top_ground.png"},
     "HR": {"calibration_squares": true, "filename": "reversed_htree_top.png"},
-    "SK": {"calibration_squares": true, "filename": "spikes.png"},
+    "SK": {"calibration_squares": false, "filename": "spikes.png"},
     "CU": {"calibration_squares": false, "filename": "underground.png"},
     "VT": {"calibration_squares": true, "filename": "vtree.png"},
     "VG": {"calibration_squares": false, "filename": "vtree_ground.png"},
@@ -42,6 +42,8 @@
     "RR": {"calibration_squares": false, "filename": "rotated_rocks.png"},
     "RS": {"calibration_squares": false, "filename": "rotated_slopes.png"},
     "RC": {"calibration_squares": false, "filename": "rotated_connectors.png"},
-    "RU": {"calibration_squares": false, "filename": "rotated_underground.png"}
+    "RU": {"calibration_squares": false, "filename": "rotated_underground.png"},
+    "MP": {"calibration_squares": true, "filename":  "moving_platform.png"},
+    "UP": {"calibration_squares":  false, "filename":  "underground_plants.png"}
   }
 }
