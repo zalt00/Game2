@@ -4,3 +4,4 @@ venv/
 *.wpr
 *.log
 other/
+*.psd

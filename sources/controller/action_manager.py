@@ -636,50 +636,58 @@ class GameActionManager(ActionManager):
         self.next_state = 'idle'
 
     def set_state(self, *args, **kwargs):
-        
-        if self.player.state == 'land':
-            self.player.secondary_state = ''
-        
-        if self.player.state == 'dash':
-            self.player.state = 'fall'
-            if self.still_walking:
-                if self.still_running:
-                    self.player.position_handler.body.velocity = Vec2d(150 * self.player.direction, 0)
-                else:
-                    self.player.position_handler.body.velocity = Vec2d(100 * self.player.direction, 0)
-            else:
-                self.player.position_handler.body.velocity = Vec2d(0, 0)
-        
-        if not self.player.is_on_ground:
-            if self.player.state in ('jump',) or self.next_state in ('walk', 'run', 'prejump'):
-                self.next_state = self.player.state
-            else:
-                self.next_state = 'fall'        
-        
-        if self.player.state == 'jump' and self.player.is_on_ground:
-            self.next_state = 'jump'
-        self.player.direction = self.next_direction
-        if self.player.air_control:
-            self.player.air_control = self.player.direction
 
-        self.player.state = self.next_state
-        
-        if self.player.is_on_ground:
-            if self.still_walking:
-                if self.still_running:
-                    self.next_state = 'run'
+        if not self.player.dead:
+            if self.player.state == 'land':
+                self.player.secondary_state = ''
+
+            if self.player.state == 'dash':
+                self.player.state = 'fall'
+                if self.still_walking:
+                    if self.still_running:
+                        self.player.position_handler.body.velocity = Vec2d(150 * self.player.direction, 0)
+                    else:
+                        self.player.position_handler.body.velocity = Vec2d(100 * self.player.direction, 0)
                 else:
-                    self.next_state = 'walk'
-            else:
-                if self.player.state != 'jump':
-                    self.next_state = 'idle'
+                    self.player.position_handler.body.velocity = Vec2d(0, 0)
+
+            if not self.player.is_on_ground:
+                if self.player.state in ('jump',) or self.next_state in ('walk', 'run', 'prejump'):
+                    self.next_state = self.player.state
                 else:
-                    self.next_state = 'jump'
-        else:
-            if self.player.state in ('jump',):
-                self.next_state = self.player.state
-            else:
-                self.next_state = 'fall'
-            if self.still_walking:
+                    self.next_state = 'fall'
+
+            if self.player.state == 'jump' and self.player.is_on_ground:
+                self.next_state = 'jump'
+            self.player.direction = self.next_direction
+            if self.player.air_control:
                 self.player.air_control = self.player.direction
+
+            self.player.state = self.next_state
+
+            if self.player.is_on_ground:
+                if self.still_walking:
+                    if self.still_running:
+                        self.next_state = 'run'
+                    else:
+                        self.next_state = 'walk'
+                else:
+                    if self.player.state != 'jump':
+                        self.next_state = 'idle'
+                    else:
+                        self.next_state = 'jump'
+            else:
+                if self.player.state in ('jump',):
+                    self.next_state = self.player.state
+                else:
+                    self.next_state = 'fall'
+                if self.still_walking:
+                    self.player.air_control = self.player.direction
+
+        else:
+            if self.player.state != 'die':
+                self.player.state = 'die'
+                self.next_state = 'die'
+            else:
+                self.player.hide()
 

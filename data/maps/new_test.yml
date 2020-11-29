@@ -1,0 +1,267 @@
+background_data:
+  bg_decoration_layer_id: -4
+  bg_decoration_object_set_res: forest/forest_bg_decoration_set.bgobj
+  bg_decoration_objects_pos:
+  - 0
+  - -300
+  bg_decoration_sequence:
+  - shrub
+  - small_tree
+  - large_tree
+  - stump
+  - small_tree
+  - bush
+  pos:
+  - 0
+  - -550
+  res: forest/forest.bg
+objects_data:
+  bgdec_1_structure:
+    is_built: false
+    layer: -1
+    name: bgdec_1
+    pos:
+    - 836
+    - 0
+    res: forest/structures/lvl_bg_dec.st
+    state: base
+    type: structure
+  fgdec_1_0_structure:
+    3d_effect_layer: 1.2
+    is_built: true
+    layer: 2
+    name: fgdec_1_0
+    pos:
+    - 1111
+    - 532
+    res: forest/foreground_decorations/flipped_big_bush.obj
+    state: base
+    type: structure
+  fgdec_1_1_structure:
+    3d_effect_layer: 1.2
+    is_built: true
+    layer: 2
+    name: fgdec_1_1
+    pos:
+    - 639
+    - 527
+    res: forest/foreground_decorations/big_bush_w_thorns.obj
+    state: base
+    type: structure
+  fgdec_1_2_structure:
+    3d_effect_layer: 1.2
+    is_built: true
+    layer: 3
+    name: fgdec_1_2
+    pos:
+    - 853
+    - 617
+    res: forest/foreground_decorations/bush_w_thorns.obj
+    state: base
+    type: structure
+  fgdec_1_3_structure:
+    3d_effect_layer: 1.2
+    is_built: true
+    layer: 3
+    name: fgdec_1_3
+    pos:
+    - 1475
+    - 647
+    res: forest/foreground_decorations/flipped_bush.obj
+    state: base
+    type: structure
+  fgdec_1_4_structure:
+    3d_effect_layer: 1.2
+    is_built: true
+    layer: 2
+    name: fgdec_1_4
+    pos:
+    - 1387
+    - -111
+    res: forest/foreground_decorations/big_bush_and_trees.obj
+    state: base
+    type: structure
+  fgdec_1_5_structure:
+    3d_effect_layer: 1.2
+    is_built: true
+    layer: 2
+    name: fgdec_1_5
+    pos:
+    - 737
+    - 0
+    res: forest/foreground_decorations/bush.obj
+    state: base
+    type: structure
+  ground1_structure:
+    ground:
+    - - - -416.0
+        - 123
+      - - 416.0
+        - 123
+    is_built: false
+    layer: 1
+    name: ground1
+    pos:
+    - -76
+    - -62
+    res: forest/structure.st
+    state: base
+    type: structure
+    walls: []
+  mainbuild_1_structure:
+    ground:
+    - - - -496.0
+        - 64
+      - - -96.0
+        - 64
+    - - - -96.0
+        - 224
+      - - 0.0
+        - 224
+    - - - -80.0
+        - 288
+      - - -16.0
+        - 288
+    - - - -240.0
+        - 192
+      - - -176.0
+        - 192
+    - - - -320.0
+        - 416
+      - - -480.0
+        - 416
+    - - - -96.0
+        - 512
+      - - 64.0
+        - 512
+    - - - 144.0
+        - 544
+      - - 304.0
+        - 544
+    - - - -272.0
+        - 608
+      - - 496.0
+        - 608
+    - - - 352.0
+        - 416
+      - - 496.0
+        - 416
+    - - - 128.0
+        - 64
+      - - 368.0
+        - 64
+    - - - 224.0
+        - 96
+      - - 320.0
+        - 96
+    - - - -16.0
+        - 192
+      - - 16.0
+        - 192
+    - - - 16.0
+        - 160
+      - - 32.0
+        - 160
+    - - - 16.0
+        - 128
+      - - 48.0
+        - 128
+    - - - 48.0
+        - 96
+      - - 80.0
+        - 96
+    - - - 80.0
+        - 64
+      - - 112.0
+        - 64
+    - - - 144.0
+        - 384
+      - - 272.0
+        - 384
+    is_built: false
+    layer: 1
+    name: mainbuild_1
+    pos:
+    - 836
+    - 0
+    res: forest/structures/lvl.st
+    state: base
+    type: structure
+    walls: []
+  player:
+    res: player/white_guy.obj
+    type: player
+  tree2_structure:
+    3d_effect_layer: 0.8
+    is_built: true
+    layer: -2
+    name: tree2
+    pos:
+    - 1385
+    - -3
+    res: forest/decorations/big_tree1.obj
+    state: base
+    type: structure
+  tree_structure:
+    3d_effect_layer: 0.8
+    is_built: true
+    layer: -2
+    name: tree
+    pos:
+    - 526
+    - 52
+    res: forest/decorations/big_tree1.obj
+    state: base
+    type: structure
+palette: forest/forest_structure_tilesets.stsp
+space: true
+triggers_data:
+  bottom_of_world:
+    actions:
+    - entity_name: player
+      npos:
+      - 300
+      - 300
+      type_: TPEntity
+    enabled: true
+    id: 0
+    top: -200
+  left_border:
+    actions:
+    - dx: 600
+      dy: 0
+      fade_in: 30
+      fade_out: 30
+      total_duration: 100
+      type_: RelativeMovecam
+    - target: 1
+      type_: DisableTrigger
+    - target: 4
+      type_: EnableTrigger
+    enabled: true
+    id: 1
+    left: 1280
+  lock_cam:
+    actions:
+    - mode: follow
+      type_: LockCamera
+      x: true
+      y: false
+    - target: 3
+      type_: DisableTrigger
+    - follow_sensitivity: 30
+      left_limit: 0
+      moving_threshold: 4
+      type_: CameraSettings
+    enabled: true
+    id: 3
+    left: 185
+  right_border:
+    actions:
+    - target: 1
+      type_: EnableTrigger
+    - target: 4
+      type_: DisableTrigger
+    enabled: true
+    id: 4
+    right: 1270

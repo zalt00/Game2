@@ -35,6 +35,18 @@ class GameActionGetter(ActionGetter):
             self.ag.camera_handler.add_trajectory((self.x, self.y), self.total_duration, self.fade_in, self.fade_out)
 
     @dataclass
+    class RelativeMovecam(AbstractAction):
+        dx: int
+        dy: int
+        total_duration: int
+        fade_in: int
+        fade_out: int
+
+        def __call__(self):
+            self.ag.camera_handler.add_trajectory((self.dx, self.dy), self.total_duration, self.fade_in, self.fade_out,
+                                                  relative=True)
+
+    @dataclass
     class LockCamera(AbstractAction):
         x: bool
         y: bool
@@ -47,12 +59,18 @@ class GameActionGetter(ActionGetter):
     class CameraSettings(AbstractAction):
         follow_sensitivity: int = -1
         moving_threshold: int = -1
+        left_limit: int = 2_147_483_641
+        max_speed: int = 2_147_483_641
 
         def __call__(self):
             if self.follow_sensitivity != -1:
                 self.ag.camera_handler.follow_sensitivity = self.follow_sensitivity
             if self.moving_threshold != -1:
                 self.ag.camera_handler.moving_threshold = self.moving_threshold
+            if self.left_limit != 2_147_483_641:
+                self.ag.camera_handler.left_limit = self.left_limit
+            if self.max_speed != 2_147_483_641:
+                self.ag.camera_handler.max_speed = self.max_speed
 
     @dataclass
     class EnableTrigger(AbstractAction):

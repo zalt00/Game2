@@ -4,15 +4,9 @@ import pymunk
 
 
 class GameSpace(pymunk.Space):
-    def __init__(self, ground_height, ground_length):
+    def __init__(self):
         super().__init__()
         self.gravity = (0, -1000)
-        self.ground_body = pymunk.Body(body_type=pymunk.Body.STATIC)
-        self.ground_shape = pymunk.Segment(self.ground_body, (0, ground_height), (ground_length, ground_height), 5)
-        self.ground_shape.friction = 1
-        self.ground_shape.is_solid_ground = True
-        self.ground_shape.collision_type = 1
-        self.add(self.ground_body, self.ground_shape)
         
         self.objects = {}
 
@@ -32,6 +26,7 @@ class GameSpace(pymunk.Space):
         shape = pymunk.Poly(body=body, vertices=points, radius=radius)
         shape.collision_type = 0
         shape.friction = 1
+        shape.action_on_touch = None
         
         body.width = width
         
@@ -40,7 +35,7 @@ class GameSpace(pymunk.Space):
         
         self.objects[name] = (body, shape)
         
-    def add_structure(self, pos, walls, segments, name):
+    def add_structure(self, pos, walls, segments, name, action_on_touch=None):
         body = pymunk.Body(body_type=pymunk.Body.STATIC)
         body.position = pos
         
@@ -49,15 +44,15 @@ class GameSpace(pymunk.Space):
             s = pymunk.Segment(body, a, b, 1)
             shapes.append(s)
             s.friction = 0
-            s.is_solid_ground = False
             s.collision_type = 2
+            s.action_on_touch = action_on_touch
 
         for a, b in segments:
             s = pymunk.Segment(body, a, b, 1)
             shapes.append(s)
             s.friction = 1
-            s.is_solid_ground = True
             s.collision_type = 1
+            s.action_on_touch = action_on_touch
             
         self.add(body, shapes)
         

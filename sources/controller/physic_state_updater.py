@@ -16,10 +16,18 @@ class PhysicStateUpdater:
         self.x2 = 0
         self.xb = 0
 
-        self.space.add_collision_handler(0, 1).pre_solve = self.collision_with_ground
-        self.space.add_collision_handler(0, 2).post_solve = self.collision_with_structure
-        self.space.add_collision_handler(0, 1).separate = self.separate_from_ground
-        self.space.add_collision_handler(0, 2).separate = self.separate
+        # override default collision behaviours
+        player_ground_collision_handler = self.space.add_collision_handler(0, 1)
+        player_wall_collision_handler = self.space.add_collision_handler(0, 2)
+
+        player_ground_collision_handler.pre_solve = self.collision_with_ground
+        player_wall_collision_handler.post_solve = self.collision_with_structure
+
+        player_ground_collision_handler.separate = self.separate_from_ground
+        player_wall_collision_handler.separate = self.separate
+
+        player_ground_collision_handler.begin = self.check_actions_on_touch
+        player_wall_collision_handler.begin = self.check_actions_on_touch
 
         self.state_duration = state_duration
 
@@ -27,13 +35,23 @@ class PhysicStateUpdater:
         self.current_state_duration = 0
         self.t0 = 0
 
+        self.actions = []
+
     def change_physic_state(self, entity, state):
-        duration = self.state_duration.get(state, None)
-        if duration is None:
-            duration = entity.image_handler.get_state_duration(state)
-        self.current_state_duration = duration
-        self.current_state_name = state
-        self.t0 = perf_counter()
+        if entity.state != 'die' or not entity.dead:
+            duration = self.state_duration.get(state, None)
+            if duration is None:
+                duration = entity.image_handler.get_state_duration(state)
+            self.current_state_duration = duration
+            self.current_state_name = state
+            self.t0 = perf_counter()
+
+    def check_actions_on_touch(self, arbiter, *_, **__):
+        shapes = arbiter.shapes
+        for s in shapes:
+            if s.action_on_touch is not None:
+                self.actions.append(s.action_on_touch)
+        return True
 
     def separate_from_ground(self, *_, **__):
         self.separate()
@@ -61,59 +79,71 @@ class PhysicStateUpdater:
         return False
     
     def update_(self, entity, n=1):
-        for _ in range(n):
-            entity.can_air_control = True
 
-            # bug fix (prevents the player to keep his/her speed during the dash if he or she hits a structure)
-            if self.collide and entity.state == 'dash':
-                self.body.velocity /= 20
-                entity.state = 'fall'
+        if not entity.dead:
 
-            # the player should not be able to air control against a wall because the wall can get him/her stuck
-            # this code tests if the direction of the player is in the same direction as the direction of the object
-            # he/she is colliding with
-            if self.collide and ((entity.direction == 1 and self.xb > self.body.position.x)
-                                 or (entity.direction == -1 and self.xb < self.body.position.x)):
-                entity.can_air_control = False
+            for _ in range(len(self.actions)):
+                action_name, action_args = self.actions.pop()
+                getattr(entity, action_name, lambda *_, **__: None)(*action_args)
 
-            # prevents saving an unstable position (at least half of the body must be on a stable structure)
-            if self.on_ground:
-                if self.body.width // 2 < round(abs(self.x1 - self.x2)):
-                    self.save_position()
+            for _ in range(n):
+                entity.can_air_control = True
 
-            # prevents a "flicker" effect when the player leaves the ground for 1 or 2 ticks (it sometimes happens
-            # when the player simply runs on a structure after a weird landing)
-            if not self.on_ground:
-                if self.a > 3:
-                    on_ground = False
+                # bug fix (prevents the player to keep his/her speed during the dash if he or she hits a structure)
+                if self.collide and entity.state == 'dash':
+                    self.body.velocity /= 20
+                    entity.state = 'fall'
+
+                # the player should not be able to air control against a wall because the wall can get him/her stuck
+                # this code tests if the direction of the player is in the same direction as the direction of the object
+                # he/she is colliding with
+                if self.collide and ((entity.direction == 1 and self.xb > self.body.position.x)
+                                     or (entity.direction == -1 and self.xb < self.body.position.x)):
+                    entity.can_air_control = False
+
+                # prevents saving an unstable position (at least half of the body must be on a stable structure)
+                if self.on_ground:
+                    if self.body.width // 2 < round(abs(self.x1 - self.x2)):
+                        self.save_position()
+
+                # prevents a "flicker" effect when the player leaves the ground for 1 or 2 ticks (it sometimes happens
+                # when the player simply runs on a structure after a weird landing)
+                if not self.on_ground:
+                    if self.a > 3:
+                        on_ground = False
+                    else:
+                        self.a += 1
+                        on_ground = True
                 else:
-                    self.a += 1
+                    self.a = 0
                     on_ground = True
-            else:
-                self.a = 0
-                on_ground = True
 
-            # animation util
-            if not on_ground:
-                if self.body.velocity.y < 0:
-                    if entity.state == 'jump':
-                        entity.state = 'fall'
-                else:
-                    if entity.state == 'fall':
-                        entity.state = 'jump'
+                # animation util
+                if not on_ground:
+                    if self.body.velocity.y < 0:
+                        if entity.state == 'jump':
+                            entity.state = 'fall'
+                    else:
+                        if entity.state == 'fall':
+                            entity.state = 'jump'
 
-            self.body.angle = 0
-            self.body.angular_velocity = 0
-            self.body.space.reindex_shapes_for_body(self.body)
-            
-            if not entity.is_on_ground and entity.state in ('walk', 'run'):
-                entity.state = 'fall'
+                self.body.angle = 0
+                self.body.angular_velocity = 0
+                self.body.space.reindex_shapes_for_body(self.body)
 
-            landed = (not entity.is_on_ground) and on_ground
-            entity.is_on_ground = on_ground
-            if landed:
-                self.land()
+                if not entity.is_on_ground and entity.state in ('walk', 'run'):
+                    entity.state = 'fall'
 
+                landed = (not entity.is_on_ground) and on_ground
+                entity.is_on_ground = on_ground
+                if landed:
+                    self.land()
+
+                # updates the physic state of the entity
+                t1 = perf_counter()
+                if t1 - self.t0 >= self.current_state_duration:
+                    entity.end_of_state(self.current_state_name)
+        else:
             # updates the physic state of the entity
             t1 = perf_counter()
             if t1 - self.t0 >= self.current_state_duration:

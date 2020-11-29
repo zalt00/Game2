@@ -33,6 +33,9 @@ class BaseSprite(pyglet.sprite.Sprite, metaclass=SpriteMetaclass, instantiable=F
         self.image_handler = image_handler
         self.position_handler = position_handler
 
+        self.goal_opacity = -1
+        self.start_opacity = -1
+
         self.animated = True
         self.static = False
 
@@ -84,6 +87,10 @@ class BaseSprite(pyglet.sprite.Sprite, metaclass=SpriteMetaclass, instantiable=F
             if image is not None:
                 self.image = image
         self.position_changed = self.image_changed = False
+        if self.goal_opacity > -1:
+            self.opacity += (-self.start_opacity + self.goal_opacity) / 150
+            if round(self.opacity) == self.goal_opacity:
+                self.goal_opacity = -1
 
     def update_(self, n=1):
         self.update_position()
@@ -105,10 +112,18 @@ class BaseSprite(pyglet.sprite.Sprite, metaclass=SpriteMetaclass, instantiable=F
             self.static = False
             self.animated = True
 
+    def fade_to(self, goal_opacity):
+        self.goal_opacity = goal_opacity
+        self.start_opacity = self.opacity
+
 
 class Entity(BaseSprite, metaclass=SpriteMetaclass):
     def __init__(self, batch, layer_group, position_handler,
-                 image_handler, screen_offset, physic_state_updater, particles_handler, end_of_state_callback):
+                 image_handler, screen_offset, physic_state_updater, particles_handler, end_of_state_callback,
+                 on_death_callback):
+
+        self.dead = False
+        self.on_death = on_death_callback
 
         self.secondary_state = ''
 
@@ -132,6 +147,11 @@ class Entity(BaseSprite, metaclass=SpriteMetaclass):
         self._direction = 1
 
         super().__init__(batch, layer_group, position_handler, image_handler, screen_offset)
+
+    def die(self):
+        self.state = 'die'
+        self.dead = True
+        self.on_death()
 
     def start_recording_position(self, default_array_size=2000):
         self.record_position = True
@@ -174,7 +194,6 @@ class Entity(BaseSprite, metaclass=SpriteMetaclass):
             self.position_records[self.last_index, :] = self.position_handler.body.position
             self.last_index += 1
 
-
     def update_image(self):
         super(Entity, self).update_image()
         self.particles_handler.update_(self)
@@ -182,7 +201,7 @@ class Entity(BaseSprite, metaclass=SpriteMetaclass):
 
 class BgLayer(BaseSprite, metaclass=SpriteMetaclass):
     def __init__(self, batch, layer_group, position_handler, image_handler, screen_offset):
-        super().__init__(batch, layer_group, position_handler, image_handler, screen_offset)
+        super().__init__(batch, layer_group, position_handler, image_handler, screen_offset, state='base')
         self.affected_by_screen_offset = False
         image_data = self.image.get_image_data()
 

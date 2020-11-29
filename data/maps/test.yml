@@ -16,23 +16,18 @@ background_data:
   - -550
   res: forest/forest.bg
 objects_data:
-  base_ground_structure:
-    ground:
-    - - - -416.0
-        - 123
-      - - 416.0
-        - 123
-    is_built: false
-    layer: 1
-    name: base_ground
+  fg_bush_structure:
+    3d_effect_layer: 1.2
+    is_built: true
+    layer: 2
+    name: fg_bush
     pos:
-    - 1669
-    - -96
-    res: forest/structure.st
+    - 822
+    - 1
+    res: forest/foreground_decorations/bush.obj
     state: base
     type: structure
-    walls: []
-  ground-2_structure:
+  ground1_structure:
     ground:
     - - - -416.0
         - 123
@@ -40,7 +35,7 @@ objects_data:
         - 123
     is_built: false
     layer: 1
-    name: ground-2
+    name: ground1
     pos:
     - 101
     - -32
@@ -48,20 +43,23 @@ objects_data:
     state: base
     type: structure
     walls: []
-  player:
-    res: player/white_guy.obj
-    type: player
-  spikes_structure:
+  ground2_structure:
+    ground:
+    - - - -416.0
+        - 123
+      - - 416.0
+        - 123
     is_built: false
-    layer: -1
-    name: spikes
+    layer: 1
+    name: ground2
     pos:
-    - 961
-    - 64
-    res: forest/spikes.st
+    - 1669
+    - -96
+    res: forest/structure.st
     state: base
     type: structure
-  structure-1_structure:
+    walls: []
+  platforms_structure:
     ground:
     - - - -368.0
         - 91
@@ -89,7 +87,7 @@ objects_data:
         - 315
     is_built: false
     layer: 1
-    name: structure-1
+    name: platforms
     pos:
     - 885
     - 0
@@ -129,10 +127,44 @@ objects_data:
         - 315
       - - 360.0
         - 27
-  structure1_structure:
+  player:
+    res: player/white_guy.obj
+    type: player
+  spikes_structure:
+    action_on_touch:
+    - die
+    - []
+    ground: []
+    is_built: false
+    layer: -1
+    name: spikes
+    pos:
+    - 961
+    - 64
+    res: forest/spikes.st
+    state: base
+    type: structure
+    walls:
+    - - - 48.0
+        - 13.0
+      - - -48.0
+        - 13.0
+  tree2_structure:
+    3d_effect_layer: 0.8
     is_built: true
     layer: -1
-    name: structure1
+    name: tree2
+    pos:
+    - 1385
+    - -3
+    res: forest/decorations/big_tree1.obj
+    state: base
+    type: structure
+  tree_structure:
+    3d_effect_layer: 0.8
+    is_built: true
+    layer: -1
+    name: tree
     pos:
     - 526
     - 52
@@ -154,15 +186,15 @@ triggers_data:
     top: -200
   left_border:
     actions:
-    - fade_in: 30
+    - dx: 600
+      dy: 0
+      fade_in: 30
       fade_out: 30
       total_duration: 100
-      type_: AbsoluteMovecam
-      x: -1216
-      y: 0
+      type_: RelativeMovecam
     - target: 1
       type_: DisableTrigger
-    - target: 2
+    - target: 4
       type_: EnableTrigger
     enabled: true
     id: 1
@@ -175,24 +207,19 @@ triggers_data:
       y: false
     - target: 3
       type_: DisableTrigger
-    - follow_sensitivity: 15
+    - follow_sensitivity: 30
+      left_limit: 0
+      moving_threshold: 4
       type_: CameraSettings
     enabled: true
     id: 3
     left: 185
-    right: 500
   right_border:
     actions:
-    - fade_in: 30
-      fade_out: 30
-      total_duration: 100
-      type_: AbsoluteMovecam
-      x: 0
-      y: 0
-    - target: 2
-      type_: DisableTrigger
     - target: 1
       type_: EnableTrigger
-    enabled: false
-    id: 2
-    right: 1216
+    - target: 4
+      type_: DisableTrigger
+    enabled: true
+    id: 4
+    right: 1270

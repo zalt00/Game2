@@ -6,6 +6,14 @@ AbsoluteMovecam:
     fade_in: 0
     fade_out: 0
 
+RelativeMovecam:
+    type_: RelativeMovecam
+    dx: 0
+    dy: 0
+    total_duration: 1
+    fade_in: 0
+    fade_out: 0
+
 EnableTrigger:
     type_: EnableTrigger
     target: 1

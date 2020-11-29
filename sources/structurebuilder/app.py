@@ -348,20 +348,6 @@ class App:
             self.show_dash_record ^= True
         elif key == K_k:
             self.flip_record ^= True
-
-        elif key == K_u:
-            self.i -= 1
-            self.change_tile(self.i)
-        elif key == K_p:
-            self.i += 5
-            self.change_tile(self.i)
-        elif key == K_o:
-            self.i -= 5
-            self.change_tile(self.i)
-        elif key == K_i:
-            self.i += 1
-            self.change_tile(self.i)
-
         elif key == K_F1:
             self.open_tileset_selection_menu()
 

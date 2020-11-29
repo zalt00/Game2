@@ -10,6 +10,7 @@
     "run": {"filename":  "run.png"},
     "walk": {"filename":  "walk.png"},
     "dash_effect": {"filename":  "dash_effect.png"},
-    "jump": {"filename": "jump.png"}
+    "jump": {"filename": "jump.png"},
+	"die": {"filename": "die.png"}
   }
 }

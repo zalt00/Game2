@@ -1,6 +1,6 @@
 # -*- coding:Utf-8 -*-
 
-from profile import run
+from cProfile import run
 from utils.model_loader import get_model
 from viewer import window
 from controller import app

@@ -1,21 +1,25 @@
 # -*- coding:Utf-8 -*-
 
+import copy
+import json
+import os
+import sys
 import tkinter as tk
+from configparser import ConfigParser
+from dataclasses import dataclass
 from tkinter import ttk
 from tkinter.filedialog import askopenfilename, asksaveasfilename
 from tkinter.messagebox import askokcancel
 from tkinter.simpledialog import askstring
-from dataclasses import dataclass
 from typing import Any
-import json
-import os
-from configparser import ConfigParser
-from viewer.resources_loader import ResourcesLoader
-from PIL import Image, ImageTk, ImageFile
+
 import pygame
 import yaml
 import yaml.parser
-import sys
+from PIL import Image, ImageTk, ImageFile
+
+from viewer.resources_loader import ResourcesLoader
+
 pygame.init()
 
 
@@ -76,23 +80,42 @@ class App(tk.Frame):
         self.opt_frame = tk.Frame(self)
         self.opt_frame.grid(row=2, column=1, sticky='ew')
 
-        self.set_bg_button = ttk.Button(self.opt_frame, text='Set BG', command=self.set_bg)
-        self.set_bg_button.grid(row=0, column=0)
+        self.menubar = tk.Menu(self, tearoff=False)
 
-        self.add_structure_button = ttk.Button(self.opt_frame, text='Add Structure', command=self.add_structure)
-        self.add_structure_button.grid(row=0, column=1)
+        self.filemenu = tk.Menu(self.menubar, tearoff=False)
+        self.filemenu.add_command(label='Save as', command=self.save_as)
+        self.filemenu.add_command(label='Import', command=self.import_level)
+        self.menubar.add_cascade(label='File', menu=self.filemenu)
 
-        self.set_height_ref_button = ttk.Button(self.opt_frame, text='Set Height Ref', command=self.set_height_ref)
-        self.set_height_ref_button.grid(row=0, column=2)
+        self.editmenu = tk.Menu(self.menubar, tearoff=False)
+        self.editmenu.add_command(label='Set BG', command=self.set_bg)
+        self.editmenu.add_command(label='Add Structure', command=self.add_structure)
+        self.editmenu.add_command(label='Set Height Ref', command=self.set_height_ref)
+        self.menubar.add_cascade(label='Edit', menu=self.editmenu)
 
-        self.save_as_button = ttk.Button(self.opt_frame, text='Save as', command=self.save_as)
-        self.save_as_button.grid(row=0, column=3)
+        self.displaymenu = tk.Menu(self.menubar, tearoff=False)
+        self.displaymenu.add_command(label='Update layers', command=self.update_layers)
+        self.menubar.add_cascade(label='Display', menu=self.displaymenu)
 
-        self.import_button = ttk.Button(self.opt_frame, text='Import', command=self.import_level)
-        self.import_button.grid(row=0, column=4)
+        self.root.config(menu=self.menubar)
 
-        self.update_layers_button = ttk.Button(self.opt_frame, text='Update layers', command=self.update_layers)
-        self.update_layers_button.grid(row=0, column=5)
+        # self.set_bg_button = ttk.Button(self.opt_frame, text='Set BG', command=self.set_bg)
+        # self.set_bg_button.grid(row=0, column=0)
+        #
+        # self.add_structure_button = ttk.Button(self.opt_frame, text='Add Structure', command=self.add_structure)
+        # self.add_structure_button.grid(row=0, column=1)
+        #
+        # self.set_height_ref_button = ttk.Button(self.opt_frame, text='Set Height Ref', command=self.set_height_ref)
+        # self.set_height_ref_button.grid(row=0, column=2)
+        #
+        # self.save_as_button = ttk.Button(self.opt_frame, text='Save as', command=self.save_as)
+        # self.save_as_button.grid(row=0, column=3)
+        #
+        # self.import_button = ttk.Button(self.opt_frame, text='Import', command=self.import_level)
+        # self.import_button.grid(row=0, column=4)
+        #
+        # self.update_layers_button = ttk.Button(self.opt_frame, text='Update layers', command=self.update_layers)
+        # self.update_layers_button.grid(row=0, column=5)
 
         self.rowconfigure(2, weight=1)
         self.columnconfigure(2, weight=1)
@@ -496,7 +519,7 @@ class App(tk.Frame):
         self.preview_canvas.tag_raise('fg1')
 
     def add_structure(self):
-        filename = askopenfilename()
+        filename = askopenfilename(initialdir=self.resources_base_dir)
         if filename:
             res_name = filename[filename.find('resources') + 10:]
 
@@ -530,7 +553,7 @@ class App(tk.Frame):
         self.canvas['cursor'] = 'crosshair'
 
     def set_bg(self):
-        filename = askopenfilename()
+        filename = askopenfilename(initialdir=self.resources_base_dir)
         if filename:
             self._set_bg(filename)
 
@@ -626,7 +649,7 @@ class App(tk.Frame):
             self.save_as()
 
     def save_as(self, *_, **__):
-        filename = asksaveasfilename(defaultextension='yml')
+        filename = asksaveasfilename(defaultextension='yml', initialdir=self.maps_base_dir)
         if filename:
             self._save(filename)
             self.last_saved = filename
@@ -637,12 +660,17 @@ class App(tk.Frame):
         with open('level_model.yaml') as datafile:
             base = yaml.safe_load(datafile)
 
+        with open('structure_data.yaml') as datafile:
+            structure_data = yaml.safe_load(datafile)
+
         base['palette'] = self.palette_res_name
         base['background_data']['res'] = self.bg_res
         if self.bg is not None:
             base['background_data']['pos'] = [0, -(int(self.bg[0].height() - 800 + self.ref_height))]
 
         for struct_id, struct in self.structures.items():
+            print(struct.res_path)
+
             base['objects_data'][struct.name + '_structure'] = {}
             struct_data = base['objects_data'][struct.name + '_structure']
             struct_data['type'] = 'structure'
@@ -653,11 +681,38 @@ class App(tk.Frame):
                 struct_data['is_built'] = True
             struct_data['name'] = struct.name
             struct_data['pos'] = [int(struct.pos[0]), int(-self.ref_height + 720 - self.canvas.bbox(struct_id)[3])]
-            collisions_infos = self.get_collision_infos(struct)
-            if collisions_infos is not None:
-                struct_data['walls'], struct_data['ground'] = collisions_infos
+
+            families = self._get_struct_families(struct, structure_data['structure_families'])
+            for family_name in families:
+                family = structure_data['structure_families'][family_name]
+                for key, value in family['data'].items():
+                    struct_data[key] = value
+
+            try:
+                collisions_infos = self.get_collision_infos(struct, with_action_on_touche=True,
+                                                            input_data=structure_data)
+            except KeyError:
+                pass
+            else:
+                if collisions_infos is not None:
+                    struct_data['walls'] = collisions_infos[0]
+                    struct_data['ground'] = collisions_infos[1]
+                    if collisions_infos[2] is not None:
+                        struct_data['action_on_touch'] = collisions_infos[2]
             struct_data['state'] = 'base'
             struct_data['layer'] = struct.layer
+
+            try:
+                struct_data['3d_effect_layer'] = self._load_additional_data(struct, '3d_effect_layer',
+                                                                            data=structure_data)
+            except KeyError:
+                pass
+
+            families = self._get_struct_families(struct, structure_data['structure_families'])
+            for family_name in families:
+                family = structure_data['structure_families'][family_name]
+                for key, value in family['data'].items():
+                    struct_data[key] = value
 
         base['triggers_data'].update(self.triggers)
 
@@ -696,19 +751,46 @@ class App(tk.Frame):
             self.canvas.tag_raise(struct_id)
 
     @staticmethod
-    def _load_collision_infos(struct):
-        with open('default_collisions.yaml') as datafile:
-            data = yaml.safe_load(datafile)
+    def _load_collision_infos(struct, with_action_on_touche=False, data=None):
+        if data is None:
+            with open('structure_data.yaml') as datafile:
+                data = yaml.safe_load(datafile)
         struct_data = data.get(struct.res_path, None)
         if struct_data is not None:
-            return (struct_data['walls'], struct_data['ground'],
-                    struct_data.get('x_offset', 0), struct_data.get('y_offset', 0))
+            to_rtn = (struct_data['walls'], struct_data['ground'],
+                      struct_data.get('x_offset', 0), struct_data.get('y_offset', 0))
+            if with_action_on_touche:
+                return to_rtn + (struct_data.get('action_on_touch', None),)
+            else:
+                return to_rtn
 
-    def get_collision_infos(self, struct):
-        data = self._load_collision_infos(struct)
+    @staticmethod
+    def _load_additional_data(struct, key, data=None):
+        if data is None:
+            with open('structure_data.yaml') as datafile:
+                data = yaml.safe_load(datafile)
+        struct_data = data.get(struct.res_path, None)
+        if struct_data is not None:
+            return struct_data[key]
+        raise KeyError(f'no data for structure "{struct.res_path}"')
+
+    @staticmethod
+    def _get_struct_families(struct, families_data):
+        families = set()
+        for family_name, family_data in families_data.items():
+            if any([struct.res_path.startswith(component) for component in family_data['components']]):
+                families.add(family_name)
+        return families
+
+    def get_collision_infos(self, struct, with_action_on_touche=False, input_data=None):
+        data = self._load_collision_infos(struct, with_action_on_touche, data=input_data)
+        data = copy.deepcopy(data)
         if data is not None:
-            walls, segments, x_offset, y_offset = data
-            print(data)
+            if with_action_on_touche:
+                walls, segments, x_offset, y_offset, action_on_touch = data
+            else:
+                walls, segments, x_offset, y_offset = data
+
             for a, b in walls:
                 a[0] += x_offset
                 b[0] += x_offset
@@ -720,6 +802,9 @@ class App(tk.Frame):
                 b[0] += x_offset
                 a[1] += y_offset
                 b[1] += y_offset
+
+            if with_action_on_touche:
+                return walls, segments, action_on_touch
             return walls, segments
 
     def show_collision_command(self):

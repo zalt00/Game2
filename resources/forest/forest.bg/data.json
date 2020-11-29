@@ -3,9 +3,9 @@
   "scale": 4,
 
   "background": [
-    {"filename": "Layer_00.png", "relative_pos":  [0, 0], "layer":  -3},
-    {"filename": "Layer_01.png", "relative_pos":  [0, 0], "layer":  -4},
-    {"filename": "Layer_02.png", "relative_pos":  [0, 0], "layer":  -5}
+    {"filename": "Layer_00.png", "relative_pos":  [0, 0], "layer":  -6},
+    {"filename": "Layer_01.png", "relative_pos":  [0, 0], "layer":  -8},
+    {"filename": "Layer_02.png", "relative_pos":  [0, 0], "layer":  -10}
   ],
 
   "foreground": []

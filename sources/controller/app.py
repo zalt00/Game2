@@ -1,6 +1,7 @@
 # -*- coding:Utf-8 -*-
 
-from .position_handler import StaticPositionHandler, PlayerPositionHandler, BgLayerPositionHandler
+from .position_handler import StaticPositionHandler, \
+    PlayerPositionHandler, BgLayerPositionHandler, DecorationPositionHandler
 from .action_manager import GameActionManager,\
     MainMenuActionManager, OptionsActionManager, CharacterSelectionActionManager
 from .physic_state_updater import PhysicStateUpdater
@@ -441,6 +442,11 @@ class Game:
         self.t1 = self.count = self.number_of_space_updates = self.space = \
             self.player = self.entities = self.structures = self.triggers = self.ag = self.action_manager = None
         self.camera_handler = None
+        self.is_player_dead = False
+        self.sprites_to_delete = []
+        self.already_hidden = []
+        self.scheduled_func = set()
+
         self.draw_options = None
 
         self.viewer_page = None
@@ -498,7 +504,7 @@ class Game:
         else:
             self.draw_options = None
 
-        self.space = GameSpace(0, 0)
+        self.space = GameSpace()
 
         ### BG ###
         dynamic = True
@@ -540,7 +546,7 @@ class Game:
                                     y=self.model.Game.BaseBGData.camera_pos_y.get(self.current_save_id))
 
         ### TRIGGERS ###
-        self.triggers = [None] * len(self.level['triggers_data'])
+        self.triggers = dict()
         self.ag = GameActionGetter(self.triggers, self.window, self.camera_handler, self.entities)
         for trigdata in self.level['triggers_data'].values():
             self.triggers[trigdata['id']] = Trigger(trigdata, self.ag)
@@ -590,17 +596,28 @@ class Game:
 
     def init_structure(self, data):
         name = data['name']
-        pos_handler = StaticPositionHandler(data['pos'])
+        is_decoration = '3d_effect_layer' in data
+        if is_decoration:
+            pos_handler = DecorationPositionHandler(data['pos'], data['3d_effect_layer'], self.window.screen_offset)
+        else:
+            pos_handler = StaticPositionHandler(data['pos'])
         layer = data.get('layer', 0)
         if data['is_built']:
             struct = self.window.add_structure(self.viewer_page, layer, pos_handler, data['res'])
         else:
             struct = self.window.build_structure(
                 self.viewer_page, layer, pos_handler, data['res'], self.level['palette'])
+
+        if is_decoration:
+            struct.affected_by_screen_offset = False
         self.viewer_page.structures.add(struct)
 
         if 'walls' in data:
-            self.space.add_structure(data['pos'], data['walls'], data['ground'], name)
+            if 'action_on_touch' not in data:
+                action_on_touch = None
+            else:
+                action_on_touch = data['action_on_touch']
+            self.space.add_structure(data['pos'], data['walls'], data['ground'], name, action_on_touch)
 
         self.structures[name] = struct
 
@@ -617,7 +634,9 @@ class Game:
             additional_data['res'],
             PhysicStateUpdater(self.space.objects[name][0], self.action_manager.land, self.save_position, self.space,
                                player_data.StateDuration),
-            ParticleHandler(self.spawn_particle), self.action_manager.set_state)
+            ParticleHandler(self.spawn_particle), self.action_manager.set_state,
+            self.player_death
+        )
 
         self.camera_handler.player = self.player
         self.player.position_handler.do_update_triggers = True
@@ -661,7 +680,83 @@ class Game:
         self.model.Game.BaseBGData.camera_pos_x.set(round(self.window.screen_offset[0]), self.current_save_id)
         self.model.Game.BaseBGData.camera_pos_y.set(round(self.window.screen_offset[1]), self.current_save_id)
 
+    def player_death(self):
+        self.is_player_dead = True
+        for sprite in self.viewer_page.get_all_sprites():
+            if sprite != self.player:
+                if sprite.visible:
+                    sprite.hide()
+                else:
+                    self.already_hidden.append(sprite)
+
+        bg = self.window.add_solid_color_background(
+            self.viewer_page, -1, StaticPositionHandler((0, 0)), (245, 245, 245, 100))
+        bg.affected_by_screen_offset = False
+        bg.update_position()
+        self.viewer_page.bg_layers.add(bg)
+
+        self.sprites_to_delete.append(bg)
+
+        self.scheduled_func.add(self.display_death_screen)
+        self.window.schedule_once(self.display_death_screen, 1.8)
+
+    def display_death_screen(self, *_, **__):
+
+        bg = self.window.add_solid_color_background(
+            self.viewer_page, -1, StaticPositionHandler((0, 0)), (245, 245, 245, 255))
+        bg.affected_by_screen_offset = False
+        bg.update_position()
+        self.viewer_page.bg_layers.add(bg)
+
+        death_screen = self.window.add_structure(
+            self.viewer_page, 0, StaticPositionHandler((0, 0)), 'death_screen.obj'
+        )
+        death_screen.affected_by_screen_offset = False
+        death_screen.opacity = 0
+        death_screen.fade_to(255)
+        death_screen.update_position()
+        self.viewer_page.structures.add(death_screen)
+
+        self.sprites_to_delete.append(bg)
+        self.sprites_to_delete.append(death_screen)
+
+        self.scheduled_func.add(self.start_reviving_transition)
+        self.window.schedule_once(self.start_reviving_transition, 3.4)
+
+    def start_reviving_transition(self, *_, **__):
+        transition = Transition(120, (0, 0, 0, 255), (1280, 720), self.reanimate_player, 'in')
+        self.window.add_transition(transition)
+
+    def reanimate_player(self, *_, **__):
+        self.is_player_dead = False
+
+        for _ in range(len(self.sprites_to_delete)):
+            sprite = self.sprites_to_delete.pop()
+            if sprite in self.viewer_page.bg_layers:
+                self.viewer_page.bg_layers.remove(sprite)
+            elif sprite in self.viewer_page.structures:
+                self.viewer_page.structures.remove(sprite)
+            sprite.delete()
+            del sprite
+
+        for sprite in self.viewer_page.get_all_sprites():
+            if sprite not in self.already_hidden:
+                sprite.show()
+        self.already_hidden = []
+
+        self.player.dead = False
+        self.player.state = 'idle'
+
+        self.player.position_handler.body.position = (self.model.Game.BasePlayerData.pos_x.get(self.current_save_id),
+                                                      self.model.Game.BasePlayerData.pos_y.get(self.current_save_id))
+
+        transition = Transition(300, (0, 0, 0, 255), (1280, 720), lambda *_, **__: None, 'out')
+        self.window.add_transition(transition)
+
     def quit(self):
+        for func in self.scheduled_func:
+            self.window.unschedule(func)
+        self.scheduled_func = set()
         self.dump_save()
 
     def update(self, *_, **__):
@@ -690,7 +785,8 @@ class Game:
                 self.space.step(1/60/4)
                 if self.count == 3:
                     self.count = 0
-                    self.window.screen_offset = self.camera_handler.update_camera_position(1)
+                    if not self.is_player_dead:
+                        self.window.screen_offset = self.camera_handler.update_camera_position(1)
                     for sprite in sprites:
                         last = i + 4 - self.count >= (n1 // 3 - 1)
                         sprite.update_position(last)

@@ -13,7 +13,7 @@ background_data:
         - stump
         - small_tree
         - bush
-    bg_decoration_layer_id: -2
+    bg_decoration_layer_id: -4
     bg_decoration_objects_pos: [0, -300]
 
 objects_data:

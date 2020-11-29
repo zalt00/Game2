@@ -139,7 +139,8 @@ class StructTSPalette:
 
         step_x = flip_x * -2 + 1
         step_y = flip_y * -2 + 1
-        return tileset[::step_y, tile_id * tw:(tile_id + 1) * tw, :][:, ::step_x, :]
+        output_value = tileset[::step_y, tile_id * tw:(tile_id + 1) * tw, :][:, ::step_x, :]
+        return output_value
 
     def build(self, res):
         """creates the structure's image with the string buffer and return it"""

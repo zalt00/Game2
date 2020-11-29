@@ -128,6 +128,14 @@ class Window(pyglet.window.Window):
     def set_page(self, page):
         self.current_page = page
 
+    @staticmethod
+    def schedule_once(func, delay):
+        pyglet.clock.schedule_once(func, delay)
+
+    @staticmethod
+    def unschedule(func):
+        pyglet.clock.unschedule(func)
+
     def _add_sprite(self, batch, sprite_type, layer, position_handler, image_handler, *args, **kwargs):
         constructor = SpriteMetaclass.get_constructor(sprite_type)
         layer_group = self.get_group(layer)
@@ -143,14 +151,23 @@ class Window(pyglet.window.Window):
         sprite = self._add_sprite(batch, 'BgLayer', layer, position_handler, image_handler)
         return sprite
 
+    def add_solid_color_background(self, page, layer, position_handler, color):
+        img = pyglet.image.SolidColorImagePattern(color).create_image(self.width, self.height)
+        batch = page.batch
+        image_handler = ihdlr.StructureImageHandler(
+            OtherObjectsResource({'base': img}, self.width, self.height, (0, 0)))
+
+        sprite = self._add_sprite(batch, 'Structure', layer, position_handler, image_handler)
+        return sprite
+
     def add_entity(self, page, layer, position_handler, res, physics_updater, particle_handler,
-                   end_of_state_callback):
+                   end_of_state_callback, on_death_callback):
         if isinstance(res, str):
             res = self.resource_loader.load(res)
         batch = page.batch
         image_handler = ihdlr.TBEntityImageHandler(res, lambda *_, **__: None)
         sprite = self._add_sprite(batch, 'Entity', layer, position_handler, image_handler,
-                                  physics_updater, particle_handler, end_of_state_callback)
+                                  physics_updater, particle_handler, end_of_state_callback, on_death_callback)
         return sprite
 
     def add_structure(self, page, layer, position_handler, res):

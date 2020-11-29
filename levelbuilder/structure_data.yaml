@@ -15,6 +15,13 @@ forest/ground.st:
     ground:
         - [[-304, 96], [304, 96]]
 
+forest/spikes.st:
+    walls:
+        - [[48.0, 13.0], [-48.0, 13.0]]
+    ground: []
+    action_on_touch: [die, []]
+
+
 forest/struct_1.st:
     walls:
         - [[-256.0, 96], [-256.0, 160]]
@@ -59,7 +66,6 @@ forest/holes/med_hole.st:
     walls: []
     ground: []
 
-
 forest/level.st:
     walls:
         - [[-200.0, 96], [-200.0, 224]]
@@ -80,5 +86,41 @@ forest/level.st:
         - [[172.0, 320], [360.0, 320]]
 
     y_offset: -5
+
+
+forest/structures/lvl.st:
+    ground:
+        - [[-496.0, 64], [-96.0, 64]]
+        - [[-96.0, 224], [0.0, 224]]
+        - [[-80.0, 288], [-16.0, 288]]
+        - [[-240.0, 192], [-176.0, 192]]
+        - [[-320.0, 416], [-480.0, 416]]
+        - [[-96.0, 512], [64.0, 512]]
+        - [[144.0, 544], [304.0, 544]]
+        - [[-272.0, 608], [496.0, 608]]
+        - [[352.0, 416], [496.0, 416]]
+        - [[128.0, 64], [368.0, 64]]
+        - [[224.0, 96], [320.0, 96]]
+        - [[-16.0, 192], [16.0, 192]]
+        - [[16.0, 160], [32.0, 160]]
+        - [[16.0, 128], [48.0, 128]]
+        - [[48.0, 96], [80.0, 96]]
+        - [[80.0, 64], [112.0, 64]]
+        - [[144.0, 384], [272.0, 384]]
+    walls: []
+
+structure_families:
+    decorations:
+        components:
+            - forest/decorations
+        data:
+            3d_effect_layer: 0.8
+
+    foreground_decorations:
+        components:
+            - forest/foreground_decorations
+        data:
+            3d_effect_layer: 1.2
+
 
 

@@ -110,7 +110,6 @@ class StructTSPalette:
         self.random_icon = pygame.image.load(
             os.path.join(directory, self.data['random']).replace('\\', '/')).convert_alpha()
 
-
     def parse(self, s):
         """parses a string buffer element and returns an image"""
         key = s[:2]
