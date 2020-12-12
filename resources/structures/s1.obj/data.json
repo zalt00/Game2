@@ -1,8 +1,0 @@
-{
-  "dec": [40, 0],
-  "dimensions": [80, 112],
-  "scale2x": 0,
-  "animations": {
-    "base": {"filename":  "base.png"}
-  }
-}

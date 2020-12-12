@@ -107,10 +107,12 @@ class PlayerPositionHandler(EntityPositionHandler):
         super().__init__(body)
 
     def update_position(self, entity, n=1):
-        x, y = super().update_position(entity, n)
-        if self.do_update_triggers:
-            self.update_triggers()
-        return x, y
+        if not entity.dead:
+            x, y = super().update_position(entity, n)
+            if self.do_update_triggers:
+                self.update_triggers()
+            return x, y
+        return self.pos
 
     def update_triggers(self):
         for trigger in self.triggers.values():

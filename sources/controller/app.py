@@ -749,6 +749,7 @@ class Game:
 
         self.player.position_handler.body.position = (self.model.Game.BasePlayerData.pos_x.get(self.current_save_id),
                                                       self.model.Game.BasePlayerData.pos_y.get(self.current_save_id))
+        self.player.position_handler.body.velocity = (0, 0)
 
         transition = Transition(300, (0, 0, 0, 255), (1280, 720), lambda *_, **__: None, 'out')
         self.window.add_transition(transition)
@@ -782,7 +783,8 @@ class Game:
         sprites = self.viewer_page.get_all_sprites()
         for i in range(n1):
             if not self.paused:
-                self.space.step(1/60/4)
+                if not self.is_player_dead:
+                    self.space.step(1/60/4)
                 if self.count == 3:
                     self.count = 0
                     if not self.is_player_dead:

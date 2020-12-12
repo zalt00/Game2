@@ -561,7 +561,7 @@ class GameActionManager(ActionManager):
         self.already_dashed = False
 
     def jump(self):
-        if self.player.state in ('walk', 'run', 'idle'):
+        if self.player.state in ('walk', 'run', 'idle', 'land'):
             self.player.secondary_state = ''
             self.player.state = 'jump'
         else:

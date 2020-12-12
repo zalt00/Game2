@@ -35,3 +35,9 @@ LockCamera:
 
 CameraSettings:
     type_: CameraSettings
+
+ActionOnEntity:
+    type_: ActionOnEntity
+    entity_name: entity_name
+    action_name: action_name
+    arg: []

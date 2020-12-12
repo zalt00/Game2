@@ -45,6 +45,8 @@ class PhysicStateUpdater:
             self.current_state_duration = duration
             self.current_state_name = state
             self.t0 = perf_counter()
+        if entity.dead and entity.state != 'die':
+            entity.state = 'die'
 
     def check_actions_on_touch(self, arbiter, *_, **__):
         shapes = arbiter.shapes
@@ -71,13 +73,15 @@ class PhysicStateUpdater:
         if len(points) == 2:
             self.x1, self.x2 = points[0].point_a.x, points[1].point_a.x
         for contact_point in points:
-            if (round(contact_point.point_a.y) == round(self.body.position.y - 1)
-                    or round(contact_point.point_b.y) == round(self.body.position.y - 1)):
+            py = round(self.body.position.y)
+            if ((py - 8 <= round(contact_point.point_a.y) <= py + 8)
+                    and (py - 8 <= round(contact_point.point_b.y) <= py + 8)):
+
                 if self.current_state_name != 'jump' or self.body.velocity.y < 1:
                     self.on_ground = True
                     return True
         return False
-    
+
     def update_(self, entity, n=1):
 
         if not entity.dead:
@@ -148,4 +152,3 @@ class PhysicStateUpdater:
             t1 = perf_counter()
             if t1 - self.t0 >= self.current_state_duration:
                 entity.end_of_state(self.current_state_name)
-

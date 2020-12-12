@@ -1,0 +1,12 @@
+top-left:
+CN0023;TH1000
+CN0016;TG0000
+CW0001;CN0004
+bottom-left:
+CN0000;CN0001
+CN0128;CN0129
+CN0132;CN0006
+top-right:
+bottom-right:
+filling:
+CW00RD;WU00RD

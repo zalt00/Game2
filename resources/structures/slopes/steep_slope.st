@@ -1,0 +1,8 @@
+dimensions=48 48
+dec=24 0
+scale=2
+length=3
+string-buffer:
+CN0011;CN0015;CN0032
+CN0020;CN0133;CN0101
+NA1100;CN0011;CN0012

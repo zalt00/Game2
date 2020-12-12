@@ -148,7 +148,7 @@ class Entity(BaseSprite, metaclass=SpriteMetaclass):
 
         super().__init__(batch, layer_group, position_handler, image_handler, screen_offset)
 
-    def die(self):
+    def die(self, trigger_to_enable=0):
         self.state = 'die'
         self.dead = True
         self.on_death()
@@ -167,8 +167,8 @@ class Entity(BaseSprite, metaclass=SpriteMetaclass):
 
     @state.setter
     def state(self, new_state):
-        self.physic_state_updater.change_physic_state(self, new_state)
         self._state = new_state
+        self.physic_state_updater.change_physic_state(self, new_state)
 
     @property
     def direction(self):

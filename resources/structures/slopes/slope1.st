@@ -1,0 +1,7 @@
+dimensions=64 32
+dec=32 0
+scale=2
+length=2
+string-buffer:
+CN0030;CN0012;CN0032;LU0000
+CN0026;CN0027;CN0028;CN0029

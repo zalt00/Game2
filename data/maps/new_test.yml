@@ -16,9 +16,65 @@ background_data:
   - -550
   res: forest/forest.bg
 objects_data:
-  bgdec_1_structure:
+  additional_dec_1_0_structure:
+    is_built: false
+    layer: 1
+    name: additional_dec_1_0
+    pos:
+    - 849
+    - 56
+    res: forest/structures/lvl_additional_dec_1.st
+    state: base
+    type: structure
+  additional_dec_1_1_structure:
+    is_built: false
+    layer: 1
+    name: additional_dec_1_1
+    pos:
+    - 970
+    - 586
+    res: forest/structures/lvl_additional_dec_2.st
+    state: base
+    type: structure
+  behind_player_1_structure:
+    ground:
+    - - - -208.0
+        - 224
+      - - -144.0
+        - 224
+    - - - 96.0
+        - 32
+      - - 192.0
+        - 32
     is_built: false
     layer: -1
+    name: behind_player_1
+    pos:
+    - 967
+    - 64
+    res: forest/structures/lvl_behind_player_obj.st
+    state: base
+    type: structure
+    walls:
+    - - - -206.0
+        - 224
+      - - -206.0
+        - 160
+    - - - -146.0
+        - 224
+      - - -146.0
+        - 160
+    - - - 96.0
+        - 32
+      - - 96.0
+        - 0
+    - - - 192.0
+        - 32
+      - - 192.0
+        - 0
+  bgdec_1_structure:
+    is_built: false
+    layer: -2
     name: bgdec_1
     pos:
     - 836
@@ -29,7 +85,7 @@ objects_data:
   fgdec_1_0_structure:
     3d_effect_layer: 1.2
     is_built: true
-    layer: 2
+    layer: 4
     name: fgdec_1_0
     pos:
     - 1111
@@ -40,7 +96,7 @@ objects_data:
   fgdec_1_1_structure:
     3d_effect_layer: 1.2
     is_built: true
-    layer: 2
+    layer: 4
     name: fgdec_1_1
     pos:
     - 639
@@ -51,7 +107,7 @@ objects_data:
   fgdec_1_2_structure:
     3d_effect_layer: 1.2
     is_built: true
-    layer: 3
+    layer: 5
     name: fgdec_1_2
     pos:
     - 853
@@ -62,7 +118,7 @@ objects_data:
   fgdec_1_3_structure:
     3d_effect_layer: 1.2
     is_built: true
-    layer: 3
+    layer: 5
     name: fgdec_1_3
     pos:
     - 1475
@@ -73,7 +129,7 @@ objects_data:
   fgdec_1_4_structure:
     3d_effect_layer: 1.2
     is_built: true
-    layer: 2
+    layer: 4
     name: fgdec_1_4
     pos:
     - 1387
@@ -84,7 +140,7 @@ objects_data:
   fgdec_1_5_structure:
     3d_effect_layer: 1.2
     is_built: true
-    layer: 2
+    layer: 4
     name: fgdec_1_5
     pos:
     - 737
@@ -99,7 +155,7 @@ objects_data:
       - - 416.0
         - 123
     is_built: false
-    layer: 1
+    layer: 2
     name: ground1
     pos:
     - -76
@@ -110,76 +166,52 @@ objects_data:
     walls: []
   mainbuild_1_structure:
     ground:
-    - - - -496.0
+    - - - -480.0
         - 64
       - - -96.0
         - 64
-    - - - -96.0
-        - 224
-      - - 0.0
-        - 224
-    - - - -80.0
-        - 288
-      - - -16.0
-        - 288
-    - - - -240.0
+    - - - -232.0
         - 192
-      - - -176.0
+      - - -184.0
         - 192
-    - - - -320.0
+    - - - 152.0
+        - 384
+      - - 264.0
+        - 384
+    - - - -472.0
         - 416
-      - - -480.0
+      - - -328.0
         - 416
-    - - - -96.0
+    - - - -88.0
         - 512
-      - - 64.0
+      - - 56.0
         - 512
-    - - - 144.0
-        - 544
-      - - 304.0
-        - 544
-    - - - -272.0
-        - 608
-      - - 496.0
-        - 608
-    - - - 352.0
+    - - - 360.0
         - 416
-      - - 496.0
+      - - 488.0
         - 416
-    - - - 128.0
+    - - - 384.0
         - 64
-      - - 368.0
+      - - 96.0
         - 64
-    - - - 224.0
-        - 96
-      - - 320.0
-        - 96
-    - - - -16.0
-        - 192
-      - - 16.0
-        - 192
-    - - - 16.0
-        - 160
+    - - - 96.0
+        - 80.0
       - - 32.0
-        - 160
-    - - - 16.0
-        - 128
-      - - 48.0
-        - 128
-    - - - 48.0
-        - 96
-      - - 80.0
-        - 96
-    - - - 80.0
-        - 64
-      - - 112.0
-        - 64
-    - - - 144.0
-        - 384
-      - - 272.0
-        - 384
+        - 80.0
+    - - - 32.0
+        - 144.0
+      - - 0.0
+        - 144.0
+    - - - -96.0
+        - 208.0
+      - - 0.0
+        - 208.0
+    - - - -96.0
+        - 192
+      - - -104.0
+        - 192
     is_built: false
-    layer: 1
+    layer: 2
     name: mainbuild_1
     pos:
     - 836
@@ -187,14 +219,365 @@ objects_data:
     res: forest/structures/lvl.st
     state: base
     type: structure
-    walls: []
+    walls:
+    - - - -232.0
+        - 64
+      - - -232.0
+        - 192
+    - - - -184.0
+        - 192
+      - - -184.0
+        - 64
+    - - - 264.0
+        - 384
+      - - 264.0
+        - 256
+    - - - 264.0
+        - 256
+      - - 208.0
+        - 256
+    - - - 152.0
+        - 320
+      - - 208.0
+        - 256
+    - - - 152.0
+        - 384
+      - - 152.0
+        - 320
+    - - - -104.0
+        - 192
+      - - -104.0
+        - 64
+    - - - -96.0
+        - 208.0
+      - - -96.0
+        - 192
+    - - - 0.0
+        - 208.0
+      - - 0.0
+        - 144.0
+    - - - 32.0
+        - 144.0
+      - - 32.0
+        - 80.0
+    - - - 96.0
+        - 80.0
+      - - 96.0
+        - 64
+    - - - 384.0
+        - 64
+      - - 384.0
+        - 400.0
+    - - - 384.0
+        - 400.0
+      - - 360.0
+        - 400.0
+    - - - 360.0
+        - 400.0
+      - - 360.0
+        - 416
+    - - - 488.0
+        - 416
+      - - 488.0
+        - 0
+    - - - -264.0
+        - 736
+      - - -264.0
+        - 608
+    - - - -264.0
+        - 608
+      - - 496.0
+        - 608
+    - - - 152.0
+        - 608
+      - - 152.0
+        - 544
+    - - - 296.0
+        - 608
+      - - 296.0
+        - 544
+    - - - 152.0
+        - 544
+      - - 296.0
+        - 544
+    - - - -88.0
+        - 512
+      - - -88.0
+        - 496.0
+    - - - -88.0
+        - 496.0
+      - - -32.0
+        - 448.0
+    - - - -32.0
+        - 448
+      - - 0.0
+        - 448
+    - - - 56.0
+        - 496.0
+      - - 56.0
+        - 512
+    - - - 56.0
+        - 496.0
+      - - 0.0
+        - 448
+    - - - -328.0
+        - 416
+      - - -328.0
+        - 400.0
+    - - - -328.0
+        - 400.0
+      - - -384.0
+        - 352
+    - - - -384.0
+        - 352
+      - - -416.0
+        - 352
+    - - - -416.0
+        - 352
+      - - -472.0
+        - 400.0
+    - - - -472.0
+        - 400.0
+      - - -472.0
+        - 416
+  mainbuild_2_structure:
+    ground:
+    - - - -400.0
+        - 32
+      - - 96.0
+        - 32
+    - - - -296.0
+        - 320
+      - - -248.0
+        - 320
+    - - - -256.0
+        - 192
+      - - -168.0
+        - 192
+    - - - -96.0
+        - 576
+      - - -8.0
+        - 576
+    - - - 8.0
+        - 416
+      - - 152.0
+        - 416
+    - - - 232.0
+        - 512
+      - - 360.0
+        - 512
+    - - - 216.0
+        - 672
+      - - 328.0
+        - 672
+    - - - -128.0
+        - 64
+      - - 0.0
+        - 64
+    - - - 88.0
+        - 128
+      - - 128.0
+        - 128
+    - - - 128.0
+        - 144.0
+      - - 144.0
+        - 144.0
+    - - - 144.0
+        - 160
+      - - 176.0
+        - 160
+    - - - 176.0
+        - 176.0
+      - - 192.0
+        - 176.0
+    - - - 192.0
+        - 208.0
+      - - 224.0
+        - 208.0
+    - - - 224.0
+        - 304.0
+      - - 256.0
+        - 304.0
+    - - - 352.0
+        - 128
+      - - 392.0
+        - 128
+    is_built: false
+    layer: -1
+    name: mainbuild_2
+    pos:
+    - 1732
+    - 0
+    res: forest/structures/lvl_2.st
+    state: base
+    type: structure
+    walls:
+    - - - -296.0
+        - 32
+      - - -296.0
+        - 320
+    - - - -248.0
+        - 320
+      - - -248.0
+        - 32
+    - - - 232.0
+        - 512
+      - - 232.0
+        - 496.0
+    - - - 232.0
+        - 496.0
+      - - 248.0
+        - 480
+    - - - 248.0
+        - 480
+      - - 248.0
+        - 288
+    - - - 224.0
+        - 304.0
+      - - 224.0
+        - 208.0
+    - - - 192.0
+        - 208.0
+      - - 192.0
+        - 176.0
+    - - - 176.0
+        - 176.0
+      - - 176.0
+        - 160
+    - - - 144.0
+        - 160
+      - - 144.0
+        - 144.0
+    - - - 128.0
+        - 144.0
+      - - 128.0
+        - 128
+    - - - 88.0
+        - 128
+      - - 88.0
+        - 32
+    - - - 360.0
+        - 512
+      - - 360.0
+        - 128
+    - - - 392.0
+        - 128
+      - - 392.0
+        - 32
+    - - - -400.0
+        - 608
+      - - -128.0
+        - 608
+    - - - -368.0
+        - 608
+      - - -368.0
+        - 544
+    - - - -368.0
+        - 544
+      - - -304.0
+        - 544
+    - - - -308.0
+        - 544
+      - - -308.0
+        - 608
+    - - - -136.0
+        - 608
+      - - -136.0
+        - 512
+    - - - -136.0
+        - 512
+      - - -88.0
+        - 512
+    - - - -88.0
+        - 512
+      - - -88.0
+        - 624.0
+    - - - -56.0
+        - 736
+      - - -56.0
+        - 640
+    - - - -56.0
+        - 640
+      - - -88.0
+        - 624
+    - - - 216.0
+        - 672
+      - - 224.0
+        - 624.0
+    - - - 224.0
+        - 624.0
+      - - 256.0
+        - 608
+    - - - 256.0
+        - 608
+      - - 288.0
+        - 608
+    - - - 288.0
+        - 608
+      - - 320.0
+        - 624.0
+    - - - 320.0
+        - 624.0
+      - - 328.0
+        - 672
+    - - - -128.0
+        - 64
+      - - -128.0
+        - 32
+    - - - 0.0
+        - 64
+      - - 0.0
+        - 32
+    - - - 8.0
+        - 416
+      - - 32.0
+        - 368.0
+    - - - 32.0
+        - 368.0
+      - - 64.0
+        - 352
+    - - - 96.0
+        - 352
+      - - 64.0
+        - 352
+    - - - 96.0
+        - 352
+      - - 128.0
+        - 368.0
+    - - - 128.0
+        - 368.0
+      - - 152.0
+        - 416
   player:
     res: player/white_guy.obj
     type: player
+  spikes_1_structure:
+    action_on_touch:
+    - die
+    - []
+    ground: []
+    is_built: false
+    layer: 3
+    name: spikes_1
+    pos:
+    - 1061
+    - 385
+    res: forest/structures/spikes/spikes_1.st
+    state: base
+    type: structure
+    walls:
+    - - - -62.0
+        - 144.0
+      - - 62.0
+        - 144.0
+    - - - -62.0
+        - 16.0
+      - - 30.0
+        - 16.0
   tree2_structure:
     3d_effect_layer: 0.8
     is_built: true
-    layer: -2
+    layer: -3
     name: tree2
     pos:
     - 1385
@@ -205,7 +588,7 @@ objects_data:
   tree_structure:
     3d_effect_layer: 0.8
     is_built: true
-    layer: -2
+    layer: -3
     name: tree
     pos:
     - 526
@@ -218,14 +601,41 @@ space: true
 triggers_data:
   bottom_of_world:
     actions:
-    - entity_name: player
-      npos:
-      - 300
-      - 300
-      type_: TPEntity
+    - action_name: die
+      arg: []
+      entity_name: player
+      type_: ActionOnEntity
+    - target: 0
+      type_: DisableTrigger
+    - target: 5
+      type_: EnableTrigger
     enabled: true
     id: 0
     top: -200
+  death_trigger_1:
+    actions:
+    - action_name: die
+      arg: []
+      entity_name: player
+      type_: ActionOnEntity
+    bottom: 0
+    enabled: true
+    id: 6
+    left: 1324
+    right: 1450
+    top: 106
+  inbounds_world:
+    actions:
+    - target: 0
+      type_: EnableTrigger
+    - target: 5
+      type_: DisableTrigger
+    - target: 6
+      type_: EnableTrigger
+    bottom: 0
+    enabled: false
+    id: 5
+    top: 800
   left_border:
     actions:
     - dx: 600

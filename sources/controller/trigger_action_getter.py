@@ -91,7 +91,23 @@ class GameActionGetter(ActionGetter):
                 self.ag.triggers[self.target].enabled = False
             except IndexError:
                 pass
-    
+
+    @dataclass
+    class ActionOnEntity(AbstractAction):
+        entity_name: str
+        action_name: str
+        arg: list
+
+        def __call__(self):
+            try:
+                entity = self.ag.entities[self.entity_name]
+            except KeyError:
+                pass
+            else:
+                action = getattr(entity, self.action_name, None)
+                if action is not None:
+                    action(*self.arg)
+
     @dataclass
     class TPEntity(AbstractAction):
         entity_name: str
