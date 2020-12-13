@@ -5,3 +5,7 @@ venv/
 *.log
 other/
 *.psd
+main.exe
+build/
+main.spec
+

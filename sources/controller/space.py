@@ -54,7 +54,7 @@ class GameSpace(pymunk.Space):
             s.collision_type = 1
             s.action_on_touch = action_on_touch
             
-        self.add(body, shapes)
+        self.add(body, *shapes)
         
         self.objects[name] = (body, shapes)
 

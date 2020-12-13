@@ -26,7 +26,7 @@ class Window(pyglet.window.Window):
 
         self.ordered_groups = [pyglet.graphics.OrderedGroup(i) for i in range(20)]
 
-        self.resource_loader = ResourcesLoader('resources')
+        self.resource_loader = None
 
         self.event_manager = evtm.INACTIVE_EVENT_MANAGER
 
@@ -40,6 +40,9 @@ class Window(pyglet.window.Window):
         self.paused = False
 
         pyglet.clock.schedule_interval(self._update, 1 / 120.0)
+
+    def create_resources_loader(self, dir_):
+        self.resource_loader = ResourcesLoader(dir_)
 
     def init_joysticks(self):
         self.joysticks = pyglet.input.get_joysticks()

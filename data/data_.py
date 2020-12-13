@@ -8,6 +8,7 @@ from pyglet.window.key import *
 
 class Data(DataContainer):
     save_path = 'data/saves/save.data'
+    resources_path = './resources/'
 
     key_names = {
         LSHIFT: 'shift',

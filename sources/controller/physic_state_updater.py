@@ -74,8 +74,10 @@ class PhysicStateUpdater:
             self.x1, self.x2 = points[0].point_a.x, points[1].point_a.x
         for contact_point in points:
             py = round(self.body.position.y)
-            if ((py - 8 <= round(contact_point.point_a.y) <= py + 8)
-                    and (py - 8 <= round(contact_point.point_b.y) <= py + 8)):
+            if (((py - 8 <= round(contact_point.point_a.y) <= py + 8)
+                    and (py - 8 <= round(contact_point.point_b.y) <= py + 8))
+                and (round(contact_point.point_a.y) == py - 1 or
+                     round(contact_point.point_b.y) == py - 1)):
 
                 if self.current_state_name != 'jump' or self.body.velocity.y < 1:
                     self.on_ground = True

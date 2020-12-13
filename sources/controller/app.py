@@ -19,12 +19,15 @@ from viewer.transition import Transition
 from .camera_handler import CameraHandler
 from utils.logger import logger
 from pyglet.window import key
+import os
 
 
 class App:
     def __init__(self, window, model, debug=False):
         self.window = window
         self.model = model
+        print(os.path.abspath(self.model.resources_path))
+        self.window.create_resources_loader(os.path.abspath(self.model.resources_path))
         self.current = Menu(window, model, self.start_game, debug=debug)
 
         self.debug = debug
