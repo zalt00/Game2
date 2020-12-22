@@ -444,8 +444,10 @@ class Game:
 
         self.t1 = self.count = self.number_of_space_updates = self.space = \
             self.player = self.entities = self.structures = self.triggers = self.ag = self.action_manager = None
+        self.checkpoints = None
         self.camera_handler = None
         self.is_player_dead = False
+        self.is_camera_handler_activated = True
         self.sprites_to_delete = []
         self.already_hidden = []
         self.scheduled_func = set()
@@ -590,6 +592,12 @@ class Game:
                                           [0.35, 0.35, 0.3, 0.15, 0.15, 0.15])
         #####
 
+        #  checkpoints
+        self.checkpoints = self.level.get('checkpoints', [])
+
+        if len(self.checkpoints) == 0:
+            self.checkpoints.append(('base', self.model.Game.default_checkpoint_pos))
+
         self.window.update = self.update_positions
         self.window.update_image = self.update_images
         self.window.quit = self.dump_save
@@ -620,7 +628,14 @@ class Game:
                 action_on_touch = None
             else:
                 action_on_touch = data['action_on_touch']
-            self.space.add_structure(data['pos'], data['walls'], data['ground'], name, action_on_touch)
+
+            if 'is_slippery_slope' in data:
+                is_slippery_slope = data['is_slippery_slope']
+            else:
+                is_slippery_slope = False
+
+            self.space.add_structure(data['pos'], data['walls'], data['ground'], name,
+                                     action_on_touch, is_slippery_slope)
 
         self.structures[name] = struct
 
@@ -660,7 +675,7 @@ class Game:
             particle.image_handler.revive()
         else:
             position_handler = StaticPositionHandler(pos)
-            particle = self.window.spawn_particle(self.viewer_page, 0, position_handler, res, state, direction, 8)
+            particle = self.window.spawn_particle(self.viewer_page, -1, position_handler, res, state, direction, 8)
             self.viewer_page.dash_particles.add(particle)
             self.dash_particles.append(particle)
 
@@ -685,6 +700,7 @@ class Game:
 
     def player_death(self):
         self.is_player_dead = True
+        self.is_camera_handler_activated = False
         for sprite in self.viewer_page.get_all_sprites():
             if sprite != self.player:
                 if sprite.visible:
@@ -702,6 +718,10 @@ class Game:
 
         self.scheduled_func.add(self.display_death_screen)
         self.window.schedule_once(self.display_death_screen, 1.8)
+
+        _, new_pos = self.checkpoints[self.model.Game.last_checkpoint.get(self.current_save_id)]
+        self.model.Game.BasePlayerData.pos_x.set(new_pos[0], self.current_save_id)
+        self.model.Game.BasePlayerData.pos_y.set(new_pos[1], self.current_save_id)
 
     def display_death_screen(self, *_, **__):
 
@@ -727,6 +747,12 @@ class Game:
         self.window.schedule_once(self.start_reviving_transition, 3.4)
 
     def start_reviving_transition(self, *_, **__):
+        self.is_camera_handler_activated = True
+
+        _, new_pos = self.checkpoints[self.model.Game.last_checkpoint.get(self.current_save_id)]
+        self.player.position_handler.body.position = new_pos
+        self.player.position_handler.body.velocity = (0, 0)
+
         transition = Transition(120, (0, 0, 0, 255), (1280, 720), self.reanimate_player, 'in')
         self.window.add_transition(transition)
 
@@ -749,10 +775,8 @@ class Game:
 
         self.player.dead = False
         self.player.state = 'idle'
-
-        self.player.position_handler.body.position = (self.model.Game.BasePlayerData.pos_x.get(self.current_save_id),
-                                                      self.model.Game.BasePlayerData.pos_y.get(self.current_save_id))
-        self.player.position_handler.body.velocity = (0, 0)
+        self.player.direction = 1
+        self.action_manager.next_direction = 1
 
         transition = Transition(300, (0, 0, 0, 255), (1280, 720), lambda *_, **__: None, 'out')
         self.window.add_transition(transition)
@@ -790,7 +814,7 @@ class Game:
                     self.space.step(1/60/4)
                 if self.count == 3:
                     self.count = 0
-                    if not self.is_player_dead:
+                    if self.is_camera_handler_activated:
                         self.window.screen_offset = self.camera_handler.update_camera_position(1)
                     for sprite in sprites:
                         last = i + 4 - self.count >= (n1 // 3 - 1)

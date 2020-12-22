@@ -125,6 +125,9 @@ class Entity(BaseSprite, metaclass=SpriteMetaclass):
         self.dead = False
         self.on_death = on_death_callback
 
+        # bug fix, prevents the dash velocity to be applied in certain circumstances
+        self.can_dash_velocity_be_applied = True
+
         self.secondary_state = ''
 
         self.record_position = False

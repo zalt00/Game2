@@ -48,7 +48,7 @@ class Data(DataContainer):
     }
 
     menu_save_length = 20
-    game_save_length = 5
+    game_save_length = 6
 
     class Options(DataContainer):
         option_types = ('Video', 'Gameplay', 'Controls')
@@ -356,7 +356,10 @@ class Data(DataContainer):
     class Game(DataContainer):
 
         current_map_id = SaveComponent(4)
-        maps = ('data/maps/new_test.yml',)
+        last_checkpoint = SaveComponent(5)
+        default_checkpoint_pos = (200, 300)
+
+        maps = ('data/maps/test.yml',)
 
         class BasePlayerData:
             height = 50

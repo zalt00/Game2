@@ -101,6 +101,8 @@ class App:
         self.open_tileset_selection_menu()
         self.bindings = {}
 
+        self.last_opened = ''
+
         self.plugins = {}
         self.load_plugins()
 
@@ -266,7 +268,7 @@ class App:
         root.destroy()
 
         if path:
-            res = self.rl.load_from_path(path)
+            res, res_name = self.rl.load_from_path(path, return_res_name=True)
             sb = res.string_buffer
             subtab = [line.split(';') for line in sb.splitlines()]
             img = self.palette.build(res)
@@ -280,6 +282,8 @@ class App:
             lines = self.tab[self.sepos[1]:self.sepos[1] + height]
             for i, line in enumerate(lines):
                 line[self.sepos[0]:self.sepos[0] + width] = subtab[i]
+
+            self.last_opened = res_name
 
     def rebuild(self):
         top = self.sepos[1] * self.th

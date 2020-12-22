@@ -489,6 +489,7 @@ class GameActionManager(ActionManager):
     PAUSE = 14
     DEV_COMMAND = 15
     RECORD = 16
+    GOD = 17
     
     def __init__(self, player,
                  return_to_main_menu, save_callback, toggle_debug_draw_callback, pause_callback):
@@ -520,6 +521,7 @@ class GameActionManager(ActionManager):
         self.do_handlers[self.PAUSE] = self.pause
 
         self.do_handlers[self.DEV_COMMAND] = self.dev_command
+        self.do_handlers[self.GOD] = self.toggle_god_mod
 
         self.do_handlers[self.RECORD] = self.record
 
@@ -531,8 +533,13 @@ class GameActionManager(ActionManager):
         
         self.already_dashed = True
 
+        self.god = False
+
     def dev_command(self):
         logger.info('dev debug command')
+
+    def toggle_god_mod(self):
+        self.god = not self.god
 
     def record(self):
         if self.player.record_position:
@@ -561,14 +568,18 @@ class GameActionManager(ActionManager):
         self.already_dashed = False
 
     def jump(self):
-        if self.player.state in ('walk', 'run', 'idle', 'land'):
-            self.player.secondary_state = ''
-            self.player.state = 'jump'
+        if not self.god:
+            if self.player.state in ('walk', 'run', 'idle', 'land'):
+                self.player.secondary_state = ''
+                self.player.state = 'jump'
+            else:
+                self.next_state = 'jump'
         else:
-            self.next_state = 'jump'
-            
+            self.player.position_handler.body.apply_force_at_local_point(
+                (0, 1_250_000), self.player.position_handler.body.center_of_gravity)
+
     def dash(self):
-        if not self.already_dashed:
+        if not self.already_dashed or self.god:
             if self.player.state == 'fall' or self.player.state == 'jump':
                 self.player.state = 'dash'
                 self.already_dashed = True

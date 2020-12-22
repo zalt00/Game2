@@ -34,13 +34,15 @@ class ResourcesLoader:
         local_dir = os.path.normpath(self.dir_ + '\\' + res_name + '\\').replace('\\', '/')
         return self.load_from_path(local_dir, res_name)
 
-    def load_from_path(self, local_dir, res_name=''):
+    def load_from_path(self, local_dir, res_name='', return_res_name=False):
         """loads a resource from disk, directly from the absolute path or the path relative to the launcher
         :param local_dir: path of the resource directory or file
         :type local_dir: str
         :param res_name: name of the resource, automatically detected if not precised
         :type res_name: str
-        :return: Resource object"""
+        :param return_res_name: says if the function should return a pair (res, res_name) or just the resource
+        :type return_res_name: bool
+        :return: Any"""
         if res_name == '':
             res_name = local_dir.split('/')[-1]
 
@@ -72,7 +74,10 @@ class ResourcesLoader:
             raise ValueError('invalid extension')
         self.cache[res_name] = res
 
-        return res
+        if return_res_name:
+            return res, res_name
+        else:
+            return res
 
     @staticmethod
     def load_structure_from_string(s):

@@ -7,6 +7,7 @@ from typing import Any
 @dataclass
 class AbstractAction:
     ag: Any
+
     def __call__(self, *_, **__):
         raise NotImplementedError
 

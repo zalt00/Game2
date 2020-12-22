@@ -22,3 +22,4 @@ objects_data:
         res: player/white_guy.obj
 
 triggers_data: {}
+checkpoints: []

@@ -205,6 +205,23 @@ forest/structures/lvl_2.st:
         - [[128.0, 400.0], [152.0, 448]]
     y_offset: -32
 
+forest/structures/slippery_slopes/test.st:
+    ground: []
+    walls:
+        - [[-64.0, 0], [64.0, 128]]
+
+forest/structures/slippery_slopes/slope45d.st:
+    ground: []
+    walls:
+        - [[-59.0, 0], [64.0, 123]]
+
+
+
+forest/structures/ground.st:
+    ground:
+        - [[-608.0, 160], [608.0, 160]]
+    walls: []
+
 structure_families:
     decorations:
         components:
@@ -223,6 +240,12 @@ structure_families:
             - forest/structures/spikes
         data:
             action_on_touch: [die, []]
+
+    slippery_slopes:
+        components:
+            - forest/structures/slippery_slopes
+        data:
+            is_slippery_slope: true
 
 
 

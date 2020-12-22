@@ -9,6 +9,7 @@ class PhysicStateUpdater:
         self.space = space
         self.on_ground = False
         self.collide = False
+        self.collide_with_slippery_slope = False
         self.land = landing_callback
         self.save_position = save_position_callback
         self.a = 11
@@ -19,15 +20,19 @@ class PhysicStateUpdater:
         # override default collision behaviours
         player_ground_collision_handler = self.space.add_collision_handler(0, 1)
         player_wall_collision_handler = self.space.add_collision_handler(0, 2)
+        player_slippery_slope_collision_handler = self.space.add_collision_handler(0, 3)
 
         player_ground_collision_handler.pre_solve = self.collision_with_ground
         player_wall_collision_handler.post_solve = self.collision_with_structure
+        player_slippery_slope_collision_handler.post_solve = self.collision_with_slippery_slope
 
         player_ground_collision_handler.separate = self.separate_from_ground
         player_wall_collision_handler.separate = self.separate
+        player_slippery_slope_collision_handler.separate = self.separate_from_slippery_slope
 
         player_ground_collision_handler.begin = self.check_actions_on_touch
         player_wall_collision_handler.begin = self.check_actions_on_touch
+        player_slippery_slope_collision_handler.begin = self.check_actions_on_touch
 
         self.state_duration = state_duration
 
@@ -62,6 +67,10 @@ class PhysicStateUpdater:
     def separate(self, *_, **__):
         self.collide = False
 
+    def separate_from_slippery_slope(self, *_, **__):
+        self.collide_with_slippery_slope = False
+        self.separate()
+
     def collision_with_structure(self, arbiter, *_, **__):
         self.collide = True
         self.xb = arbiter.contact_point_set.points[0].point_a.x
@@ -81,13 +90,17 @@ class PhysicStateUpdater:
 
                 if self.current_state_name != 'jump' or self.body.velocity.y < 1:
                     self.on_ground = True
+                    self.collide_with_slippery_slope = False
                     return True
         return False
+
+    def collision_with_slippery_slope(self, arbiter, *_, **__):
+        self.collision_with_structure(arbiter)
+        self.collide_with_slippery_slope = True
 
     def update_(self, entity, n=1):
 
         if not entity.dead:
-
             for _ in range(len(self.actions)):
                 action_name, action_args = self.actions.pop()
                 getattr(entity, action_name, lambda *_, **__: None)(*action_args)
@@ -95,10 +108,31 @@ class PhysicStateUpdater:
             for _ in range(n):
                 entity.can_air_control = True
 
-                # bug fix (prevents the player to keep his/her speed during the dash if he or she hits a structure)
-                if self.collide and entity.state == 'dash':
+                # bug fix (prevents the player to keep his/her speed during the dash if he or she hits the ground)
+                if self.on_ground and entity.state == 'dash':
                     self.body.velocity /= 20
                     entity.state = 'fall'
+
+                if not self.collide_with_slippery_slope:
+                    # bug fix (prevents the player to force his/her way through walls when dashing)
+                    if self.collide and entity.state == 'dash':
+                        entity.can_dash_velocity_be_applied = False
+                    else:
+                        entity.can_dash_velocity_be_applied = True
+                elif entity.state == 'dash':
+                    if abs(self.body.velocity.x) > 800:
+                        entity.state = 'fall'
+                        self.body.velocity *= 800 / abs(self.body.velocity.x)
+
+                # rough approximation of air resistance
+                # uses this formula: C * 1/2 * p(air) * v**2 * S * <vector>u
+                # C = 1.3, p(air) = 1.2, S = 1.5m * 0.3m = 0.5m**2
+                # divides by the mass, around 50kg, by 60 to convert seconds into time units (1/60s) and then
+                # by 50 again to convert distance units into meters (50 * 60 * 50 = 150 000)
+                if self.body.velocity.length > 250 and not self.on_ground and entity.state != 'dash':
+                    ax = (0.8 * self.body.velocity.x * abs(self.body.velocity.x)) / 150_000
+                    ay = (0.8 * self.body.velocity.y * abs(self.body.velocity.y)) / 150_000
+                    self.body.velocity -= (ax, ay)
 
                 # the player should not be able to air control against a wall because the wall can get him/her stuck
                 # this code tests if the direction of the player is in the same direction as the direction of the object

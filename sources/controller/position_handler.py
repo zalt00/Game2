@@ -79,7 +79,7 @@ class EntityPositionHandler:
                 self.jumped = True
                 entity.thrust[1] = 1_250_000
 
-            elif entity.state == 'dash':
+            elif entity.state == 'dash' and entity.can_dash_velocity_be_applied:
                 entity.thrust = np.array((0, 0))
                 self.body.velocity = Vec2d(2500 * entity.direction, 0)
 

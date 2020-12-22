@@ -1,5 +1,5 @@
 background_data:
-  bg_decoration_layer_id: -2
+  bg_decoration_layer_id: -4
   bg_decoration_object_set_res: forest/forest_bg_decoration_set.bgobj
   bg_decoration_objects_pos:
   - 0
@@ -15,211 +15,115 @@ background_data:
   - 0
   - -550
   res: forest/forest.bg
+checkpoints:
+- - base
+  - - 99
+    - 90
 objects_data:
-  fg_bush_structure:
-    3d_effect_layer: 1.2
-    is_built: true
-    layer: 2
-    name: fg_bush
-    pos:
-    - 822
-    - 1
-    res: forest/foreground_decorations/bush.obj
-    state: base
-    type: structure
-  ground1_structure:
-    ground:
-    - - - -416.0
-        - 123
-      - - 416.0
-        - 123
-    is_built: false
-    layer: 1
-    name: ground1
-    pos:
-    - 101
-    - -32
-    res: forest/structure.st
-    state: base
-    type: structure
-    walls: []
-  ground2_structure:
-    ground:
-    - - - -416.0
-        - 123
-      - - 416.0
-        - 123
-    is_built: false
-    layer: 1
-    name: ground2
-    pos:
-    - 1669
-    - -96
-    res: forest/structure.st
-    state: base
-    type: structure
-    walls: []
-  platforms_structure:
-    ground:
-    - - - -368.0
-        - 91
-      - - -200.0
-        - 91
-    - - - -200.0
-        - 219
-      - - -88.0
-        - 219
-    - - - -88.0
-        - 91
-      - - 12.0
-        - 91
-    - - - 12.0
-        - 59
-      - - 144.0
-        - 59
-    - - - 144.0
-        - 91
-      - - 184.0
-        - 91
-    - - - 172.0
-        - 315
-      - - 360.0
-        - 315
-    is_built: false
-    layer: 1
-    name: platforms
-    pos:
-    - 885
-    - 0
-    res: forest/level.st
-    state: base
-    type: structure
-    walls:
-    - - - -200.0
-        - 91
-      - - -200.0
-        - 219
-    - - - -88.0
-        - 219
-      - - -88.0
-        - 91
-    - - - 12.0
-        - 91
-      - - 12.0
-        - 59
-    - - - 144.0
-        - 59
-      - - 144.0
-        - 91
-    - - - 184.0
-        - 91
-      - - 184.0
-        - 291
-    - - - 184.0
-        - 291.0
-      - - 172.0
-        - 291.0
-    - - - 172.0
-        - 315
-      - - 172.0
-        - 291.0
-    - - - 360.0
-        - 315
-      - - 360.0
-        - 27
   player:
     res: player/white_guy.obj
     type: player
-  spikes_structure:
-    action_on_touch:
-    - die
-    - []
-    ground: []
+  structure1_structure:
+    ground:
+    - - - -304
+        - 96
+      - - 304
+        - 96
     is_built: false
-    layer: -1
-    name: spikes
+    layer: 1
+    name: structure1
     pos:
-    - 961
-    - 64
-    res: forest/spikes.st
+    - 304
+    - 0
+    res: forest/ground.st
     state: base
     type: structure
-    walls:
-    - - - 48.0
-        - 13.0
-      - - -48.0
-        - 13.0
-  tree2_structure:
-    3d_effect_layer: 0.8
-    is_built: true
-    layer: -1
-    name: tree2
+    walls: []
+  structure2_structure:
+    ground:
+    - - - -304
+        - 96
+      - - 304
+        - 96
+    is_built: false
+    layer: 1
+    name: structure2
     pos:
-    - 1385
-    - -3
-    res: forest/decorations/big_tree1.obj
+    - 912
+    - 0
+    res: forest/ground.st
     state: base
     type: structure
-  tree_structure:
-    3d_effect_layer: 0.8
-    is_built: true
-    layer: -1
-    name: tree
+    walls: []
+  structure3_structure:
+    ground:
+    - - - -304
+        - 96
+      - - 304
+        - 96
+    is_built: false
+    layer: 1
+    name: structure3
     pos:
-    - 526
-    - 52
-    res: forest/decorations/big_tree1.obj
+    - 1520
+    - 0
+    res: forest/ground.st
     state: base
     type: structure
+    walls: []
+  structure4_structure:
+    ground:
+    - - - -304
+        - 96
+      - - 304
+        - 96
+    is_built: false
+    layer: 1
+    name: structure4
+    pos:
+    - 2128
+    - 0
+    res: forest/ground.st
+    state: base
+    type: structure
+    walls: []
 palette: forest/forest_structure_tilesets.stsp
 space: true
 triggers_data:
   bottom_of_world:
     actions:
-    - entity_name: player
-      npos:
-      - 300
-      - 300
-      type_: TPEntity
+    - action_name: die
+      arg: []
+      entity_name: player
+      type_: ActionOnEntity
     enabled: true
-    id: 0
+    id: 2
     top: -200
-  left_border:
-    actions:
-    - dx: 600
-      dy: 0
-      fade_in: 30
-      fade_out: 30
-      total_duration: 100
-      type_: RelativeMovecam
-    - target: 1
-      type_: DisableTrigger
-    - target: 4
-      type_: EnableTrigger
-    enabled: true
-    id: 1
-    left: 1280
   lock_cam:
     actions:
     - mode: follow
       type_: LockCamera
       x: true
       y: false
-    - target: 3
+    - target: 0
       type_: DisableTrigger
     - follow_sensitivity: 30
       left_limit: 0
       moving_threshold: 4
       type_: CameraSettings
-    enabled: true
-    id: 3
-    left: 185
-  right_border:
-    actions:
     - target: 1
       type_: EnableTrigger
-    - target: 4
-      type_: DisableTrigger
     enabled: true
-    id: 4
-    right: 1270
+    id: 0
+    left: 185
+  move_cam:
+    actions:
+    - dx: 600
+      dy: 0
+      fade_in: 20
+      fade_out: 20
+      total_duration: 100
+      type_: RelativeMovecam
+    enabled: false
+    id: 1
+    left: 180

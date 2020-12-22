@@ -15,6 +15,10 @@ background_data:
   - 0
   - -550
   res: forest/forest.bg
+checkpoints:
+- - statue1
+  - - 232
+    - 63
 objects_data:
   additional_dec_1_0_structure:
     is_built: false
@@ -574,6 +578,33 @@ objects_data:
         - 16.0
       - - 30.0
         - 16.0
+  structure1_structure:
+    ground: []
+    is_built: false
+    is_slippery_slope: true
+    layer: 0
+    name: structure1
+    pos:
+    - 2178
+    - 510
+    res: forest/structures/slippery_slopes/test.st
+    state: base
+    type: structure
+    walls:
+    - - - -64.0
+        - 0
+      - - 64.0
+        - 128
+  structure2_structure:
+    is_built: true
+    layer: -1
+    name: structure2
+    pos:
+    - 235
+    - 23
+    res: statue.obj
+    state: base
+    type: structure
   tree2_structure:
     3d_effect_layer: 0.8
     is_built: true
@@ -636,21 +667,6 @@ triggers_data:
     enabled: false
     id: 5
     top: 800
-  left_border:
-    actions:
-    - dx: 600
-      dy: 0
-      fade_in: 30
-      fade_out: 30
-      total_duration: 100
-      type_: RelativeMovecam
-    - target: 1
-      type_: DisableTrigger
-    - target: 4
-      type_: EnableTrigger
-    enabled: true
-    id: 1
-    left: 1280
   lock_cam:
     actions:
     - mode: follow
@@ -663,15 +679,21 @@ triggers_data:
       left_limit: 0
       moving_threshold: 4
       type_: CameraSettings
+    - target: 7
+      type_: EnableTrigger
     enabled: true
     id: 3
     left: 185
-  right_border:
+  move_cam:
     actions:
-    - target: 1
-      type_: EnableTrigger
-    - target: 4
+    - dx: 600
+      dy: 0
+      fade_in: 20
+      fade_out: 20
+      total_duration: 100
+      type_: RelativeMovecam
+    - target: 7
       type_: DisableTrigger
-    enabled: true
-    id: 4
-    right: 1270
+    enabled: false
+    id: 7
+    left: 180

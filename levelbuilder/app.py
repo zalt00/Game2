@@ -25,6 +25,7 @@ pygame.init()
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
+
 @dataclass()
 class Structure:
     res_path: str
@@ -58,6 +59,8 @@ class App(tk.Frame):
         cfg.read('config.ini', encoding="utf-8")
 
         self.history = []
+
+        self._sleep = False
 
         self.resources_base_dir = cfg['env']['resources_base_dir'].format(**dict(os.environ))
         self.maps_base_dir = cfg['env']['maps_base_dir'].format(**dict(os.environ))
@@ -95,27 +98,10 @@ class App(tk.Frame):
 
         self.displaymenu = tk.Menu(self.menubar, tearoff=False)
         self.displaymenu.add_command(label='Update layers', command=self.update_layers)
+        self.displaymenu.add_command(label='Sleep mode', command=self.switch_sleep_mode)
         self.menubar.add_cascade(label='Display', menu=self.displaymenu)
 
         self.root.config(menu=self.menubar)
-
-        # self.set_bg_button = ttk.Button(self.opt_frame, text='Set BG', command=self.set_bg)
-        # self.set_bg_button.grid(row=0, column=0)
-        #
-        # self.add_structure_button = ttk.Button(self.opt_frame, text='Add Structure', command=self.add_structure)
-        # self.add_structure_button.grid(row=0, column=1)
-        #
-        # self.set_height_ref_button = ttk.Button(self.opt_frame, text='Set Height Ref', command=self.set_height_ref)
-        # self.set_height_ref_button.grid(row=0, column=2)
-        #
-        # self.save_as_button = ttk.Button(self.opt_frame, text='Save as', command=self.save_as)
-        # self.save_as_button.grid(row=0, column=3)
-        #
-        # self.import_button = ttk.Button(self.opt_frame, text='Import', command=self.import_level)
-        # self.import_button.grid(row=0, column=4)
-        #
-        # self.update_layers_button = ttk.Button(self.opt_frame, text='Update layers', command=self.update_layers)
-        # self.update_layers_button.grid(row=0, column=5)
 
         self.rowconfigure(2, weight=1)
         self.columnconfigure(2, weight=1)
@@ -123,10 +109,10 @@ class App(tk.Frame):
         self.notebook = ttk.Notebook(self)
         self.notebook.grid(row=0, column=2, sticky='nsew')
 
+        # Notebook structure info
         self.structures_info_frame = tk.Frame(self.notebook)
         self.structures_info_frame.columnconfigure(0, weight=1)
         self.structures_info_frame.rowconfigure(3, weight=1)
-        # self.structures_info_frame.grid(row=0, column=2, sticky='nsew')
 
         self.notebook.add(self.structures_info_frame, text='Main')
 
@@ -140,8 +126,6 @@ class App(tk.Frame):
         self.focus_object_frame.grid(row=2, column=0, sticky='nesw')
 
         self.preview_image = None
-        self.preview_label = tk.Label(self.focus_object_frame)
-        # self.preview_label.grid(row=0, column=0, sticky='nw')
 
         self.preview_canvas = tk.Canvas(self.focus_object_frame, width=0, height=0, scrollregion=(0, 0, 1200, 1200))
         self.preview_canvas.grid(row=0, column=0, sticky='nw')
@@ -183,6 +167,7 @@ class App(tk.Frame):
                                                       variable=self.show_collision_var,
                                                       command=self.show_collision_command)
 
+        # Notebook triggers
         self.triggers_info_frame = tk.Frame(self.notebook)
         self.notebook.add(self.triggers_info_frame, text='Triggers')
 
@@ -243,6 +228,34 @@ class App(tk.Frame):
                                                     text='Add action', command=self.add_trigger_action_command)
         self.add_trigger_action_button.grid(row=0, column=0, sticky='ew')
 
+        # Notebook checkpoints
+        self.checkpoints_info_frame = tk.Frame(self.notebook)
+
+        self.checkpoints_info_frame.columnconfigure(0, weight=1)
+
+        self.notebook.add(self.checkpoints_info_frame, text='Checkpoints')
+
+        self.xylabel3 = tk.Label(self.checkpoints_info_frame, justify='left')
+        self.xylabel3.grid(row=0, column=0, sticky='nw')
+
+        self.checkpoint_listvar = tk.StringVar()
+        self.checkpoint_listbox = tk.Listbox(self.checkpoints_info_frame, selectmode='single',
+                                             listvariable=self.checkpoint_listvar)
+        self.checkpoint_listbox.grid(row=1, column=0, sticky='nsew')
+        self.checkpoints = {}
+
+        self.cp_buttons_frame = tk.Frame(self.checkpoints_info_frame)
+        self.cp_buttons_frame.grid(row=2, column=0, sticky='new')
+
+        self.button_add_checkpoint = ttk.Button(self.cp_buttons_frame, text='Add', command=self.add_checkpoint)
+        self.button_add_checkpoint.grid(row=0, column=0, sticky='ew')
+        self.button_remove_checkpoint = ttk.Button(self.cp_buttons_frame, text='Remove', command=self.remove_checkpoint)
+        self.button_remove_checkpoint.grid(row=0, column=1, sticky='ew')
+
+        self.checkpoint_info_label = tk.Label(self.checkpoints_info_frame, justify='left')
+        self.checkpoint_info_label.grid(row=3, column=0, sticky='nw')
+
+        # bindings
         self.bind_all('<Motion>', self.mouse_motion)
         self.bind_all('<Button>', self.button_down)
         self.bind_all('<ButtonRelease>', self.button_up)
@@ -291,106 +304,139 @@ class App(tk.Frame):
 
         self.mouse_pos = []
 
+    @property
+    def sleep(self):
+        return self._sleep
+
+    @sleep.setter
+    def sleep(self, v):
+        if v:
+            self.pack_forget()
+            self._sleep = True
+        else:
+            self.pack(fill='both', expand=True)
+            self._sleep = False
+
+    def switch_sleep_mode(self):
+        self.sleep = not self.sleep
+
     def button_up(self, _):
         if self.state == 'moving structure':
             self.state = 'idle'
 
     def button_down(self, evt):
-        if self.state == 'set height ref':
-            self.root.title(self.document_name + '*')
-
-            self.ref_height = -self.canvas.canvasy(evt.y) + 720
-            self.update_height_ref()
-            self.canvas['cursor'] = 'arrow'
-            self.state = 'idle'
-
-        elif self.state == 'placing structure':
-            self.root.title(self.document_name + '*')
-
-            self.canvas['cursor'] = 'arrow'
-            if self.cache_structure is not None:
-                self.i += 1
-                name = 'structure' + str(self.i)
-                self.cache_structure.name = name
-                self.cache_structure.pos = list(self.cursor_pos)
-                self._add_structure(self.cache_structure)
-            self.state = 'idle'
-            
-        elif 16 < evt.x_root <= 1280 and evt.y_root <= 750:
-            if evt.state & 0x0001 and self.focus_on is not None:
+        if not self.sleep:
+            if self.state == 'set height ref':
                 self.root.title(self.document_name + '*')
 
-                x, y = self.canvas.canvasx(evt.x), self.canvas.canvasy(evt.y)
-                struct_id = self.focus_on[1]
-                x1, y1 = self.canvas.coords(struct_id)
-                self.focus_dec = x1 - x, y1 - y
-                struct = self.structures[struct_id]
-                self.history.append((struct_id, struct.copy()))
-                self.select_structure(struct, struct_id)
-                self.state = 'moving structure'
-            else:
-                s = self.canvas.find_overlapping(*self.cursor_pos, *self.cursor_pos)
-                if len(s) > 0:
-                    s = set(s)
-                    if self.bg_id is not None:
-                        for id_ in self.bg_id:
+                self.ref_height = -self.canvas.canvasy(evt.y) + 720
+                self.update_height_ref()
+                self.canvas['cursor'] = 'arrow'
+                self.state = 'idle'
+
+            elif self.state == 'placing structure':
+                self.root.title(self.document_name + '*')
+
+                self.canvas['cursor'] = 'arrow'
+                if self.cache_structure is not None:
+                    self.i += 1
+                    name = 'structure' + str(self.i)
+                    self.cache_structure.name = name
+                    self.cache_structure.pos = list(self.cursor_pos)
+                    self._add_structure(self.cache_structure)
+                self.state = 'idle'
+
+            elif self.state == 'placing checkpoint':
+                self.root.title(self.document_name + '*')
+
+                self.canvas['cursor'] = 'arrow'
+                self.state = 'idle'
+
+                pos = int(self.cursor_pos[0]), int(-self.ref_height + 720 - self.cursor_pos[1])
+
+                name = askstring(
+                    'Rename', 'Enter the name of the checkpoint.', parent=self.root)
+                if name:
+                    self.checkpoints[name.replace(' ', '-')] = pos
+                self.update_checkpoint_listbox()
+
+            elif 16 < evt.x_root <= 1280 and evt.y_root <= 750:
+                if evt.state & 0x0001 and self.focus_on is not None:
+                    self.root.title(self.document_name + '*')
+
+                    x, y = self.canvas.canvasx(evt.x), self.canvas.canvasy(evt.y)
+                    struct_id = self.focus_on[1]
+                    x1, y1 = self.canvas.coords(struct_id)
+                    self.focus_dec = x1 - x, y1 - y
+                    struct = self.structures[struct_id]
+                    self.history.append((struct_id, struct.copy()))
+                    self.select_structure(struct, struct_id)
+                    self.state = 'moving structure'
+                else:
+                    s = self.canvas.find_overlapping(*self.cursor_pos, *self.cursor_pos)
+                    if len(s) > 0:
+                        s = set(s)
+                        if self.bg_id is not None:
+                            for id_ in self.bg_id:
+                                try:
+                                    s.remove(id_)
+                                except KeyError:
+                                    pass
+
+                        for id_ in self.triggers_visualisation_rectangles:
                             try:
                                 s.remove(id_)
                             except KeyError:
                                 pass
 
-                    for id_ in self.triggers_visualisation_rectangles:
                         try:
-                            s.remove(id_)
+                            s.remove(self.selection_rect_id)
                         except KeyError:
                             pass
 
-                    try:
-                        s.remove(self.selection_rect_id)
-                    except KeyError:
-                        pass
+                        try:
+                            s.remove(self.ref_visual_line_bottom)
+                        except KeyError:
+                            pass
 
-                    try:
-                        s.remove(self.ref_visual_line_bottom)
-                    except KeyError:
-                        pass
+                        try:
+                            s.remove(self.ref_visual_line_top)
+                        except KeyError:
+                            pass
 
-                    try:
-                        s.remove(self.ref_visual_line_top)
-                    except KeyError:
-                        pass
+                        s = tuple(s)
+                        if len(s) == 0:
+                            self.remove_focus(evt)
+                        else:
+                            self.root.title(self.document_name + '*')
 
-                    s = tuple(s)
-                    if len(s) == 0:
-                        self.remove_focus(evt)
-                    else:
-                        self.root.title(self.document_name + '*')
+                            x, y = self.canvas.canvasx(evt.x), self.canvas.canvasy(evt.y)
+                            struct_id = s[0]
+                            x1, y1 = self.canvas.coords(struct_id)
+                            self.focus_dec = x1 - x, y1 - y
+                            struct = self.structures[struct_id]
+                            self.history.append((struct_id, struct.copy()))
+                            self.select_structure(struct, struct_id)
+                            self.state = 'moving structure'
 
-                        x, y = self.canvas.canvasx(evt.x), self.canvas.canvasy(evt.y)
-                        struct_id = s[0]
-                        x1, y1 = self.canvas.coords(struct_id)
-                        self.focus_dec = x1 - x, y1 - y
-                        struct = self.structures[struct_id]
-                        self.history.append((struct_id, struct.copy()))
-                        self.select_structure(struct, struct_id)
-                        self.state = 'moving structure'
+            else:
+                selection = self.structure_list.curselection()
+                if len(selection) > 0:
+                    i = selection[0]
+                    struct_id = self.structures_listbox_elements[i]
+                    struct = self.structures[struct_id]
+                    self.select_structure(struct, struct_id)
 
-        else:
-            selection = self.structure_list.curselection()
-            if len(selection) > 0:
-                i = selection[0]
-                struct_id = self.structures_listbox_elements[i]
-                struct = self.structures[struct_id]
-                self.select_structure(struct, struct_id)
+                selection2 = self.triggers_list.curselection()
+                if len(selection2) > 0:
+                    i2 = selection2[0]
+                    trig_name = self.triggers_listbox_elements[i2]
+                    trig = self.triggers[trig_name]
+                    self.select_trigger(trig_name, trig)
 
-            selection2 = self.triggers_list.curselection()
-            if len(selection2) > 0:
-                i2 = selection2[0]
-                trig_name = self.triggers_listbox_elements[i2]
-                trig = self.triggers[trig_name]
-                self.select_trigger(trig_name, trig)
+                self.update_checkpoint_listbox_selection()
 
-        self.mouse_motion(evt)
+            self.mouse_motion(evt)
 
     def update_height_ref(self):
         self.height_ref_label['text'] = 'height ref: {}\n'.format(self.ref_height)
@@ -476,47 +522,76 @@ class App(tk.Frame):
                     self._show_triggers()
 
     def mouse_motion(self, evt):
-        x, y = self.canvas.canvasx(evt.x), self.canvas.canvasy(evt.y)
-        self.cursor_pos = x, y
-        self.mouse_pos = evt.x, evt.y
-        self.xylabel['text'] = 'x = {}, y = {}'.format(x, -self.ref_height + 720 - y)
-        self.xylabel2['text'] = 'x = {}, y = {}'.format(x, -self.ref_height + 720 - y)
-        if self.state == 'moving structure':
-            self.root.title(self.document_name + '*')
+        if not self.sleep:
+            x, y = self.canvas.canvasx(evt.x), self.canvas.canvasy(evt.y)
+            self.cursor_pos = x, y
+            self.mouse_pos = evt.x, evt.y
+            self.xylabel['text'] = 'x = {}, y = {}'.format(int(x), int(-self.ref_height + 720 - y))
+            self.xylabel2['text'] = 'x = {}, y = {}'.format(int(x), int(-self.ref_height + 720 - y))
+            self.xylabel3['text'] = 'x = {}, y = {}'.format(int(x), int(-self.ref_height + 720 - y))
 
-            if evt.state & 0x0001:
-                self.canvas.move(self.focus_on[1],
-                                 self.cursor_pos[0] - self.focus_on[0].pos[0] + self.focus_dec[0], 0)
-                self.focus_on[0].pos = self.cursor_pos[0] + self.focus_dec[0], self.focus_on[0].pos[1]
+            if self.state == 'moving structure':
+                self.root.title(self.document_name + '*')
 
-            elif evt.state & 0x0004:
-                self.canvas.move(self.focus_on[1], 0,
-                                 self.cursor_pos[1] - self.focus_on[0].pos[1] + self.focus_dec[1])
-                self.focus_on[0].pos = self.focus_on[0].pos[0], self.cursor_pos[1] + self.focus_dec[1]
+                if evt.state & 0x0001:
+                    self.canvas.move(self.focus_on[1],
+                                     self.cursor_pos[0] - self.focus_on[0].pos[0] + self.focus_dec[0], 0)
+                    self.focus_on[0].pos = self.cursor_pos[0] + self.focus_dec[0], self.focus_on[0].pos[1]
 
+                elif evt.state & 0x0004:
+                    self.canvas.move(self.focus_on[1], 0,
+                                     self.cursor_pos[1] - self.focus_on[0].pos[1] + self.focus_dec[1])
+                    self.focus_on[0].pos = self.focus_on[0].pos[0], self.cursor_pos[1] + self.focus_dec[1]
+
+                else:
+                    self.canvas.move(self.focus_on[1],
+                                     self.cursor_pos[0] - self.focus_on[0].pos[0] + self.focus_dec[0],
+                                     self.cursor_pos[1] - self.focus_on[0].pos[1] + self.focus_dec[1])
+                    self.focus_on[0].pos = self.cursor_pos[0] + self.focus_dec[0], self.cursor_pos[1] + self.focus_dec[1]
+
+            if self.focus_on is not None:
+                x, y = self.focus_on[0].pos
+                y = -self.ref_height + 720 - y
+
+                x1, y1, x2, y2 = self.canvas.bbox(self.focus_on[1])
+                y1 = -self.ref_height + 720 - y1
+                y2 = -self.ref_height + 720 - y2
+                self.struct_label['text'] = 'pos = ({}, {})\nres: {}\nstate: {}\nbbox: ({}, {}, {}, {})'.format(
+                    x, y, self.focus_on[0].res_path,
+                    self.focus_on[0].state, x1, y1, x2, y2)
+                self.canvas.coords(self.selection_rect_id, *self.canvas.bbox(self.focus_on[1]))
             else:
-                self.canvas.move(self.focus_on[1],
-                                 self.cursor_pos[0] - self.focus_on[0].pos[0] + self.focus_dec[0],
-                                 self.cursor_pos[1] - self.focus_on[0].pos[1] + self.focus_dec[1])
-                self.focus_on[0].pos = self.cursor_pos[0] + self.focus_dec[0], self.cursor_pos[1] + self.focus_dec[1]
+                self.canvas.coords(self.selection_rect_id, 0, 0, 0, 0)
+            self.canvas.tag_raise('fg')
+            self.canvas.tag_lower('bg')
+            self.preview_canvas.tag_raise('fg2')
+            self.preview_canvas.tag_raise('fg1')
 
-        if self.focus_on is not None:
-            x, y = self.focus_on[0].pos
-            y = -self.ref_height + 720 - y
+    def add_checkpoint(self):
+        self.state = 'placing checkpoint'
+        self.canvas['cursor'] = 'crosshair'
 
-            x1, y1, x2, y2 = self.canvas.bbox(self.focus_on[1])
-            y1 = -self.ref_height + 720 - y1
-            y2 = -self.ref_height + 720 - y2
-            self.struct_label['text'] = 'pos = ({}, {})\nres: {}\nstate: {}\nbbox: ({}, {}, {}, {})'.format(
-                x, y, self.focus_on[0].res_path,
-                self.focus_on[0].state, x1, y1, x2, y2)
-            self.canvas.coords(self.selection_rect_id, *self.canvas.bbox(self.focus_on[1]))
+    def remove_checkpoint(self):
+        selection = self.update_checkpoint_listbox_selection()
+        if len(selection) > 0:
+            txt = list(self.checkpoints)[selection[0]]
+            self.checkpoints.pop(txt)
+            self.update_checkpoint_listbox()
+
+    def update_checkpoint_listbox(self):
+        self.checkpoint_listvar.set(' '.join(self.checkpoints.keys()))
+        self.update_checkpoint_listbox_selection()
+
+    def update_checkpoint_listbox_selection(self):
+        selection = self.checkpoint_listbox.curselection()
+        if len(selection) > 0:
+            txt = list(self.checkpoints)[selection[0]]
+            pos = self.checkpoints[txt]
+            self.checkpoint_info_label['text'] = f'x = {int(pos[0])}\ny = {int(pos[1])}\nid = {selection[0]}'
         else:
-            self.canvas.coords(self.selection_rect_id, 0, 0, 0, 0)
-        self.canvas.tag_raise('fg')
-        self.canvas.tag_lower('bg')
-        self.preview_canvas.tag_raise('fg2')
-        self.preview_canvas.tag_raise('fg1')
+            self.checkpoint_info_label['text'] = ''
+
+        return selection
 
     def add_structure(self):
         filename = askopenfilename(initialdir=self.resources_base_dir)
@@ -663,6 +738,7 @@ class App(tk.Frame):
         with open('structure_data.yaml') as datafile:
             structure_data = yaml.safe_load(datafile)
 
+        base['checkpoints'] = list(self.checkpoints.items())
         base['palette'] = self.palette_res_name
         base['background_data']['res'] = self.bg_res
         if self.bg is not None:
@@ -720,7 +796,6 @@ class App(tk.Frame):
             yaml.safe_dump(base, file)
 
     def import_level(self):
-        print(self.maps_base_dir)
         filename = askopenfilename(initialdir=self.maps_base_dir)
         if filename:
             with open(filename) as datafile:
@@ -742,6 +817,10 @@ class App(tk.Frame):
 
             self.triggers.update(data['triggers_data'])
             self.update_triggers_listvar()
+
+            if 'checkpoints' in data:
+                self.checkpoints.update(data['checkpoints'])
+            self.update_checkpoint_listbox()
 
             self.update_structure_listvar()
 

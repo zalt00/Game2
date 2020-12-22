@@ -5,6 +5,8 @@ import pygame
 import json
 import os
 from collections import deque
+from structurebuilder.config import collision_db_path
+import glob
 pygame.init()
 
 __plugin_name__ = 'CollisionEditorPlugin'
@@ -13,6 +15,9 @@ __plugin_name__ = 'CollisionEditorPlugin'
 class CollisionEditorPlugin(AbstractPlugin, metaclass=PluginMeta):
     def __init__(self, app):
         super(CollisionEditorPlugin, self).__init__(app)
+
+        self.last_resource = ''
+
         self.point_a = []
         self.current_collision_segments = deque()
         self.multiplier = 1
@@ -222,6 +227,13 @@ class CollisionEditorPlugin(AbstractPlugin, metaclass=PluginMeta):
         with open(filename, 'w') as file:
             json.dump((list(self.current_collision_segments), self.app.nwpos, self.app.sepos), file)
 
+    @command('ctrl-alt-d')
+    def display_available_collision_data_files(self):
+        print()
+        for fp in glob.glob('{BASE}/sources/structurebuilder/collisions_data/*.json'.format(**dict(os.environ))):
+            if not fp.endswith('_cache.json'):
+                print(os.path.basename(fp).replace('.json', ''))
+
     @command('ctrl-alt-l')
     def load_collision_data(self):
         filename = input('enter the name of the file: ')
@@ -251,3 +263,49 @@ class CollisionEditorPlugin(AbstractPlugin, metaclass=PluginMeta):
         self.current_collision_segments = deque()
 
         self.redraw()
+
+    @command('ctrl-alt-e')
+    def send_to_db(self):
+        with open(collision_db_path, 'r', encoding='utf8') as datafile:
+            data = json.load(datafile)
+
+        print('database loaded successfully')
+
+        res_name = ''
+        while res_name == '':
+            print('type in your choice:')
+            print(' - the name of the resource')
+            if self.last_resource:
+                print(' - "l" for the last entered')
+            if self.app.last_opened:
+                print(' - "o" for the last opened structure')
+            res_name = input()
+            if res_name == 'l':
+                res_name = self.last_resource
+            elif res_name == 'o':
+                res_name = self.app.last_opened
+
+        is_ground = None
+        while is_ground is None:
+            ground_or_walls = input('[G]round or [W]alls ? ').upper()
+            if ground_or_walls in ('G', 'GROUND'):
+                is_ground = True
+            elif ground_or_walls in ('W', 'WALLS'):
+                is_ground = False
+            else:
+                print('error - invalid entry')
+
+        collision_data = [v[0] for v in self.current_collision_segments]
+
+        if res_name not in data:
+            data[res_name] = dict(ground=[], walls=[])
+        if is_ground:
+            data[res_name]['ground'] = collision_data
+        else:
+            data[res_name]['walls'] = collision_data
+
+        print('sending to database...')
+        with open(collision_db_path, 'w', encoding='utf8') as datafile:
+            json.dump(data, datafile)
+        print('done.')
+
