@@ -44,6 +44,7 @@
     "RC": {"calibration_squares": false, "filename": "rotated_connectors.png"},
     "RU": {"calibration_squares": false, "filename": "rotated_underground.png"},
     "MP": {"calibration_squares": true, "filename":  "moving_platform.png"},
-    "UP": {"calibration_squares":  false, "filename":  "underground_plants.png"}
+    "UP": {"calibration_squares":  false, "filename":  "underground_plants.png"},
+	"SL": {"calibration_squares": false, "filename": "slippery_slopes.png"}
   }
 }

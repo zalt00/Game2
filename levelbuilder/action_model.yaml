@@ -41,3 +41,11 @@ ActionOnEntity:
     entity_name: entity_name
     action_name: action_name
     arg: []
+
+SetCheckpoint:
+    type_: SetCheckpoint
+    checkpoint_id: 0
+
+LoadMap:
+    type_: LoadMap
+    map_id: 0

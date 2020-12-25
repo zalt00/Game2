@@ -25,11 +25,9 @@ Debug commands:
  - `F2`: raises an error, manually makes the program crash
  - `F3`: pause/unpause the game
  - `F4`: start/stop and save player position recording (saved into `records.npy`)
+ - `F5`: toggle god mode (infinite jump and dash)
  - `F12`: dev debug command
- 
-Signaling an issue:
-  - please use the "issues" functionality from github or directly send me a pm
- 
+
 Additional infos:
   - credits: see `credits.txt`
   - manually set the save data (not recommended unless you softlock or the game crashes at launch):

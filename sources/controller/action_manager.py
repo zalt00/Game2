@@ -556,14 +556,27 @@ class GameActionManager(ActionManager):
     def sleep(self):
         time.sleep(2)
 
-    def land(self):
-        if self.still_walking:
-            if self.still_running:
-                self.player.secondary_state = 'run'
+    def land(self, landing_strength=3200):
+        if landing_strength > 1800:
+            if self.still_walking:
+                if self.still_running:
+                    self.player.secondary_state = 'run'
+                else:
+                    self.player.secondary_state = 'walk'
+            self.player.state = 'land'
+            self.next_state = 'idle'
+        else:
+            if self.still_walking:
+                if self.still_walking:
+                    if self.still_running:
+                        self.player.state = 'run'
+                        self.next_state = 'run'
+                    else:
+                        self.player.state = 'walk'
+                        self.next_state = 'walk'
             else:
-                self.player.secondary_state = 'walk'
-        self.player.state = 'land'
-        self.next_state = 'idle'
+                self.player.state = 'land'
+                self.next_state = 'idle'
         self.player.is_on_ground = True
         self.already_dashed = False
 

@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 from typing import Any
+from utils.logger import logger
 
 
 @dataclass
@@ -18,11 +19,14 @@ class ActionGetter:
 
 
 class GameActionGetter(ActionGetter):
-    def __init__(self, triggers, window, camera_handler, entities):
+    def __init__(self, triggers, window, camera_handler, entities, model, current_save_id, load_map_callback):
         self.triggers = triggers
         self.window = window
         self.camera_handler = camera_handler
+        self.model = model
         self.entities = entities
+        self.current_save_id = current_save_id
+        self.load_map = load_map_callback
 
     @dataclass
     class AbsoluteMovecam(AbstractAction):
@@ -112,15 +116,31 @@ class GameActionGetter(ActionGetter):
     @dataclass
     class TPEntity(AbstractAction):
         entity_name: str
-        npos: int
+        npos: list
 
         def __call__(self):
             try:
                 entity = self.ag.entities[self.entity_name]
             except KeyError:
-                pass
+                logger.warning(f'invalid entity name: {self.entity_name}')
             else:
                 entity.position_handler.body.position = self.npos
                 entity.position_handler.body.velocity = (0, 0)
-        
+                self.ag.model.Game.BasePlayerData.pos_x.set(self.npos[0], self.ag.current_save_id)
+                self.ag.model.Game.BasePlayerData.pos_y.set(self.npos[1], self.ag.current_save_id)
+
+    @dataclass
+    class SetCheckpoint(AbstractAction):
+        checkpoint_id: int
+
+        def __call__(self):
+            self.ag.model.Game.last_checkpoint.set(self.checkpoint_id, self.ag.current_save_id)
+
+    @dataclass
+    class LoadMap(AbstractAction):
+        map_id: int
+
+        def __call__(self):
+            self.ag.load_map(self.map_id)
+
 

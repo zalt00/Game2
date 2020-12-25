@@ -17,12 +17,35 @@ background_data:
   res: forest/forest.bg
 checkpoints:
 - - base
-  - - 99
-    - 90
+  - - 116
+    - 96
+- - cp2
+  - - 2051
+    - 96
 objects_data:
   player:
     res: player/white_guy.obj
     type: player
+  statue2_structure:
+    is_built: true
+    layer: -1
+    name: statue2
+    pos:
+    - 2054
+    - 59
+    res: statue.obj
+    state: base
+    type: structure
+  statue_structure:
+    is_built: true
+    layer: -1
+    name: statue
+    pos:
+    - 131
+    - 59
+    res: statue.obj
+    state: base
+    type: structure
   structure1_structure:
     ground:
     - - - -304
@@ -99,6 +122,28 @@ triggers_data:
     enabled: true
     id: 2
     top: -200
+  first_cp:
+    actions:
+    - checkpoint_id: 0
+      type_: SetCheckpoint
+    - target: 3
+      type_: DisableTrigger
+    enabled: true
+    id: 3
+    left: 90
+    right: 170
+  load_next_map:
+    actions:
+    - map_id: 1
+      type_: LoadMap
+    - entity_name: player
+      npos:
+      - 20
+      - 96
+      type_: TPEntity
+    enabled: true
+    id: 5
+    left: 2400
   lock_cam:
     actions:
     - mode: follow
@@ -127,3 +172,13 @@ triggers_data:
     enabled: false
     id: 1
     left: 180
+  second_cp:
+    actions:
+    - target: 4
+      type_: DisableTrigger
+    - checkpoint_id: 1
+      type_: SetCheckpoint
+    enabled: true
+    id: 4
+    left: 2012
+    right: 2090

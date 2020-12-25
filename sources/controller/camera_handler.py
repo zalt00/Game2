@@ -61,6 +61,17 @@ class CameraHandler:
         else:
             self.lock_mode = 'strict'
 
+    def get_camera_position_after_player_death(self, player_position):
+        if self.locked[0]:
+            self.pos[0] = self.relative_pos[0] - player_position[0]
+            if self.pos[0] > self.left_limit:
+                self.pos[0] = self.left_limit
+
+        if self.locked[1]:
+            self.pos[1] = self.relative_pos[1] - player_position[1]
+
+        return self.pos
+
     def update_camera_position(self, n):
         if self.trajectory is not None:
             end = False
@@ -98,6 +109,8 @@ class CameraHandler:
             if self.locked[0]:
                 if self.lock_mode == 'strict':
                     self.pos[0] = self.relative_pos[0] - self.player.position_handler.body.position.x
+                    if self.pos[0] > self.left_limit:
+                        self.pos[0] = self.left_limit
                 elif self.lock_mode == 'follow':
                     dif = self.relative_pos[0] - self.player.position_handler.body.position.x - self.pos[0]
                     if self.pos[0] + dif > self.left_limit:

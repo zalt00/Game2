@@ -735,8 +735,7 @@ class App(tk.Frame):
         with open('level_model.yaml') as datafile:
             base = yaml.safe_load(datafile)
 
-        with open('structure_data.yaml') as datafile:
-            structure_data = yaml.safe_load(datafile)
+        structure_data = self._load_data()
 
         base['checkpoints'] = list(self.checkpoints.items())
         base['palette'] = self.palette_res_name
@@ -830,10 +829,22 @@ class App(tk.Frame):
             self.canvas.tag_raise(struct_id)
 
     @staticmethod
-    def _load_collision_infos(struct, with_action_on_touche=False, data=None):
+    def _load_data():
+        with open('collision_database.json', 'r', encoding='utf8') as datafile:
+            database = json.load(datafile)
+
+        with open('structure_data.yaml') as datafile:
+            data = yaml.safe_load(datafile)
+
+        for struct_name, struct_data in database.items():
+            if struct_name not in data:
+                data[struct_name] = struct_data
+
+        return data
+
+    def _load_collision_infos(self, struct, with_action_on_touche=False, data=None):
         if data is None:
-            with open('structure_data.yaml') as datafile:
-                data = yaml.safe_load(datafile)
+            data = self._load_data()
         struct_data = data.get(struct.res_path, None)
         if struct_data is not None:
             to_rtn = (struct_data['walls'], struct_data['ground'],
@@ -843,11 +854,9 @@ class App(tk.Frame):
             else:
                 return to_rtn
 
-    @staticmethod
-    def _load_additional_data(struct, key, data=None):
+    def _load_additional_data(self, struct, key, data=None):
         if data is None:
-            with open('structure_data.yaml') as datafile:
-                data = yaml.safe_load(datafile)
+            data = self._load_data()
         struct_data = data.get(struct.res_path, None)
         if struct_data is not None:
             return struct_data[key]
@@ -904,14 +913,7 @@ class App(tk.Frame):
                         yb = int(y - b[1] / self.focus_on[0].scale)
                         walls_visu_id = self.preview_canvas.create_line(
                             xa, ya, xb, yb, fill='#32b5fc', width=2, tag='fg2')
-                        # if len(points) > 0 and len(points[0]) > 0:
-                        #     p = [
-                        #         (int((dx / self.focus_on[0].scale) + x),
-                        #          int(y - (dy / self.focus_on[0].scale))) for dx, dy in points]
 
-                        # walls_visu_id = self.preview_canvas.create_polygon(*p, fill='',
-                        #
-                        #                                                       width=2, outline='#32b5fc', tag='fg2')
                         self.walls_visualisations.append(walls_visu_id)
                     for a, b in segments:
                         xa = int(a[0] / self.focus_on[0].scale + x)

@@ -436,6 +436,8 @@ class Game:
         self.loading_finished_check = loading_finished_check
         self.debug_draw = False
 
+        self.level_cache = dict()
+
         self.dash_particles = []
 
         self.debug = debug
@@ -452,6 +454,10 @@ class Game:
         self.already_hidden = []
         self.scheduled_func = set()
 
+        self.additional_commands = []
+
+        self.current_map_id = -1
+
         self.draw_options = None
 
         self.viewer_page = None
@@ -460,8 +466,8 @@ class Game:
         self.debug_draw_activated = False
 
         SaveComponent.load()
-        with open(self.model.Game.maps[self.model.Game.current_map_id.get(self.current_save_id)]) as datafile:
-            self.level = yaml.safe_load(datafile)
+        self.level = self.load_map_file(self.model.Game.current_map_id.get(self.current_save_id))
+
         self.level_res = self.level['background_data']['res']
 
         self.window.reset_event_manager()
@@ -482,6 +488,16 @@ class Game:
                 self.window.resource_loader.load(res_name)
 
     def start_game(self):
+
+        self.current_map_id = self.model.Game.current_map_id.get(self.current_save_id)
+
+        self.is_player_dead = False
+        self.is_camera_handler_activated = True
+        self.dash_particles = []
+        self.sprites_to_delete = []
+        self.already_hidden = []
+        self.scheduled_func = set()
+
         try:
             self.window.game_page.remove_child('Game')
         except KeyError:
@@ -552,7 +568,8 @@ class Game:
 
         ### TRIGGERS ###
         self.triggers = dict()
-        self.ag = GameActionGetter(self.triggers, self.window, self.camera_handler, self.entities)
+        self.ag = GameActionGetter(self.triggers, self.window, self.camera_handler, self.entities, self.model,
+                                   self.current_save_id, self.load_map_on_next_frame)
         for trigdata in self.level['triggers_data'].values():
             self.triggers[trigdata['id']] = Trigger(trigdata, self.ag)
 
@@ -719,7 +736,29 @@ class Game:
         self.scheduled_func.add(self.display_death_screen)
         self.window.schedule_once(self.display_death_screen, 1.8)
 
-        _, new_pos = self.checkpoints[self.model.Game.last_checkpoint.get(self.current_save_id)]
+        cp_id = self.model.Game.last_checkpoint.get(self.current_save_id)
+        map_id = self.model.Game.last_checkpoints_map.get(self.current_save_id)
+        if map_id == self.current_map_id:
+            try:
+                _, new_pos = self.checkpoints[cp_id]
+            except IndexError:
+                _, new_pos = self.checkpoints[0]
+                logger.warning(f'invalid checkpoint id: "{cp_id}" for map {map_id}')
+        else:
+            self.model.Game.current_map_id.set(map_id, self.current_save_id)
+            level = self.load_map_file(self.model.Game.last_checkpoints_map.get(self.current_save_id))
+            checkpoints = level.get('checkpoints', [])
+            if len(checkpoints) == 0:
+                checkpoints.append(('base', self.model.Game.default_checkpoint_pos))
+            try:
+                _, new_pos = checkpoints[cp_id]
+            except IndexError:
+                _, new_pos = checkpoints[0]
+                logger.warning(f'invalid checkpoint id: "{cp_id}" for map {map_id}')
+
+        self.player.position_handler.body.position = new_pos
+        self.player.position_handler.body.velocity = (0, 0)
+
         self.model.Game.BasePlayerData.pos_x.set(new_pos[0], self.current_save_id)
         self.model.Game.BasePlayerData.pos_y.set(new_pos[1], self.current_save_id)
 
@@ -749,37 +788,71 @@ class Game:
     def start_reviving_transition(self, *_, **__):
         self.is_camera_handler_activated = True
 
-        _, new_pos = self.checkpoints[self.model.Game.last_checkpoint.get(self.current_save_id)]
-        self.player.position_handler.body.position = new_pos
-        self.player.position_handler.body.velocity = (0, 0)
+        if self.model.Game.last_checkpoints_map.get(self.current_save_id) == self.current_map_id:
+            _, new_pos = self.checkpoints[self.model.Game.last_checkpoint.get(self.current_save_id)]
+            self.player.position_handler.body.position = new_pos
+            self.player.position_handler.body.velocity = (0, 0)
 
         transition = Transition(120, (0, 0, 0, 255), (1280, 720), self.reanimate_player, 'in')
         self.window.add_transition(transition)
 
     def reanimate_player(self, *_, **__):
-        self.is_player_dead = False
+        if self.model.Game.last_checkpoints_map.get(self.current_save_id) != self.current_map_id:
+            self.window.screen_offset = self.camera_handler.get_camera_position_after_player_death(
+                (self.model.Game.BasePlayerData.pos_x.get(self.current_save_id),
+                 self.model.Game.BasePlayerData.pos_y.get(self.current_save_id))
+            )
+            self.model.Game.BaseBGData.camera_pos_x.set(self.window.screen_offset[0], self.current_save_id)
+            self.model.Game.BaseBGData.camera_pos_y.set(self.window.screen_offset[1], self.current_save_id)
 
-        for _ in range(len(self.sprites_to_delete)):
-            sprite = self.sprites_to_delete.pop()
-            if sprite in self.viewer_page.bg_layers:
-                self.viewer_page.bg_layers.remove(sprite)
-            elif sprite in self.viewer_page.structures:
-                self.viewer_page.structures.remove(sprite)
-            sprite.delete()
-            del sprite
+            self.load_map(self.model.Game.last_checkpoints_map.get(self.current_save_id))
+        else:
 
-        for sprite in self.viewer_page.get_all_sprites():
-            if sprite not in self.already_hidden:
-                sprite.show()
-        self.already_hidden = []
+            self.is_player_dead = False
 
-        self.player.dead = False
-        self.player.state = 'idle'
-        self.player.direction = 1
-        self.action_manager.next_direction = 1
+            for _ in range(len(self.sprites_to_delete)):
+                sprite = self.sprites_to_delete.pop()
+                if sprite in self.viewer_page.bg_layers:
+                    self.viewer_page.bg_layers.remove(sprite)
+                elif sprite in self.viewer_page.structures:
+                    self.viewer_page.structures.remove(sprite)
+                sprite.delete()
+                del sprite
+
+            for sprite in self.viewer_page.get_all_sprites():
+                if sprite not in self.already_hidden:
+                    sprite.show()
+            self.already_hidden = []
+
+            self.player.dead = False
+            self.player.state = 'idle'
+            self.player.direction = 1
+            self.action_manager.next_direction = 1
 
         transition = Transition(300, (0, 0, 0, 255), (1280, 720), lambda *_, **__: None, 'out')
         self.window.add_transition(transition)
+
+    def load_map_file(self, map_id):
+        if map_id in self.level_cache:
+            return self.level_cache[map_id]
+        else:
+            with open(self.model.Game.maps[map_id]) as datafile:
+                level = yaml.safe_load(datafile)
+            self.level_cache[map_id] = level
+            return level
+
+    def load_map_on_next_frame(self, map_id):
+        self.additional_commands.append(lambda: self.load_map(map_id))
+
+    def load_map(self, map_id):
+        self.model.Game.current_map_id.set(map_id, self.current_save_id)
+
+        self.level = self.load_map_file(self.model.Game.current_map_id.get(self.current_save_id))
+        self.level_res = self.level['background_data']['res']
+
+        self.window.reset_event_manager()
+
+        self.start_game()
 
     def quit(self):
         for func in self.scheduled_func:
@@ -822,6 +895,9 @@ class Game:
                 else:
                     self.count += 1
         self.number_of_space_updates += n1
+
+        for _ in range(len(self.additional_commands)):
+            self.additional_commands.pop()()
 
     def update_images(self):
         sprites = self.viewer_page.get_all_sprites()

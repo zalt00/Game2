@@ -276,9 +276,9 @@ class CollisionEditorPlugin(AbstractPlugin, metaclass=PluginMeta):
             print('type in your choice:')
             print(' - the name of the resource')
             if self.last_resource:
-                print(' - "l" for the last entered')
+                print(f' - "l" for the last entered: {self.last_resource}')
             if self.app.last_opened:
-                print(' - "o" for the last opened structure')
+                print(f' - "o" for the last opened structure: {self.app.last_opened}')
             res_name = input()
             if res_name == 'l':
                 res_name = self.last_resource

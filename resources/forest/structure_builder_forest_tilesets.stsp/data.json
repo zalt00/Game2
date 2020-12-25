@@ -45,6 +45,7 @@
     "RC": {"calibration_squares": false, "filename": "./../forest_structure_tilesets.stsp/rotated_connectors.png"},
     "RU": {"calibration_squares": false, "filename": "./../forest_structure_tilesets.stsp/rotated_underground.png"},
     "MP": {"calibration_squares": true, "filename":  "./../forest_structure_tilesets.stsp/moving_platform.png"},
-    "UP": {"calibration_squares":  false, "filename":  "./../forest_structure_tilesets.stsp/underground_plants.png"}
+    "UP": {"calibration_squares":  false, "filename":  "./../forest_structure_tilesets.stsp/underground_plants.png"},
+	"SL": {"calibration_squares": false, "filename": "./../forest_structure_tilesets.stsp/slippery_slopes.png"}
     }
 }

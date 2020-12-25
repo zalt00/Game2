@@ -17,12 +17,15 @@ class PhysicStateUpdater:
         self.x2 = 0
         self.xb = 0
 
+        self.landing_strength = 0
+
         # override default collision behaviours
         player_ground_collision_handler = self.space.add_collision_handler(0, 1)
         player_wall_collision_handler = self.space.add_collision_handler(0, 2)
         player_slippery_slope_collision_handler = self.space.add_collision_handler(0, 3)
 
         player_ground_collision_handler.pre_solve = self.collision_with_ground
+        player_ground_collision_handler.post_solve = self.collision_with_ground_post_solve
         player_wall_collision_handler.post_solve = self.collision_with_structure
         player_slippery_slope_collision_handler.post_solve = self.collision_with_slippery_slope
 
@@ -63,6 +66,7 @@ class PhysicStateUpdater:
     def separate_from_ground(self, *_, **__):
         self.separate()
         self.on_ground = False
+        self.landing_strength = 0
 
     def separate(self, *_, **__):
         self.collide = False
@@ -93,6 +97,9 @@ class PhysicStateUpdater:
                     self.collide_with_slippery_slope = False
                     return True
         return False
+
+    def collision_with_ground_post_solve(self, arbiter, *_, **__):
+        self.landing_strength = max(self.landing_strength, arbiter.total_impulse.y)
 
     def collision_with_slippery_slope(self, arbiter, *_, **__):
         self.collision_with_structure(arbiter)
@@ -177,7 +184,7 @@ class PhysicStateUpdater:
                 landed = (not entity.is_on_ground) and on_ground
                 entity.is_on_ground = on_ground
                 if landed:
-                    self.land()
+                    self.land(self.landing_strength)
 
                 # updates the physic state of the entity
                 t1 = perf_counter()

@@ -44,7 +44,9 @@ class ResourcesLoader:
         :type return_res_name: bool
         :return: Any"""
         if res_name == '':
-            res_name = local_dir.split('/')[-1]
+            split_path = local_dir.split('/')
+            relative_split_path = split_path[split_path.index('resources') + 1:]
+            res_name = "/".join(relative_split_path)
 
         logger.debug(f'Loads {res_name} from disk')
 
