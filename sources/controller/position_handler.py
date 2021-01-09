@@ -5,6 +5,8 @@ from .trajectory import CameraMovementTrajectory
 from time import perf_counter
 from queue import Queue
 import numpy as np
+from math import pi
+
 
 class StaticPositionHandler:
     def __init__(self, pos):
@@ -27,6 +29,33 @@ class DecorationPositionHandler:
     def update_position(self, entity, n=1):
         return (self.base_pos[0] + self.screen_offset[0] * self._3d_effect_layer,
                 self.base_pos[1] + self.screen_offset[1] * self._3d_effect_layer)
+
+
+class DynamicStructurePositionHandler:
+    def __init__(self, body, correct_angle=True):
+        self.correct_angle = correct_angle
+        self.body = body
+        self.relative_angle = 0
+
+    def get_anchor_y(self):
+        if self.correct_angle:
+            return self.body.center_of_gravity.y
+        else:
+            return 0
+
+    def update_position(self, struct, n=1):
+        if self.correct_angle:
+            while self.body.angle > pi / 4:
+                self.body.angle -= pi / 2
+                self.relative_angle -= pi / 2
+            while self.body.angle < -pi / 4:
+                self.body.angle += pi / 2
+                self.relative_angle += pi / 2
+        struct.rotation = -(self.body.angle - self.relative_angle) / pi * 180
+        if self.correct_angle:
+            return self.body.local_to_world(self.body.center_of_gravity)
+        else:
+            return tuple(self.body.position)
 
 
 class BgLayerPositionHandler:

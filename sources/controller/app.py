@@ -1,7 +1,7 @@
 # -*- coding:Utf-8 -*-
 
 from .position_handler import StaticPositionHandler, \
-    PlayerPositionHandler, BgLayerPositionHandler, DecorationPositionHandler
+    PlayerPositionHandler, BgLayerPositionHandler, DecorationPositionHandler, DynamicStructurePositionHandler
 from .action_manager import GameActionManager,\
     MainMenuActionManager, OptionsActionManager, CharacterSelectionActionManager
 from .physic_state_updater import PhysicStateUpdater
@@ -625,20 +625,7 @@ class Game:
     def init_structure(self, data):
         name = data['name']
         is_decoration = '3d_effect_layer' in data
-        if is_decoration:
-            pos_handler = DecorationPositionHandler(data['pos'], data['3d_effect_layer'], self.window.screen_offset)
-        else:
-            pos_handler = StaticPositionHandler(data['pos'])
-        layer = data.get('layer', 0)
-        if data['is_built']:
-            struct = self.window.add_structure(self.viewer_page, layer, pos_handler, data['res'])
-        else:
-            struct = self.window.build_structure(
-                self.viewer_page, layer, pos_handler, data['res'], self.level['palette'])
-
-        if is_decoration:
-            struct.affected_by_screen_offset = False
-        self.viewer_page.structures.add(struct)
+        dynamic = data.get('dynamic', False)
 
         if 'walls' in data:
             if 'action_on_touch' not in data:
@@ -651,8 +638,44 @@ class Game:
             else:
                 is_slippery_slope = False
 
-            self.space.add_structure(data['pos'], data['walls'], data['ground'], name,
-                                     action_on_touch, is_slippery_slope)
+            if not dynamic:
+                self.space.add_structure(data['pos'], data['walls'], data['ground'], name,
+                                         action_on_touch, is_slippery_slope)
+            else:
+                try:
+                    mass = data['mass']
+                except KeyError:
+                    logger.warning(f'unspecified mass for dynamic structure {name}, set to default value 20')
+                    mass = 20
+
+                try:
+                    center_of_gravity = data['center_of_gravity']
+                except KeyError:
+                    logger.warning(
+                        f'unspecified center of gravity for dynamic structure {name}, set to default value (0, 0)')
+                    center_of_gravity = 0, 0
+
+                self.space.add_dynamic_structure(data['pos'], data['walls'], data['ground'], name, mass,
+                                                 center_of_gravity, action_on_touch, is_slippery_slope)
+        else:
+            assert not dynamic, f'dynamic structure {name} should have collision data'
+
+        if is_decoration:
+            pos_handler = DecorationPositionHandler(data['pos'], data['3d_effect_layer'], self.window.screen_offset)
+        elif dynamic:
+            pos_handler = DynamicStructurePositionHandler(self.space.objects[name][0])
+        else:
+            pos_handler = StaticPositionHandler(data['pos'])
+        layer = data.get('layer', 0)
+        if data['is_built']:
+            struct = self.window.add_structure(self.viewer_page, layer, pos_handler, data['res'], dynamic=dynamic)
+        else:
+            struct = self.window.build_structure(
+                self.viewer_page, layer, pos_handler, data['res'], self.level['palette'], dynamic=dynamic)
+
+        if is_decoration:
+            struct.affected_by_screen_offset = False
+        self.viewer_page.structures.add(struct)
 
         self.structures[name] = struct
 

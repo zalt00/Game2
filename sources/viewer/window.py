@@ -173,12 +173,12 @@ class Window(pyglet.window.Window):
                                   physics_updater, particle_handler, end_of_state_callback, on_death_callback)
         return sprite
 
-    def add_structure(self, page, layer, position_handler, res):
+    def add_structure(self, page, layer, position_handler, res, dynamic=False):
         if isinstance(res, str):
             res = self.resource_loader.load(res)
         batch = page.batch
         image_handler = ihdlr.StructureImageHandler(res)
-        sprite = self._add_sprite(batch, 'Structure', layer, position_handler, image_handler)
+        sprite = self._add_sprite(batch, 'Structure', layer, position_handler, image_handler, dynamic=dynamic)
         return sprite
 
     def spawn_particle(self, page, layer, position_handler, res, state, direction, lifetime):
@@ -233,7 +233,7 @@ class Window(pyglet.window.Window):
         sprite = constructor(batch, layer_group, font, size, text_getter, position_handler, color)
         return sprite
 
-    def build_structure(self, page, layer, position_handler, res, palette_name):
+    def build_structure(self, page, layer, position_handler, res, palette_name, dynamic=False):
         """builds and add a structure from a palette and a string buffer"""
 
         palette = self.resource_loader.load(palette_name)
@@ -245,7 +245,7 @@ class Window(pyglet.window.Window):
 
             sheets = {'base': s}
             res.build(sheets)
-        return self.add_structure(page, layer, position_handler, res)
+        return self.add_structure(page, layer, position_handler, res, dynamic=dynamic)
 
     def get_group(self, layer):
         return self.ordered_groups[layer + 10]

@@ -43,7 +43,6 @@ class BaseSprite(pyglet.sprite.Sprite, metaclass=SpriteMetaclass, instantiable=F
         self.image_changed = False
 
         self.affected_by_screen_offset = True
-
         self._hide_next_update = False
         self._show_next_update = False
 
@@ -221,10 +220,19 @@ class BgLayer(BaseSprite, metaclass=SpriteMetaclass):
 
 
 class Structure(BaseSprite, metaclass=SpriteMetaclass):
-    def __init__(self, *args, **kwargs):
-        kwargs['state'] = 'base'
-        super(Structure, self).__init__(*args, **kwargs)
+    def __init__(self, batch, layer_group, position_handler, image_handler, screen_offset, state='base', dynamic=False):
+        self.dynamic = dynamic
+        super(Structure, self).__init__(batch, layer_group, position_handler, image_handler, screen_offset, 'base')
         self.animated = False
+
+        if dynamic:
+            self.anchor_y = self.position_handler.get_anchor_y() / self.scale
+        else:
+            self.anchor_y = 0
+
+    def update_image(self):
+        super(Structure, self).update_image()
+        self.image.anchor_y = self.anchor_y
 
     def __repr__(self):
         return f'Structure(image={self.image}, position={self.position})'

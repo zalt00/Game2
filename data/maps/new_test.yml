@@ -86,6 +86,39 @@ objects_data:
     res: forest/structures/lvl_bg_dec.st
     state: base
     type: structure
+  dynamic_struct_1_0_structure:
+    center_of_gravity:
+    - 0
+    - 96
+    dynamic: true
+    ground:
+    - - - -64.0
+        - 160
+      - - 64.0
+        - 160
+    is_built: false
+    layer: 1
+    mass: 50
+    name: dynamic_struct_1_0
+    pos:
+    - 218
+    - 437
+    res: forest/structures/dynamic_structures/test.st
+    state: base
+    type: structure
+    walls:
+    - - - -64.0
+        - 160
+      - - -64.0
+        - 32
+    - - - -64.0
+        - 32
+      - - 64.0
+        - 32
+    - - - 64.0
+        - 32
+      - - 64.0
+        - 160
   fgdec_1_0_structure:
     3d_effect_layer: 1.2
     is_built: true
@@ -578,23 +611,6 @@ objects_data:
         - 16.0
       - - 30.0
         - 16.0
-  structure1_structure:
-    ground: []
-    is_built: false
-    is_slippery_slope: true
-    layer: 0
-    name: structure1
-    pos:
-    - 2178
-    - 510
-    res: forest/structures/slippery_slopes/test.st
-    state: base
-    type: structure
-    walls:
-    - - - -64.0
-        - 0
-      - - 64.0
-        - 128
   structure2_structure:
     is_built: true
     layer: -1
@@ -683,7 +699,7 @@ triggers_data:
       type_: EnableTrigger
     enabled: true
     id: 3
-    left: 185
+    left: 10
   move_cam:
     actions:
     - dx: 600
@@ -696,4 +712,4 @@ triggers_data:
       type_: DisableTrigger
     enabled: false
     id: 7
-    left: 180
+    left: 9

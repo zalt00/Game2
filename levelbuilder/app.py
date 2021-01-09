@@ -746,8 +746,8 @@ class App(tk.Frame):
         for struct_id, struct in self.structures.items():
             print(struct.res_path)
 
-            base['objects_data'][struct.name + '_structure'] = {}
-            struct_data = base['objects_data'][struct.name + '_structure']
+            struct_data = dict()
+            base['objects_data'][struct.name + '_structure'] = struct_data
             struct_data['type'] = 'structure'
             struct_data['res'] = struct.res_path
             if struct.res_path.endswith('st'):
@@ -778,10 +778,12 @@ class App(tk.Frame):
             struct_data['layer'] = struct.layer
 
             try:
-                struct_data['3d_effect_layer'] = self._load_additional_data(struct, '3d_effect_layer',
-                                                                            data=structure_data)
+                additional_data = self.load_additional_data(struct, data=structure_data)
             except KeyError:
                 pass
+            else:
+                for k, v in additional_data.items():
+                    struct_data[k] = v
 
             families = self._get_struct_families(struct, structure_data['structure_families'])
             for family_name in families:
@@ -839,6 +841,10 @@ class App(tk.Frame):
         for struct_name, struct_data in database.items():
             if struct_name not in data:
                 data[struct_name] = struct_data
+            else:
+                for k, v in struct_data.items():
+                    if k not in data[struct_name]:
+                        data[struct_name][k] = v
 
         return data
 
@@ -854,7 +860,19 @@ class App(tk.Frame):
             else:
                 return to_rtn
 
-    def _load_additional_data(self, struct, key, data=None):
+    def load_additional_data(self, struct, data=None):
+        if data is None:
+            data = self._load_data()
+        struct_data = data.get(struct.res_path, None)
+        if struct_data is not None:
+            output = {}
+            for k, v in struct_data.items():
+                if k not in ('ground', 'walls', 'x_offset', 'y_offset', 'action_on_touch'):
+                    output[k] = v
+            return output
+        raise KeyError(f'no data for structure "{struct.res_path}"')
+
+    def _get_additional_data(self, struct, key, data=None):
         if data is None:
             data = self._load_data()
         struct_data = data.get(struct.res_path, None)

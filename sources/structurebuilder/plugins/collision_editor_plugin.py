@@ -279,33 +279,43 @@ class CollisionEditorPlugin(AbstractPlugin, metaclass=PluginMeta):
                 print(f' - "l" for the last entered: {self.last_resource}')
             if self.app.last_opened:
                 print(f' - "o" for the last opened structure: {self.app.last_opened}')
+            print(' - "c" to cancel')
             res_name = input()
             if res_name == 'l':
                 res_name = self.last_resource
             elif res_name == 'o':
                 res_name = self.app.last_opened
 
-        is_ground = None
-        while is_ground is None:
-            ground_or_walls = input('[G]round or [W]alls ? ').upper()
-            if ground_or_walls in ('G', 'GROUND'):
-                is_ground = True
-            elif ground_or_walls in ('W', 'WALLS'):
-                is_ground = False
+        if res_name != 'c':
+            stop = False
+            is_ground = None
+            while is_ground is None and not stop:
+                ground_or_walls = input('[G]round or [W]alls ? ([C]ancel to quit) ').upper()
+                if ground_or_walls in ('G', 'GROUND'):
+                    is_ground = True
+                elif ground_or_walls in ('W', 'WALLS'):
+                    is_ground = False
+                elif ground_or_walls in ('C', 'CANCEL'):
+                    stop = True
+                else:
+                    print('error - invalid entry')
+
+            if not stop:
+                collision_data = [v[0] for v in self.current_collision_segments]
+
+                if res_name not in data:
+                    data[res_name] = dict(ground=[], walls=[])
+                if is_ground:
+                    data[res_name]['ground'] = collision_data
+                else:
+                    data[res_name]['walls'] = collision_data
+
+                print('sending to database...')
+                with open(collision_db_path, 'w', encoding='utf8') as datafile:
+                    json.dump(data, datafile)
+                print('done.')
             else:
-                print('error - invalid entry')
-
-        collision_data = [v[0] for v in self.current_collision_segments]
-
-        if res_name not in data:
-            data[res_name] = dict(ground=[], walls=[])
-        if is_ground:
-            data[res_name]['ground'] = collision_data
+                print('canceled.')
         else:
-            data[res_name]['walls'] = collision_data
-
-        print('sending to database...')
-        with open(collision_db_path, 'w', encoding='utf8') as datafile:
-            json.dump(data, datafile)
-        print('done.')
+            print('canceled.')
 

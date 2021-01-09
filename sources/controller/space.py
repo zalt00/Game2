@@ -34,23 +34,45 @@ class GameSpace(pymunk.Space):
         self.add(body, shape)
         
         self.objects[name] = (body, shape)
-        
+
     def add_structure(self, pos, walls, segments, name, action_on_touch=None, is_slippery_slope=False):
+
         body = pymunk.Body(body_type=pymunk.Body.STATIC)
         body.position = pos
-        
+
+        self._add_structure(pos, walls, segments, name, action_on_touch, is_slippery_slope, body)
+
+    def add_dynamic_structure(self, pos, walls, segments, name, mass, center_of_gravity,
+                              action_on_touch=None, is_slippery_slope=False):
+
+        points = []
+        for a, b in walls:
+            points.append(a)
+            points.append(b)
+
+        moment = pymunk.moment_for_poly(mass, points, radius=1)
+
+        body = pymunk.Body(mass, moment, pymunk.Body.DYNAMIC)
+        body.position = pos
+        body.center_of_gravity = center_of_gravity
+
+        self._add_structure(pos, walls, segments, name, action_on_touch, is_slippery_slope, body, (1, 1))
+
+    def _add_structure(self, pos, walls, segments, name, action_on_touch, is_slippery_slope, body, frictions=(0, 1)):
         shapes = []
         for a, b in walls:
+            assert is_slippery_slope == 0 or is_slippery_slope == 1
+
             s = pymunk.Segment(body, a, b, 1)
             shapes.append(s)
-            s.friction = 0
+            s.friction = frictions[0]
             s.collision_type = 2 + is_slippery_slope
             s.action_on_touch = action_on_touch
 
         for a, b in segments:
             s = pymunk.Segment(body, a, b, 1)
             shapes.append(s)
-            s.friction = 1
+            s.friction = frictions[1]
             s.collision_type = 1
             s.action_on_touch = action_on_touch
             

@@ -170,7 +170,9 @@ forest/structures/slippery_slopes/slope45d.st:
     walls:
         - [[-59.0, 0], [64.0, 123]]
 
-
+forest/structures/dynamic_structures/test.st:
+    center_of_gravity: [0, 96]
+    mass: 50
 
 forest/structures/ground.st:
     ground:
@@ -201,6 +203,12 @@ structure_families:
             - forest/structures/slippery_slopes
         data:
             is_slippery_slope: true
+
+    dynamic_structures:
+        components:
+            - forest/structures/dynamic_structures
+        data:
+            dynamic: true
 
 
 

@@ -1,6 +1,7 @@
 # -*- coding:Utf-8 -*-
 
 from time import perf_counter
+import pymunk
 
 
 class PhysicStateUpdater:
@@ -26,7 +27,7 @@ class PhysicStateUpdater:
 
         player_ground_collision_handler.pre_solve = self.collision_with_ground
         player_ground_collision_handler.post_solve = self.collision_with_ground_post_solve
-        player_wall_collision_handler.post_solve = self.collision_with_structure
+        player_wall_collision_handler.post_solve = self.collision_with_structure_wall
         player_slippery_slope_collision_handler.post_solve = self.collision_with_slippery_slope
 
         player_ground_collision_handler.separate = self.separate_from_ground
@@ -42,6 +43,8 @@ class PhysicStateUpdater:
         self.current_state_name = 'idle'
         self.current_state_duration = 0
         self.t0 = 0
+
+        self.stable_ground = False
 
         self.actions = []
 
@@ -75,11 +78,14 @@ class PhysicStateUpdater:
         self.collide_with_slippery_slope = False
         self.separate()
 
-    def collision_with_structure(self, arbiter, *_, **__):
+    def collision_with_structure_wall(self, arbiter, *_, **__):
         self.collide = True
         self.xb = arbiter.contact_point_set.points[0].point_a.x
 
+        self.collision_with_structure(arbiter)
+
     def collision_with_ground(self, arbiter, *_, **__):
+
         points = arbiter.contact_point_set.points
         self.xb = points[0].point_a.x
         self.collide = True
@@ -95,15 +101,23 @@ class PhysicStateUpdater:
                 if self.current_state_name != 'jump' or self.body.velocity.y < 1:
                     self.on_ground = True
                     self.collide_with_slippery_slope = False
+                    body = arbiter.shapes[1].body
+                    self.stable_ground = body.body_type == pymunk.Body.STATIC
                     return True
         return False
 
     def collision_with_ground_post_solve(self, arbiter, *_, **__):
         self.landing_strength = max(self.landing_strength, arbiter.total_impulse.y)
+        self.collision_with_structure(arbiter)
 
     def collision_with_slippery_slope(self, arbiter, *_, **__):
-        self.collision_with_structure(arbiter)
+        self.collision_with_structure_wall(arbiter)
         self.collide_with_slippery_slope = True
+
+    def collision_with_structure(self, arbiter, *_, **__):
+        if arbiter.shapes[1].body.body_type == pymunk.Body.DYNAMIC:
+            if arbiter.total_impulse.y < -10000:
+                self.actions.append(('die', []))
 
     def update_(self, entity, n=1):
 
@@ -111,85 +125,85 @@ class PhysicStateUpdater:
             for _ in range(len(self.actions)):
                 action_name, action_args = self.actions.pop()
                 getattr(entity, action_name, lambda *_, **__: None)(*action_args)
+            if not entity.dead:
+                for _ in range(n):
+                    entity.can_air_control = True
 
-            for _ in range(n):
-                entity.can_air_control = True
-
-                # bug fix (prevents the player to keep his/her speed during the dash if he or she hits the ground)
-                if self.on_ground and entity.state == 'dash':
-                    self.body.velocity /= 20
-                    entity.state = 'fall'
-
-                if not self.collide_with_slippery_slope:
-                    # bug fix (prevents the player to force his/her way through walls when dashing)
-                    if self.collide and entity.state == 'dash':
-                        entity.can_dash_velocity_be_applied = False
-                    else:
-                        entity.can_dash_velocity_be_applied = True
-                elif entity.state == 'dash':
-                    if abs(self.body.velocity.x) > 800:
+                    # bug fix (prevents the player to keep his/her speed during the dash if he or she hits the ground)
+                    if self.on_ground and entity.state == 'dash':
+                        self.body.velocity /= 20
                         entity.state = 'fall'
-                        self.body.velocity *= 800 / abs(self.body.velocity.x)
 
-                # rough approximation of air resistance
-                # uses this formula: C * 1/2 * p(air) * v**2 * S * <vector>u
-                # C = 1.3, p(air) = 1.2, S = 1.5m * 0.3m = 0.5m**2
-                # divides by the mass, around 50kg, by 60 to convert seconds into time units (1/60s) and then
-                # by 50 again to convert distance units into meters (50 * 60 * 50 = 150 000)
-                if self.body.velocity.length > 250 and not self.on_ground and entity.state != 'dash':
-                    ax = (0.8 * self.body.velocity.x * abs(self.body.velocity.x)) / 150_000
-                    ay = (0.8 * self.body.velocity.y * abs(self.body.velocity.y)) / 150_000
-                    self.body.velocity -= (ax, ay)
-
-                # the player should not be able to air control against a wall because the wall can get him/her stuck
-                # this code tests if the direction of the player is in the same direction as the direction of the object
-                # he/she is colliding with
-                if self.collide and ((entity.direction == 1 and self.xb > self.body.position.x)
-                                     or (entity.direction == -1 and self.xb < self.body.position.x)):
-                    entity.can_air_control = False
-
-                # prevents saving an unstable position (at least half of the body must be on a stable structure)
-                if self.on_ground:
-                    if self.body.width // 2 < round(abs(self.x1 - self.x2)):
-                        self.save_position()
-
-                # prevents a "flicker" effect when the player leaves the ground for 1 or 2 ticks (it sometimes happens
-                # when the player simply runs on a structure after a weird landing)
-                if not self.on_ground:
-                    if self.a > 3:
-                        on_ground = False
-                    else:
-                        self.a += 1
-                        on_ground = True
-                else:
-                    self.a = 0
-                    on_ground = True
-
-                # animation util
-                if not on_ground:
-                    if self.body.velocity.y < 0:
-                        if entity.state == 'jump':
+                    if not self.collide_with_slippery_slope:
+                        # bug fix (prevents the player to force his/her way through walls when dashing)
+                        if self.collide and entity.state == 'dash':
+                            entity.can_dash_velocity_be_applied = False
+                        else:
+                            entity.can_dash_velocity_be_applied = True
+                    elif entity.state == 'dash':
+                        if abs(self.body.velocity.x) > 800:
                             entity.state = 'fall'
+                            self.body.velocity *= 800 / abs(self.body.velocity.x)
+
+                    # rough approximation of air resistance
+                    # uses this formula: C * 1/2 * p(air) * v**2 * S * <vector>u
+                    # C = 1.3, p(air) = 1.2, S = 1.5m * 0.3m = 0.5m**2
+                    # divides by the mass, around 50kg, by 60 to convert seconds into time units (1/60s) and then
+                    # by 50 again to convert distance units into meters (50 * 60 * 50 = 150 000)
+                    if self.body.velocity.length > 250 and not self.on_ground and entity.state != 'dash':
+                        ax = (0.8 * self.body.velocity.x * abs(self.body.velocity.x)) / 150_000
+                        ay = (0.8 * self.body.velocity.y * abs(self.body.velocity.y)) / 150_000
+                        self.body.velocity -= (ax, ay)
+
+                    # the player should not be able to air control against a wall because the wall can get him/her stuck
+                    # this code tests if the direction of the player is in the same direction as the direction of the
+                    # object he/she is colliding with
+                    if self.collide and ((entity.direction == 1 and self.xb > self.body.position.x)
+                                         or (entity.direction == -1 and self.xb < self.body.position.x)):
+                        entity.can_air_control = False
+
+                    # prevents saving an unstable position (at least half of the body must be on a stable structure)
+                    if self.on_ground and self.stable_ground:
+                        if self.body.width // 2 < round(abs(self.x1 - self.x2)):
+                            self.save_position()
+
+                    # prevents a "flicker" effect when the player leaves the ground for 1 or 2 ticks (it sometimes
+                    # happens when the player simply runs on a structure after a weird landing)
+                    if not self.on_ground:
+                        if self.a > 3:
+                            on_ground = False
+                        else:
+                            self.a += 1
+                            on_ground = True
                     else:
-                        if entity.state == 'fall':
-                            entity.state = 'jump'
+                        self.a = 0
+                        on_ground = True
 
-                self.body.angle = 0
-                self.body.angular_velocity = 0
-                self.body.space.reindex_shapes_for_body(self.body)
+                    # animation util
+                    if not on_ground:
+                        if self.body.velocity.y < 0:
+                            if entity.state == 'jump':
+                                entity.state = 'fall'
+                        else:
+                            if entity.state == 'fall':
+                                entity.state = 'jump'
 
-                if not entity.is_on_ground and entity.state in ('walk', 'run'):
-                    entity.state = 'fall'
+                    self.body.angle = 0
+                    self.body.angular_velocity = 0
+                    self.body.space.reindex_shapes_for_body(self.body)
 
-                landed = (not entity.is_on_ground) and on_ground
-                entity.is_on_ground = on_ground
-                if landed:
-                    self.land(self.landing_strength)
+                    if not entity.is_on_ground and entity.state in ('walk', 'run'):
+                        entity.state = 'fall'
 
-                # updates the physic state of the entity
-                t1 = perf_counter()
-                if t1 - self.t0 >= self.current_state_duration:
-                    entity.end_of_state(self.current_state_name)
+                    landed = (not entity.is_on_ground) and on_ground
+                    entity.is_on_ground = on_ground
+                    if landed:
+                        self.land(self.landing_strength)
+
+                    # updates the physic state of the entity
+                    t1 = perf_counter()
+                    if t1 - self.t0 >= self.current_state_duration:
+                        entity.end_of_state(self.current_state_name)
         else:
             # updates the physic state of the entity
             t1 = perf_counter()
