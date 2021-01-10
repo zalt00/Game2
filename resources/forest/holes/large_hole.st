@@ -1,7 +1,0 @@
-dimensions=64 32
-dec=32 0
-scale=2
-length=2
-string-buffer:
-HO0000;HO0001;HO0002;HO0003
-HO0004;HO0005;HO0006;HO0007

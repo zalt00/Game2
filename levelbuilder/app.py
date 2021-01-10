@@ -66,7 +66,7 @@ class App(tk.Frame):
         self.maps_base_dir = cfg['env']['maps_base_dir'].format(**dict(os.environ))
 
         self.rl = ResourcesLoader(self.resources_base_dir)
-        self.palette_res_name = 'forest/forest_structure_tilesets.stsp'
+        self.palette_res_name = 'structure_palettes/forest/forest_structure_tilesets.stsp'
         self.palette = self.rl.load(self.palette_res_name)
 
         self.canvas = tk.Canvas(self, width=1280, height=750, scrollregion=(0, 0, 5000, 2000), bg='#e4e4e4')

@@ -515,11 +515,6 @@ class Game:
         # self.window.res_loader.cache.clear()
         return_to_main_menu = self.return_to_main_menu
 
-        self.t1 = perf_counter()
-        self.count = 0  # every 4 space update ticks the position handler, the image handler
-        # and the physic state updater must be updated
-        self.number_of_space_updates = 0
-
         if self.debug_draw:
             self.draw_options = pymunk.pyglet_util.DrawOptions()
         else:
@@ -615,6 +610,11 @@ class Game:
         if len(self.checkpoints) == 0:
             self.checkpoints.append(('base', self.model.Game.default_checkpoint_pos))
 
+        self.t1 = -1
+        self.count = 0  # every 4 space update ticks the position handler, the image handler
+        # and the physic state updater must be updated
+        self.number_of_space_updates = 0
+
         self.window.update = self.update_positions
         self.window.update_image = self.update_images
         self.window.quit = self.dump_save
@@ -626,6 +626,7 @@ class Game:
         name = data['name']
         is_decoration = '3d_effect_layer' in data
         dynamic = data.get('dynamic', False)
+        correct_angle = data.get('correct_angle', True)
 
         if 'walls' in data:
             if 'action_on_touch' not in data:
@@ -656,14 +657,14 @@ class Game:
                     center_of_gravity = 0, 0
 
                 self.space.add_dynamic_structure(data['pos'], data['walls'], data['ground'], name, mass,
-                                                 center_of_gravity, action_on_touch, is_slippery_slope)
+                                                 center_of_gravity, action_on_touch, is_slippery_slope, correct_angle)
         else:
             assert not dynamic, f'dynamic structure {name} should have collision data'
 
         if is_decoration:
             pos_handler = DecorationPositionHandler(data['pos'], data['3d_effect_layer'], self.window.screen_offset)
         elif dynamic:
-            pos_handler = DynamicStructurePositionHandler(self.space.objects[name][0])
+            pos_handler = DynamicStructurePositionHandler(self.space.objects[name][0], correct_angle)
         else:
             pos_handler = StaticPositionHandler(data['pos'])
         layer = data.get('layer', 0)
@@ -794,7 +795,7 @@ class Game:
         self.viewer_page.bg_layers.add(bg)
 
         death_screen = self.window.add_structure(
-            self.viewer_page, 0, StaticPositionHandler((0, 0)), 'death_screen.obj'
+            self.viewer_page, 0, StaticPositionHandler((0, 0)), self.model.Game.death_screen_res_path
         )
         death_screen.affected_by_screen_offset = False
         death_screen.opacity = 0
@@ -883,24 +884,9 @@ class Game:
         self.scheduled_func = set()
         self.dump_save()
 
-    def update(self, *_, **__):
-        if not self.paused:
-            n1 = round((perf_counter() - self.t1) * 60 * 4) - self.number_of_space_updates
-
-            for i in range(n1):
-                self.space.step(1/60/4)
-                if self.count == 3:
-                    self.count = 0
-                    sprites = self.viewer_page.get_all_sprites()
-                    for sprite in sprites:
-                        sprite.update_position()
-                    for sprite in sprites:
-                        sprite.update_image()
-                else:
-                    self.count += 1
-            self.number_of_space_updates += n1
-
     def update_positions(self, *_, **__):
+        if self.t1 == -1:
+            self.t1 = perf_counter()
         n1 = round((perf_counter() - self.t1) * 60 * 4) - self.number_of_space_updates
 
         sprites = self.viewer_page.get_all_sprites()

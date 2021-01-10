@@ -1,6 +1,6 @@
 background_data:
   bg_decoration_layer_id: -4
-  bg_decoration_object_set_res: forest/forest_bg_decoration_set.bgobj
+  bg_decoration_object_set_res: bg_decoration_sets/forest/forest_bg_decoration_set.bgobj
   bg_decoration_objects_pos:
   - 0
   - -300
@@ -14,14 +14,14 @@ background_data:
   pos:
   - 0
   - -550
-  res: forest/forest.bg
+  res: backgrounds/forest/forest.bg
 checkpoints:
 - - base
-  - - 116
-    - 96
+  - - 127
+    - 64
 - - cp2
   - - 2051
-    - 96
+    - 64
 objects_data:
   player:
     res: player/white_guy.obj
@@ -32,8 +32,8 @@ objects_data:
     name: statue2
     pos:
     - 2054
-    - 59
-    res: statue.obj
+    - 30
+    res: special_objects/statue.obj
     state: base
     type: structure
   statue_structure:
@@ -42,75 +42,59 @@ objects_data:
     name: statue
     pos:
     - 131
-    - 59
-    res: statue.obj
+    - 30
+    res: special_objects/statue.obj
     state: base
     type: structure
   structure1_structure:
     ground:
-    - - - -304
-        - 96
-      - - 304
-        - 96
+    - - - -592.0
+        - 160
+      - - 592.0
+        - 160
     is_built: false
     layer: 1
     name: structure1
     pos:
-    - 304
-    - 0
-    res: forest/ground.st
+    - 592
+    - -96
+    res: structures/mainbuilds/forest/ground.st
     state: base
     type: structure
     walls: []
   structure2_structure:
     ground:
-    - - - -304
-        - 96
-      - - 304
-        - 96
+    - - - -592.0
+        - 160
+      - - 592.0
+        - 160
     is_built: false
     layer: 1
     name: structure2
     pos:
-    - 912
-    - 0
-    res: forest/ground.st
-    state: base
-    type: structure
-    walls: []
-  structure3_structure:
-    ground:
-    - - - -304
-        - 96
-      - - 304
-        - 96
-    is_built: false
-    layer: 1
-    name: structure3
-    pos:
-    - 1520
-    - 0
-    res: forest/ground.st
+    - 1776
+    - -96
+    res: structures/mainbuilds/forest/ground.st
     state: base
     type: structure
     walls: []
   structure4_structure:
     ground:
-    - - - -304
-        - 96
-      - - 304
-        - 96
+    - - - -592.0
+        - 160
+      - - 592.0
+        - 160
     is_built: false
     layer: 1
     name: structure4
     pos:
-    - 2128
-    - 0
-    res: forest/ground.st
+    - 2960
+    - -96
+    res: structures/mainbuilds/forest/ground.st
     state: base
     type: structure
     walls: []
-palette: forest/forest_structure_tilesets.stsp
+palette: structure_palettes/forest/forest_structure_tilesets.stsp
 space: true
 triggers_data:
   bottom_of_world:

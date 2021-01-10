@@ -219,8 +219,9 @@ class CollisionEditorPlugin(AbstractPlugin, metaclass=PluginMeta):
     def save_collision_data(self, filename=None):
         if filename is None:
             filename = input('enter the name of the file: ')
-        if filename[1] != ':':
-            filename = '{BASE}/sources/structurebuilder/collisions_data/'.format(**dict(os.environ)) + filename
+        if len(filename) > 1:
+            if filename[1] != ':':
+                filename = '{BASE}/sources/structurebuilder/collisions_data/'.format(**dict(os.environ)) + filename
         if not filename.endswith('.json'):
             filename += '.json'
 

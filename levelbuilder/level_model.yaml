@@ -5,7 +5,7 @@ background_data:
     res: ""
     pos: [0, 0]
 
-    bg_decoration_object_set_res: forest/forest_bg_decoration_set.bgobj
+    bg_decoration_object_set_res: bg_decoration_sets/forest/forest_bg_decoration_set.bgobj
     bg_decoration_sequence:
         - shrub
         - small_tree

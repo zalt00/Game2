@@ -45,16 +45,17 @@ class App:
 
         self.collision_segments_surf = self.bg.copy()
 
-        self.palette = self.rl.load('forest/structure_builder_forest_tilesets.stsp')
+        self.palette = self.rl.load('structure_palettes/forest/structure_builder_forest_tilesets.stsp')
 
         self.eraser_img = self.palette.eraser
         self.random_icon = self.palette.random_icon
 
-        self.gcursor_img = self.rl.load('cursor.obj').sheets['green']
-        self.rcursor_img = self.rl.load('cursor.obj').sheets['red']
+        res_path = 'structure_builder_utils/cursor.obj'
+        self.gcursor_img = self.rl.load(res_path).sheets['green']
+        self.rcursor_img = self.rl.load(res_path).sheets['red']
 
-        self.secursor_img = self.rl.load('cursor.obj').sheets['se']
-        self.nwcursor_img = self.rl.load('cursor.obj').sheets['nw']
+        self.secursor_img = self.rl.load(res_path).sheets['se']
+        self.nwcursor_img = self.rl.load(res_path).sheets['nw']
 
         self.button1down = False
         self.holded_b = 0

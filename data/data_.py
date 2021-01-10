@@ -104,7 +104,7 @@ class Data(DataContainer):
         y_offset = -50
 
         class Options(DataContainer):
-            bg_res = 'black_forest.bg'
+            bg_res = 'backgrounds/black_forest.bg'
             bg_pos = (0, 0)
             action_manager = 'OptionsActionManager'
 
@@ -258,7 +258,7 @@ class Data(DataContainer):
                     pos = (1092, 150)
 
         class MainMenu(DataContainer):
-            bg_res = 'black_forest.bg'
+            bg_res = 'backgrounds/black_forest.bg'
             bg_pos = (0, 0)
 
             action_manager = 'MainMenuActionManager'
@@ -297,7 +297,7 @@ class Data(DataContainer):
                     button_name = 'options_button'
 
         class CharacterSelectionMenu(DataContainer):
-            bg_res = 'black_forest.bg'
+            bg_res = 'backgrounds/black_forest.bg'
             bg_pos = (0, 0)
 
             action_manager = 'CharacterSelectionActionManager'
@@ -361,6 +361,8 @@ class Data(DataContainer):
         default_checkpoint_pos = (200, 300)
 
         maps = ('data/maps/test.yml', 'data/maps/new_test.yml')
+
+        death_screen_res_path = 'special_objects/death_screen.obj'
 
         class BasePlayerData:
             height = 50

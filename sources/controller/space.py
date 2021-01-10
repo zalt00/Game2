@@ -43,7 +43,7 @@ class GameSpace(pymunk.Space):
         self._add_structure(pos, walls, segments, name, action_on_touch, is_slippery_slope, body)
 
     def add_dynamic_structure(self, pos, walls, segments, name, mass, center_of_gravity,
-                              action_on_touch=None, is_slippery_slope=False):
+                              action_on_touch=None, is_slippery_slope=False, correct_angle=False):
 
         points = []
         for a, b in walls:
@@ -53,8 +53,11 @@ class GameSpace(pymunk.Space):
         moment = pymunk.moment_for_poly(mass, points, radius=1)
 
         body = pymunk.Body(mass, moment, pymunk.Body.DYNAMIC)
-        body.position = pos
+
         body.center_of_gravity = center_of_gravity
+
+        body.position = pos
+        self.reindex_shapes_for_body(body)
 
         self._add_structure(pos, walls, segments, name, action_on_touch, is_slippery_slope, body, (1, 1))
 
@@ -75,7 +78,7 @@ class GameSpace(pymunk.Space):
             s.friction = frictions[1]
             s.collision_type = 1
             s.action_on_touch = action_on_touch
-            
+
         self.add(body, *shapes)
         
         self.objects[name] = (body, shapes)
