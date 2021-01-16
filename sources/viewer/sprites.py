@@ -127,6 +127,9 @@ class Entity(BaseSprite, metaclass=SpriteMetaclass):
         # bug fix, prevents the dash velocity to be applied in certain circumstances
         self.can_dash_velocity_be_applied = True
 
+        # bug fix
+        self.collide_with_dynamic_ground = None
+
         self.secondary_state = ''
 
         self.record_position = False
@@ -185,6 +188,11 @@ class Entity(BaseSprite, metaclass=SpriteMetaclass):
             except AttributeError:
                 pass
 
+    def update_state(self, dt=0):
+        if dt:
+            self.physic_state_updater.step(dt)
+        self.physic_state_updater.update_physic_state(self)
+
     def update_position(self, last_update=True):
         self.physic_state_updater.update_(self)
         super(Entity, self).update_position(last_update)
@@ -222,6 +230,8 @@ class BgLayer(BaseSprite, metaclass=SpriteMetaclass):
 class Structure(BaseSprite, metaclass=SpriteMetaclass):
     def __init__(self, batch, layer_group, position_handler, image_handler, screen_offset, state='base', dynamic=False):
         self.dynamic = dynamic
+        self.constrained = False
+
         super(Structure, self).__init__(batch, layer_group, position_handler, image_handler, screen_offset, 'base')
         self.animated = False
 
@@ -230,12 +240,15 @@ class Structure(BaseSprite, metaclass=SpriteMetaclass):
         else:
             self.anchor_y = 0
 
-    def update_image(self):
-        super(Structure, self).update_image()
-        self.image.anchor_y = self.anchor_y
+        self.image_changed = True
 
     def __repr__(self):
         return f'Structure(image={self.image}, position={self.position})'
+
+
+class Rope(BaseSprite, metaclass=SpriteMetaclass):
+    def __init__(self, batch, layer_group, position_handler, image_handler, screen_offset, state='base'):
+        super(Rope, self).__init__(batch, layer_group, position_handler, image_handler, screen_offset, 'base')
 
 
 class Button(BaseSprite, metaclass=SpriteMetaclass):

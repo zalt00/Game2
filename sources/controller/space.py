@@ -1,6 +1,7 @@
 # -*- coding:Utf-8-*-
 
 import pymunk
+import pymunk.constraints
 
 
 class GameSpace(pymunk.Space):
@@ -82,4 +83,12 @@ class GameSpace(pymunk.Space):
         self.add(body, *shapes)
         
         self.objects[name] = (body, shapes)
+
+    def add_constraint(self, object_a, object_b, anchor_a, anchor_b, name):
+        body_a = self.objects[object_a][0]
+        body_b = self.objects[object_b][0]
+        cons = pymunk.constraints.PinJoint(body_a, body_b, anchor_a, anchor_b)
+
+        self.add(cons)
+        self.objects[name] = (cons,)
 

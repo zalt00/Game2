@@ -135,6 +135,12 @@ class DebugGameEventManager(GameEventManager):
                 self.action_manager.do(self.action_manager.GOD)
             except AttributeError:
                 pass
+        elif symbol == pyglet.window.key.F6:
+            try:
+                self.action_manager.do(self.action_manager.SCREENSHOT)
+            except AttributeError:
+                pass
+
         elif symbol == pyglet.window.key.F12:
             try:
                 self.action_manager.do(self.action_manager.DEV_COMMAND)

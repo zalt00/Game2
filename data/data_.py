@@ -204,8 +204,8 @@ class Data(DataContainer):
                     )
                     options_save = dict(display_mode={0: 1, 1: 0},
                                         resolution={(1280, 720): 0, (1280, 800): 1, (1280, 960): 2},
-                                        luminosity={
-                                            0: 0})  # permet de passer de la valeur de la save a l'indice du bouton a afficher
+                                        luminosity={0: 0})  # permet de passer de la valeur de la save a
+                    # l'indice du bouton a afficher
                     panel_name = 'Video'
 
                 class GameplayPanel:
@@ -348,9 +348,6 @@ class Data(DataContainer):
                     button_name = 'cancel_button'
 
 
-
-
-                    
 ######################################################################################################
 
     class Game(DataContainer):
@@ -372,10 +369,10 @@ class Data(DataContainer):
             pos_y = SaveComponent(3)
 
             class StateDuration(DataContainer):
-                idle = 0.01
-                fall = 0.01
-                jump = 0.1
-                dash = 0.08
+                idle = 0.016
+                fall = 0.016
+                jump = 0.08
+                dash = 0.092
 
         class BaseBGData:
             camera_pos_x = SaveComponent(0)

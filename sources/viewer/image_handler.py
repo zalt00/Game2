@@ -67,6 +67,15 @@ class StructureImageHandler(ImageHandler):
     def update_image(self, struct, n=1):
         img = self.res.sheets[struct.state]
         img.anchor_x = self.res.dec[0]
+        img.anchor_y = getattr(struct, 'anchor_y', 0)
+        return img
+
+
+class RopeImageHandler(ImageHandler):
+    def update_image(self, rope, n=1):
+        img = self.res.sheets[rope.state]
+        img.anchor_x = 0
+        img.anchor_y = 0
         return img
 
 

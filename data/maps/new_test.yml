@@ -90,7 +90,7 @@ objects_data:
     center_of_gravity:
     - 0
     - 96
-    correct_angle: true
+    correct_angle: false
     dynamic: true
     ground:
     - - - 64.0
@@ -99,11 +99,11 @@ objects_data:
         - 160
     is_built: false
     layer: 1
-    mass: 50
+    mass: 500
     name: dynamic_struct_1_0
     pos:
     - 346
-    - 527
+    - 437
     res: structures/dynamic_structures/forest/test.st
     state: base
     type: structure
@@ -204,6 +204,18 @@ objects_data:
     walls: []
   mainbuild_1_structure:
     ground:
+    - - - -96.0
+        - 208.0
+      - - 0.0
+        - 208.0
+    - - - -96.0
+        - 192
+      - - -104.0
+        - 192
+    - - - -496.0
+        - 64
+      - - -96.0
+        - 64
     - - - -232.0
         - 192
       - - -184.0
@@ -232,22 +244,10 @@ objects_data:
         - 80.0
       - - 32.0
         - 80.0
-    - - - 32.0
-        - 144.0
-      - - 0.0
-        - 144.0
-    - - - -96.0
-        - 208.0
-      - - 0.0
-        - 208.0
-    - - - -96.0
-        - 192
-      - - -104.0
-        - 192
-    - - - -496.0
-        - 64
-      - - -96.0
-        - 64
+    - - - 30.0
+        - 157.0
+      - - -2.0
+        - 157.0
     is_built: false
     layer: 2
     name: mainbuild_1
@@ -644,6 +644,18 @@ objects_data:
     res: special_objects/statue.obj
     state: base
     type: structure
+  test_cons_constraint:
+    anchor_a:
+    - 0
+    - 160
+    anchor_b:
+    - -500
+    - 900
+    name: test_cons
+    object_a: dynamic_struct_1_0
+    object_b: mainbuild_1
+    res: special_objects/rope.obj
+    type: constraint
   tree2_structure:
     3d_effect_layer: 0.8
     is_built: true

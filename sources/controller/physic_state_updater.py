@@ -2,18 +2,22 @@
 
 from time import perf_counter
 import pymunk
+from utils.logger import logger
 
 
 class PhysicStateUpdater:
     def __init__(self, body, landing_callback, save_position_callback, space, state_duration):
         self.body = body
         self.space = space
+
         self.on_ground = False
         self.collide = False
         self.collide_with_slippery_slope = False
+
         self.land = landing_callback
         self.save_position = save_position_callback
         self.a = 11
+
         self.x1 = 0
         self.x2 = 0
         self.xb = 0
@@ -43,8 +47,12 @@ class PhysicStateUpdater:
         self.current_state_name = 'idle'
         self.current_state_duration = 0
         self.t0 = 0
+        self.current_time = 0
 
         self.stable_ground = False
+        self.collide_with_dynamic_ground = None
+
+        self.previous_collision_data = None
 
         self.actions = []
 
@@ -55,7 +63,7 @@ class PhysicStateUpdater:
                 duration = entity.image_handler.get_state_duration(state)
             self.current_state_duration = duration
             self.current_state_name = state
-            self.t0 = perf_counter()
+            self.t0 = self.current_time
         if entity.dead and entity.state != 'die':
             entity.state = 'die'
 
@@ -70,6 +78,7 @@ class PhysicStateUpdater:
         self.separate()
         self.on_ground = False
         self.landing_strength = 0
+        self.collide_with_dynamic_ground = None
 
     def separate(self, *_, **__):
         self.collide = False
@@ -103,6 +112,8 @@ class PhysicStateUpdater:
                     self.collide_with_slippery_slope = False
                     body = arbiter.shapes[1].body
                     self.stable_ground = body.body_type == pymunk.Body.STATIC
+                    if not self.stable_ground:
+                        self.collide_with_dynamic_ground = body
                     return True
         return False
 
@@ -115,12 +126,41 @@ class PhysicStateUpdater:
         self.collide_with_slippery_slope = True
 
     def collision_with_structure(self, arbiter, *_, **__):
+
+        # unstuck mechanism (the player can get stuck between two structures without being able to do anything,
+        # this code detects this kind of situation and unsticks the player)
+        if self.previous_collision_data is None:
+            self.previous_collision_data = (arbiter.contact_point_set,
+                                            arbiter.shapes[1].body.body_type == pymunk.Body.DYNAMIC,
+                                            arbiter.shapes[1])
+
+        else:
+            if arbiter.shapes[1].body != self.previous_collision_data[2].body:
+                if self.previous_collision_data[1] or arbiter.shapes[1].body.body_type == pymunk.Body.DYNAMIC:
+                    if round(arbiter.contact_point_set.normal.x * 1000) == -round(
+                            self.previous_collision_data[0].normal.x * 1000):
+                        if round(abs(arbiter.contact_point_set.normal.x)) > 0:
+
+                            arbiter.shapes[0].body.apply_impulse_at_local_point((0, 2000), (0, 0))
+                            logger.warning('unstuck mechanism applied')
+
+                    elif 27 < (abs(arbiter.contact_point_set.points[0].point_a.x) -
+                               abs(self.previous_collision_data[0].points[0].point_a.x)) < 33:
+                        if ((abs(round(arbiter.contact_point_set.normal.x)) == 1 and abs(round(
+                                self.previous_collision_data[0].normal.x * 1000)) == 819) or
+                            (abs(round(arbiter.contact_point_set.normal.x * 1000)) == 819 and abs(round(
+                                  self.previous_collision_data[0].normal.x)) == 1)):
+
+                            arbiter.shapes[0].body.apply_impulse_at_local_point((0, 2000), (0, 0))
+                            logger.warning('unstuck mechanism applied')
+
+            self.previous_collision_data = None
+
         if arbiter.shapes[1].body.body_type == pymunk.Body.DYNAMIC:
             if arbiter.total_impulse.y < -10000:
                 self.actions.append(('die', []))
 
     def update_(self, entity, n=1):
-
         if not entity.dead:
             for _ in range(len(self.actions)):
                 action_name, action_args = self.actions.pop()
@@ -147,7 +187,7 @@ class PhysicStateUpdater:
 
                     # rough approximation of air resistance
                     # uses this formula: C * 1/2 * p(air) * v**2 * S * <vector>u
-                    # C = 1.3, p(air) = 1.2, S = 1.5m * 0.3m = 0.5m**2
+                    # C = 1.3, p(air) = 1.2, S = 1.5m * 0.3m = 0.5m^2
                     # divides by the mass, around 50kg, by 60 to convert seconds into time units (1/60s) and then
                     # by 50 again to convert distance units into meters (50 * 60 * 50 = 150 000)
                     if self.body.velocity.length > 250 and not self.on_ground and entity.state != 'dash':
@@ -188,6 +228,9 @@ class PhysicStateUpdater:
                             if entity.state == 'fall':
                                 entity.state = 'jump'
 
+                    # fixes weird behaviours when walking on a dynamic structure
+                    entity.collide_with_dynamic_ground = self.collide_with_dynamic_ground
+
                     self.body.angle = 0
                     self.body.angular_velocity = 0
                     self.body.space.reindex_shapes_for_body(self.body)
@@ -200,12 +243,10 @@ class PhysicStateUpdater:
                     if landed:
                         self.land(self.landing_strength)
 
-                    # updates the physic state of the entity
-                    t1 = perf_counter()
-                    if t1 - self.t0 >= self.current_state_duration:
-                        entity.end_of_state(self.current_state_name)
-        else:
-            # updates the physic state of the entity
-            t1 = perf_counter()
-            if t1 - self.t0 >= self.current_state_duration:
-                entity.end_of_state(self.current_state_name)
+    def update_physic_state(self, entity):
+        if self.current_time - self.t0 >= self.current_state_duration:
+            entity.end_of_state(self.current_state_name)
+
+    def step(self, dt):
+        self.current_time += dt
+

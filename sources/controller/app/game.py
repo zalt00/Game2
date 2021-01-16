@@ -1,428 +1,24 @@
 # -*- coding:Utf-8 -*-
 
-from .position_handler import StaticPositionHandler, \
-    PlayerPositionHandler, BgLayerPositionHandler, DecorationPositionHandler, DynamicStructurePositionHandler
-from .action_manager import GameActionManager,\
-    MainMenuActionManager, OptionsActionManager, CharacterSelectionActionManager
-from .physic_state_updater import PhysicStateUpdater
-from .particles_handler import ParticleHandler
-from .text_getter import FormatTextGetter, SimpleTextGetter
-from .space import GameSpace
+from ..position_handler import StaticPositionHandler, \
+    PlayerPositionHandler, BgLayerPositionHandler, DecorationPositionHandler, DynamicStructurePositionHandler, \
+    RopePositionHandler
+from ..action_manager import GameActionManager
+from ..physic_state_updater import PhysicStateUpdater
+from ..particles_handler import ParticleHandler
+from ..text_getter import FormatTextGetter, SimpleTextGetter
+from ..space import GameSpace
 import pymunk.pyglet_util
+from viewer.debug_draw import DrawOptions
 from utils.save_modifier import SaveComponent
-from .triggers import Trigger
-from .trigger_action_getter import GameActionGetter
+from ..triggers import Trigger
+from ..trigger_action_getter import GameActionGetter
 from time import perf_counter
 import yaml
-import threading
 from viewer.transition import Transition
-from .camera_handler import CameraHandler
+from ..camera_handler import CameraHandler
 from utils.logger import logger
-from pyglet.window import key
 import os
-
-
-class App:
-    def __init__(self, window, model, debug=False):
-        self.window = window
-        self.model = model
-        print(os.path.abspath(self.model.resources_path))
-        self.window.create_resources_loader(os.path.abspath(self.model.resources_path))
-        self.current = Menu(window, model, self.start_game, debug=debug)
-
-        self.debug = debug
-
-        self.current_thread = None
-        self.transition_finished = False
-        self.transition = None
-
-        self.current_save_id = 1
-
-    def change_app_state(self, new_state):
-        self.current.quit()
-        self.window.update = lambda *_, **__: None
-        self.window.after_draw = lambda *_, **__: None
-        self.window.quit = lambda *_, **__: None
-
-        del self.current
-
-        if new_state == 'game':
-            self.current = Game(self.window, self.model,
-                                self.return_to_main_menu, self.game_loading_finished_check, self.current_save_id,
-                                debug=self.debug)
-        elif new_state == 'menu':
-            self.current = Menu(self.window, self.model, self.start_game, debug=self.debug)
-
-    def start_fade_in_transition(self):
-        self.transition_finished = False
-        self.transition = Transition(8, (0, 0, 0), (self.window.width, self.window.height),
-                                     self.fade_in_transition_finished, 'in', False)
-
-        self.window.add_transition(self.transition)
-
-    def fade_in_transition_finished(self):
-        self.transition_finished = True
-
-    def delayed_start_game(self):
-        self.current.start_game()
-        self.start_fade_out_transition()
-
-    def start_fade_out_transition(self):
-        if self.transition is not None:
-            self.transition.stop()
-        self.transition = Transition(8, (0, 0, 0), (self.window.width, self.window.height),
-                                     lambda: None, 'out', True)
-
-        self.window.add_transition(self.transition)
-
-    def game_to_menu_fade_in_transition(self):
-        self.transition = Transition(8, (0, 0, 0), (self.window.width, self.window.height),
-                                     self.game_to_menu_fade_out_transition, 'in', True)
-
-        self.window.add_transition(self.transition)
-
-    def game_to_menu_fade_out_transition(self):
-        self.change_app_state('menu')
-        self.transition = Transition(8, (0, 0, 0), (self.window.width, self.window.height),
-                                     lambda: None, 'out', True)
-
-        self.window.add_transition(self.transition)
-
-    def start_game(self, current_save_id):
-        if getattr(self.transition, 'state', None) != 1:
-            self.current_save_id = current_save_id
-            self.change_app_state('game')
-            self.start_fade_in_transition()
-            t = threading.Thread(target=self.current.load_resources)
-            t.start()
-            self.current_thread = t
-
-    def game_loading_finished_check(self):
-        if self.current_thread is not None:
-            if not self.current_thread.is_alive():
-                if self.transition_finished or True:
-                    self.current.start_game()
-                    self.transition.stop()
-                    self.start_fade_out_transition()
-                elif self.transition is not None:
-                    self.transition.on_transition_end = self.delayed_start_game
-                self.transition_finished = False
-
-    def return_to_main_menu(self):
-        if getattr(self.transition, 'state', None) != 1:
-            self.game_to_menu_fade_in_transition()
-
-
-class Menu:
-    def __init__(self, window, model, start_game_callback, debug=False):
-        self.window = window
-        self.model = model
-        self.state = 'menu'
-
-        SaveComponent.load()
-
-        self.debug = debug
-
-        self.start_game_callback = start_game_callback
-
-        self.window.screen_offset = 0, 0
-
-        self.page_name = None
-        self.page = None
-        self.page_res = None
-        self.pos_hdlrs = None
-        self.panels = None
-        self.menu_objects = None
-        self.action_manager = None
-        self.classic_buttons = None
-        self.viewer_page = None
-
-        self.window.set_page(self.window.menu_page)
-
-        self.texts = None
-
-        self.init_page('MainMenu')
-
-        self.window.update = self.update
-
-    def delete_current_page(self):
-        self.window.menu_page.remove_child(self.page_name)
-        self.page_name = None
-
-    def init_page(self, page_name):
-        self.page_name = page_name
-        self.page = self.model.Menu.get(page_name)
-        self.page_res = self.page.bg_res
-
-        self.viewer_page = self.window.new_page(page_name)
-        self.viewer_page.add_group('buttons')
-        self.viewer_page.add_group('bg_layers')
-        self.viewer_page.add_group('structures')
-        self.viewer_page.add_group('texts')
-
-        self.window.menu_page.add_child(self.viewer_page)
-
-        n_layers = self.window.get_number_of_layers(self.page_res)
-        pos = self.page.bg_pos
-
-        position_handler = StaticPositionHandler(pos)
-        pos_hdlrs = [BgLayerPositionHandler(pos, [0, 0]) for _ in range(n_layers)]
-
-        bg_layers = self.window.add_bg(self.viewer_page, pos_hdlrs, self.page_res)
-        self.viewer_page.bg_layers.update(bg_layers)
-
-        self.pos_hdlrs = pos_hdlrs
-
-        self.panels = {}
-        self.menu_objects = []
-
-        self.classic_buttons = {}
-
-        self.texts = {}
-
-        self.y_offset = self.model.Menu.y_offset
-
-        for oname in self.page.Objects.objects:
-            data = self.page.Objects.get(oname)
-            obj = None
-            if data.typ == 'button':
-                if data.pos[1] > 2000:
-                    offset = self.y_offset * 1000
-                else:
-                    offset = self.y_offset
-                bpos_hdlr = StaticPositionHandler([data.pos[0], data.pos[1] + offset])
-                if hasattr(data, 'res'):
-                    obj = self.window.add_button(self.viewer_page, 0, bpos_hdlr, data.res, data.action)
-                    self.viewer_page.buttons.add(obj)
-                else:
-                    font_data = data.font
-                    obj = self.window.add_generated_button(
-                        self.viewer_page, 0, 'm5x7', font_data[1], self.get_button_text_from_font_data(font_data),
-                        StaticPositionHandler([data.pos[0], data.pos[1] + offset]),
-                        data.action, font_data[5], font_data[-1])
-                    self.viewer_page.buttons.add(obj)
-
-                if hasattr(data, 'arg'):
-                    obj.arg = data.arg
-            elif data.typ == 'structure':
-                if data.pos[1] > 2000:
-                    offset = self.y_offset * 1000
-                else:
-                    offset = self.y_offset
-                spos_hdlr = StaticPositionHandler([data.pos[0], data.pos[1] + offset])
-                obj = self.window.add_structure(self.viewer_page, 0, spos_hdlr, data.res)
-                self.viewer_page.structures.add(obj)
-                if hasattr(data, 'panel_name'):
-                    additional_buttons = self.init_panel_buttons(data)
-                    self.panels[data.panel_name] = dict(structure=obj,
-                                                        buttons=additional_buttons,
-                                                        buttons_order=data.buttons_order, data=data)
-
-            elif data.typ == 'text':
-                if data.pos[1] > 2000:
-                    offset = self.y_offset * 1000
-                else:
-                    offset = self.y_offset
-                tpos_hdlr = StaticPositionHandler([data.pos[0], data.pos[1] + offset])
-                obj = self.window.add_text(self.viewer_page, 0, data.font, data.size,
-                                           SimpleTextGetter(data.text), tpos_hdlr)
-                self.texts[data.name] = obj
-                self.viewer_page.texts.add(obj)
-            if obj is not None:
-                self.menu_objects.append(obj)
-                if hasattr(data, 'button_name'):
-                    self.classic_buttons[data.button_name] = obj
-
-        actionmanager = None
-        if self.page.action_manager == 'MainMenuActionManager':
-            actionmanager = MainMenuActionManager(
-                self.window,
-                self.viewer_page.buttons,
-                self.classic_buttons,
-                self.page.Objects.classic_buttons_order,
-                self.panels,
-                self.page.Objects.panel_order,
-                self.texts,
-                (),
-                self.play,
-                self.quit_game,
-                self.open_options
-            )
-
-        elif self.page.action_manager == 'OptionsActionManager':
-            actionmanager = OptionsActionManager(
-                self.window,
-                self.viewer_page.buttons,
-                self.classic_buttons,
-                self.page.Objects.classic_buttons_order,
-                self.panels,
-                self.page.Objects.panel_order,
-                self.texts,
-                (),
-                self.return_to_main_menu,
-                self.change_kb_ctrls,
-                self.change_con_ctrls,
-                self.set_ctrl,
-                self.model.Options,
-                self.reinit_page,
-                self.window.set_display_mode
-            )
-        elif self.page.action_manager == 'CharacterSelectionActionManager':
-            actionmanager = CharacterSelectionActionManager(
-                self.window,
-                self.viewer_page.buttons,
-                self.classic_buttons,
-                self.page.Objects.classic_buttons_order,
-                self.panels,
-                self.page.Objects.panel_order,
-                self.texts,
-                (),
-                self.start_game_callback,
-                self.return_to_main_menu
-            )
-
-        if actionmanager is None:
-            raise ValueError(f'invalid action manager name: {self.page.action_manager}')
-        self.window.set_event_manager('MenuEventManager', actionmanager)
-        self.action_manager = actionmanager
-
-    def update(self, *_, **__):
-        for sprite in self.viewer_page.get_all_sprites():
-            sprite.update_()
-    
-    def init_panel_buttons(self, panel_data):
-        data = panel_data
-        buttons_data = panel_data.additional_buttons
-        ndict = {}
-        for bname, bdata in buttons_data.items():
-            res_name = bdata.get('res', None)
-            if bdata['pos'][1] > 2000:
-                offset = self.y_offset * 1000
-            else:
-                offset = self.y_offset
-            if res_name is not None:
-                button = self.window.add_button(
-                    self.viewer_page, 0, StaticPositionHandler([bdata['pos'][0], bdata['pos'][1] + offset]),
-                    res_name, bdata['action'])
-                self.viewer_page.buttons.add(button)
-
-            else:
-                font_data = bdata['font']
-                button = self.window.add_generated_button(
-                    self.viewer_page, 0, 'm5x7', font_data[1], self.get_button_text_from_font_data(font_data),
-                    StaticPositionHandler([bdata['pos'][0], bdata['pos'][1] + offset]),
-                    bdata['action'], font_data[5], font_data[-1])
-                self.viewer_page.buttons.add(button)
-
-            if 'arg' in bdata:
-                button.arg = bdata['arg']
-                if hasattr(data, 'options_save'):
-                    self.set_state(data, button, bname)
-              
-            ndict[bname] = button
-        return ndict
-
-    def get_button_text_from_font_data(self, font_data):
-        if font_data[0] == 'nkb':
-            txt = self.get_key_name(font_data[2].get())
-        elif font_data[0] == 'ncon':
-            txt = self.get_controller_value_name(font_data[2].get_shorts())
-
-        elif font_data[0] == 'txt':
-            txt = font_data[2]
-        else:
-            raise ValueError(f'font_data[0] must be either nkb, ncon or txt, not {font_data[0]}')
-        return txt
-
-    def reinit_page(self):
-        if self.page_name is not None:
-            page_name = self.page_name
-            self.delete_current_page()
-            self.init_page(page_name)
-
-    def get_key_name(self, nkey):
-        name = self.model.key_names.get(nkey, None)
-        if name is None:
-            name = key.symbol_string(nkey).lower()
-        return name
-    
-    def get_controller_value_name(self, nvalue):
-        name = self.model.controller_values_name.get(nvalue, None)
-        if name is None:
-            name = 'undef'
-        return name
-    
-    def reinit_panel_buttons(self):
-        for panel_name, p in self.panels.items():
-            data = p['data']
-            if hasattr(data, 'options_save'):
-                for bname in p['buttons']:
-                    self.set_state(data, p['buttons'][bname], bname)
-            else:
-                for bname, bdata in p['data'].additional_buttons.items():
-                    res_name = bdata.get('res', None)
-                    if res_name is None:
-                        font_data = bdata['font']
-                        txt = None
-                        raise RuntimeError
-                        res = self.window.render_font(
-                            txt, font_data[1], font_data[3], font_data[4], font_data[5], font_data[6], font_data[7])
-                    else:
-                        res = self.window.res_loader.load(res_name)
-                    p['buttons'][bname].image_handler.res = res
-    
-    def set_state(self, data, button, bname):
-        button.arg[0] = data.options_save[bname][self.model.Options.get(data.panel_name).get(bname).get()]
-        res, value = button.arg[button.arg[0] + 1]
-        button.image_handler.change_res(res)  
-        
-    def open_options(self):
-        self.delete_current_page()
-        self.init_page('Options')
-
-    def return_to_main_menu(self):
-        self.delete_current_page()
-        self.init_page('MainMenu')
-
-    def play(self):
-        self.delete_current_page()
-        self.init_page('CharacterSelectionMenu')
-
-    def change_kb_ctrls(self, button):
-        button.label.text = ''
-        self.window.set_event_manager('ChangeCtrlsEventManager', self.action_manager, 'kb')
-
-    def change_con_ctrls(self, button):
-        button.label.text = ''
-        self.window.set_event_manager('ChangeCtrlsEventManager', self.action_manager, 'con')
-        
-    def set_ctrl(self, value, button):
-        if isinstance(value, tuple):
-            name = self.get_controller_value_name(value)
-        else:
-            name = self.get_key_name(value)
-        
-        button.change_text(name)
-        self.window.set_event_manager('MenuEventManager', self.action_manager)
-
-    def reverse_trajectory(self, t):
-        if int(t.target[0]) == 0:
-            for p in self.pos_hdlrs:
-                p.add_trajectory((-2300, 0), 1500, 400, 400)
-        else:
-            for p in self.pos_hdlrs:
-                p.add_trajectory((0, 0), 1500, 400, 400)            
-    
-    @staticmethod
-    def dump_save():
-        SaveComponent.dump()    
-    
-    def quit_game(self):
-        self.dump_save()
-        self.window.stop_loop()
-    
-    def quit(self):
-        self.dump_save()
 
 
 class Game:
@@ -484,6 +80,7 @@ class Game:
     def load_resources(self):
         self.window.update = self.loading_update
         if 'resources' in self.level:
+            logger.debug('pre-loading resources')
             for res_name in self.level['resources']:
                 self.window.resource_loader.load(res_name)
 
@@ -502,6 +99,7 @@ class Game:
             self.window.game_page.remove_child('Game')
         except KeyError:
             pass
+
         self.viewer_page = self.window.new_page('Game')
         self.viewer_page.add_group('entities')
         self.viewer_page.add_group('bg_layers')
@@ -516,7 +114,7 @@ class Game:
         return_to_main_menu = self.return_to_main_menu
 
         if self.debug_draw:
-            self.draw_options = pymunk.pyglet_util.DrawOptions()
+            self.draw_options = DrawOptions(self.window)
         else:
             self.draw_options = None
 
@@ -576,6 +174,7 @@ class Game:
 
         ### OBJECTS ###
 
+        constraints = []
         for object_name, data in self.level['objects_data'].items():
 
             if data['type'] == 'player':
@@ -584,6 +183,11 @@ class Game:
                 self.init_structure(data)
             elif data['type'] == 'text':
                 self.init_text(data)
+            elif data['type'] == 'constraint':
+                constraints.append(data)
+
+        for cons_data in constraints:
+            self.init_constraint(cons_data)
         #####
 
 
@@ -726,6 +330,19 @@ class Game:
         sprite = self.window.add_text(
             self.viewer_page, 0, 'm5x7', data['size'], text_getter, position_handler)
         self.viewer_page.texts.add(sprite)
+
+    def init_constraint(self, data):
+        self.structures[data['object_a']].constrained = True
+        self.structures[data['object_b']].constrained = True
+
+        self.space.add_constraint(data['object_a'], data['object_b'], data['anchor_a'], data['anchor_b'], data['name'])
+
+        if 'res' in data:
+            position_handler = RopePositionHandler(self.space.objects[data['name']][0])
+            sprite = self.window.add_rope(self.viewer_page, -1, position_handler, data['res'])
+            self.viewer_page.structures.add(sprite)
+
+            self.structures[data['name']] = sprite
 
     @staticmethod
     def dump_save():
@@ -894,6 +511,7 @@ class Game:
             if not self.paused:
                 if not self.is_player_dead:
                     self.space.step(1/60/4)
+                self.player.update_state(1/60/4)
                 if self.count == 3:
                     self.count = 0
                     if self.is_camera_handler_activated:
@@ -919,7 +537,7 @@ class Game:
     def toggle_debug_draw(self):
         self.debug_draw_activated = not self.debug_draw_activated
         if self.debug_draw_activated:
-            self.draw_options = pymunk.pyglet_util.DrawOptions()
+            self.draw_options = DrawOptions(self.window)
             self.window.after_draw = self.draw_space
         else:
             self.draw_options = None
@@ -927,8 +545,7 @@ class Game:
 
     def draw_space(self):
         if self.draw_options is not None:
+            self.draw_options.vecs = list()
+
             self.space.debug_draw(self.draw_options)
-
-
-
 

@@ -6,6 +6,7 @@ from time import perf_counter
 from queue import Queue
 import numpy as np
 from math import pi
+import math
 
 
 class StaticPositionHandler:
@@ -44,6 +45,11 @@ class DynamicStructurePositionHandler:
             return 0
 
     def update_position(self, struct, n=1):
+
+        if struct.constrained:
+            self.body.velocity = self.body.velocity / 1.001
+            self.body.angular_velocity = self.body.angular_velocity / 1.001
+
         if self.correct_angle:
             while self.body.angle > pi / 4:
                 self.body.angle -= pi / 2
@@ -56,6 +62,25 @@ class DynamicStructurePositionHandler:
             return self.body.local_to_world(self.body.center_of_gravity)
         else:
             return tuple(self.body.position)
+
+
+class RopePositionHandler:
+    def __init__(self, constraint):
+        self.constraint = constraint
+
+    def update_position(self, rope, n=1):
+        pos1 = self.constraint.a.local_to_world(self.constraint.anchor_a)
+        pos2 = self.constraint.b.local_to_world(self.constraint.anchor_b)
+
+        dx, dy = pos2 - pos1
+        angle = math.atan(abs(dx) / abs(dy))
+        if dy < 0:
+            angle += pi - 2 * angle
+        if dx < 0:
+            angle *= -1
+
+        rope.rotation = (angle - pi / 2) / pi * 180
+        return pos1
 
 
 class BgLayerPositionHandler:
@@ -121,7 +146,12 @@ class EntityPositionHandler:
                     self.body.velocity = self.body.velocity + Vec2d(v, 0)
                 entity.air_control = 0
 
+            if entity.collide_with_dynamic_ground is not None:
+                body = entity.collide_with_dynamic_ground
+                body.apply_force_at_local_point(Vec2d(*(-entity.thrust)), self.body.center_of_gravity)
+
             self.body.apply_force_at_local_point(Vec2d(*entity.thrust), self.body.center_of_gravity)
+
             entity.thrust = np.array((0, 0))
 
             self.pos = self.body.position

@@ -3,8 +3,8 @@ structures/mainbuilds/forest/lvl_2.st:
 
 structures/dynamic_structures/forest/test.st:
     center_of_gravity: [0, 96]
-    mass: 50
-    correct_angle: true
+    mass: 500
+    correct_angle: false
 
 structure_families:
     decorations:

@@ -181,6 +181,14 @@ class Window(pyglet.window.Window):
         sprite = self._add_sprite(batch, 'Structure', layer, position_handler, image_handler, dynamic=dynamic)
         return sprite
 
+    def add_rope(self, page, layer, position_handler, res):
+        if isinstance(res, str):
+            res = self.resource_loader.load(res)
+        batch = page.batch
+        image_handler = ihdlr.RopeImageHandler(res)
+        sprite = self._add_sprite(batch, 'Rope', layer, position_handler, image_handler)
+        return sprite
+
     def spawn_particle(self, page, layer, position_handler, res, state, direction, lifetime):
         img_hdlr = ihdlr.ParticleImageHandler(res, lifetime, None)
         particle = self._add_sprite(page.batch, 'Particle', layer, position_handler, img_hdlr, state, direction)

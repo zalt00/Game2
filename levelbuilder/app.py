@@ -69,7 +69,7 @@ class App(tk.Frame):
         self.palette_res_name = 'structure_palettes/forest/forest_structure_tilesets.stsp'
         self.palette = self.rl.load(self.palette_res_name)
 
-        self.canvas = tk.Canvas(self, width=1280, height=750, scrollregion=(0, 0, 5000, 2000), bg='#e4e4e4')
+        self.canvas = tk.Canvas(self, width=1280, height=750, scrollregion=(0, -1000, 5000, 2000), bg='#e4e4e4')
         self.canvas.grid(row=0, column=1, sticky='nesw')
 
         self.defilY = tk.Scrollbar(self, orient='vertical', command=self.canvas.yview)
@@ -93,6 +93,7 @@ class App(tk.Frame):
         self.editmenu = tk.Menu(self.menubar, tearoff=False)
         self.editmenu.add_command(label='Set BG', command=self.set_bg)
         self.editmenu.add_command(label='Add Structure', command=self.add_structure)
+        self.editmenu.add_command(label='Add Constraint', command=self.create_constraint_creation_toplevel)
         self.editmenu.add_command(label='Set Height Ref', command=self.set_height_ref)
         self.menubar.add_cascade(label='Edit', menu=self.editmenu)
 
@@ -304,6 +305,11 @@ class App(tk.Frame):
 
         self.mouse_pos = []
 
+        self.current_constraint_structures = ()
+        self.current_anchors_pos = ()
+
+        self.constraints = {}
+
     @property
     def sleep(self):
         return self._sleep
@@ -316,6 +322,40 @@ class App(tk.Frame):
         else:
             self.pack(fill='both', expand=True)
             self._sleep = False
+
+    def create_constraint_creation_toplevel(self):
+        toplevel = tk.Toplevel()
+        values = self.structures_listbox_elements
+        labels = [struct.name for struct in self.structures.values()]
+
+        if len(values) >= 2:
+            style = ttk.Style()
+            style.configure("N.TRadiobutton", indicatoron=0)
+
+            var_gr = tk.StringVar()
+            var_gr_2 = tk.StringVar()
+            for i in range(len(values)):
+                ttk.Radiobutton(
+                    toplevel, variable=var_gr, text=labels[i], value=values[i], style='N.TRadiobutton').grid(
+                    row=i, column=0, sticky='ew')
+                ttk.Radiobutton(
+                    toplevel, variable=var_gr_2, text=labels[i], value=values[i], style='N.TRadiobutton').grid(
+                    row=i, column=1, sticky='ew')
+
+            ttk.Button(
+                toplevel, text='Confirm', command=self.get_confirm_button_callback(var_gr, var_gr_2, toplevel)).grid(
+                row=i + 1, column=0, sticky='w'
+            )
+
+    def get_confirm_button_callback(self, var_gr, var_gr_2, toplevel):
+        def callback():
+            toplevel.destroy()
+            if var_gr.get().isnumeric() and var_gr_2.get().isnumeric():
+                self.current_constraint_structures = (int(var_gr.get()), int(var_gr_2.get()))
+                self.state = 'placing constraint anchor a'
+                self.canvas['cursor'] = 'crosshair'
+
+        return callback
 
     def switch_sleep_mode(self):
         self.sleep = not self.sleep
@@ -355,10 +395,52 @@ class App(tk.Frame):
                 pos = int(self.cursor_pos[0]), int(-self.ref_height + 720 - self.cursor_pos[1])
 
                 name = askstring(
-                    'Rename', 'Enter the name of the checkpoint.', parent=self.root)
+                    'Name', 'Enter the name of the checkpoint.', parent=self.root)
                 if name:
                     self.checkpoints[name.replace(' ', '-')] = pos
                 self.update_checkpoint_listbox()
+
+            elif self.state == 'placing constraint anchor a':
+                pos = int(self.cursor_pos[0]), int(-self.ref_height + 720 - self.cursor_pos[1])
+                self.state = 'placing constraint anchor b'
+
+                self.current_anchors_pos = (pos,)
+
+            elif self.state == 'placing constraint anchor b':
+                self.canvas['cursor'] = 'arrow'
+                self.state = 'idle'
+
+                pos = int(self.cursor_pos[0]), int(-self.ref_height + 720 - self.cursor_pos[1])
+
+                name = askstring(
+                    'Name', 'Enter the name of the constraint.', parent=self.root)
+
+                if name:
+                    filename = askopenfilename(initialdir=self.resources_base_dir)
+                    if filename:
+                        res_name = filename[filename.find('resources') + 10:]
+                        if res_name.endswith('.json') or res_name.endswith('.png'):
+                            res_name = '/'.join(res_name.split('/')[:-1])
+                    else:
+                        res_name = ''
+
+                    struct_1_id = self.current_constraint_structures[0]
+                    struct_1 = self.structures[struct_1_id]
+                    struct_2_id = self.current_constraint_structures[1]
+                    struct_2 = self.structures[struct_2_id]
+
+                    pos1 = [int(struct_1.pos[0]), int(-self.ref_height + 720 - self.canvas.bbox(struct_1_id)[3])]
+                    pos2 = [int(struct_2.pos[0]), int(-self.ref_height + 720 - self.canvas.bbox(struct_2_id)[3])]
+
+                    # pos + anchor = cons_pos <=> cons_pos - pos = anchor
+                    anchor_1 = -pos1[0] + self.current_anchors_pos[0][0], -pos1[1] + self.current_anchors_pos[0][1]
+                    anchor_2 = -pos2[0] + pos[0], -pos2[1] + pos[1]
+
+                    self.constraints[name] = (anchor_1, struct_1.name, anchor_2, struct_2.name, res_name)
+
+                self.current_anchors_pos = ()
+                self.current_constraint_structures = ()
+                print(self.constraints)
 
             elif 16 < evt.x_root <= 1280 and evt.y_root <= 750:
                 if evt.state & 0x0001 and self.focus_on is not None:
@@ -743,6 +825,18 @@ class App(tk.Frame):
         if self.bg is not None:
             base['background_data']['pos'] = [0, -(int(self.bg[0].height() - 800 + self.ref_height))]
 
+        for constraint_name, data in self.constraints.items():
+            constraint_data = dict()
+            base['objects_data'][constraint_name + '_constraint'] = constraint_data
+            constraint_data['name'] = constraint_name
+            constraint_data['anchor_a'] = data[0]
+            constraint_data['object_a'] = data[1]
+            constraint_data['anchor_b'] = data[2]
+            constraint_data['object_b'] = data[3]
+            if data[4]:
+                constraint_data['res'] = data[4]
+            constraint_data['type'] = 'constraint'
+
         for struct_id, struct in self.structures.items():
             print(struct.res_path)
 
@@ -816,6 +910,11 @@ class App(tk.Frame):
                     struct.pos = [x, y]
                     self._add_structure(struct)
 
+                if obj_data['type'] == 'constraint':
+                    self.constraints[obj_data['name']] = (obj_data['anchor_a'], obj_data['object_a'],
+                                                          obj_data['anchor_b'], obj_data['object_b'],
+                                                          obj_data.get('res', ''))
+            print(self.constraints)
             self.triggers.update(data['triggers_data'])
             self.update_triggers_listvar()
 
