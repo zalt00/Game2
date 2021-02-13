@@ -1,0 +1,17 @@
+{
+  "dec": [32, 0],
+  "dimensions": [64, 64],
+  "scale2x": 1,
+  "animations": {
+    "dash": {"filename":  "walk.png"},
+    "fall": {"filename":  "walk.png"},
+    "idle": {"filename":  "idle.png"},
+    "land": {"filename":  "walk.png"},
+    "run": {"filename":  "walk.png"},
+    "walk": {"filename":  "walk.png"},
+    "dash_effect": {"filename":  "walk.png"},
+    "jump": {"filename": "walk.png"},
+	"die": {"filename": "walk.png"},
+	"hit": {"filename": "walk.png"}
+  }
+}

@@ -161,7 +161,7 @@ class PhysicStateUpdater:
                 self.actions.append(('die', []))
 
     def update_(self, entity, n=1):
-        if not entity.dead:
+        if not entity.dead and not entity.sleeping:
             for _ in range(len(self.actions)):
                 action_name, action_args = self.actions.pop()
                 getattr(entity, action_name, lambda *_, **__: None)(*action_args)
@@ -205,7 +205,8 @@ class PhysicStateUpdater:
                     # prevents saving an unstable position (at least half of the body must be on a stable structure)
                     if self.on_ground and self.stable_ground:
                         if self.body.width // 2 < round(abs(self.x1 - self.x2)):
-                            self.save_position()
+                            if entity.state not in ('die', 'hit'):
+                                self.save_position()
 
                     # prevents a "flicker" effect when the player leaves the ground for 1 or 2 ticks (it sometimes
                     # happens when the player simply runs on a structure after a weird landing)
@@ -242,6 +243,11 @@ class PhysicStateUpdater:
                     entity.is_on_ground = on_ground
                     if landed:
                         self.land(self.landing_strength)
+
+        else:
+            self.body.velocity = (0, 0)
+            self.body.angle = 0
+            self.body.space.reindex_shapes_for_body(self.body)
 
     def update_physic_state(self, entity):
         if self.current_time - self.t0 >= self.current_state_duration:

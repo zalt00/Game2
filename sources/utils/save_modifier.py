@@ -1,7 +1,6 @@
 # -*- coding:Utf-8 -*-
 
 import xdrlib
-from array import array
 import os
 import sys
 
@@ -179,9 +178,9 @@ def main():
             input()
             
         os.system('cls')
-                
+
+
 if __name__ == '__main__':
     main()
-    
     
     

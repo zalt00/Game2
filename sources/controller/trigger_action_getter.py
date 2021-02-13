@@ -135,6 +135,8 @@ class GameActionGetter(ActionGetter):
 
         def __call__(self):
             self.ag.model.Game.last_checkpoint.set(self.checkpoint_id, self.ag.current_save_id)
+            current_map = self.ag.model.Game.current_map_id.get(self.ag.current_save_id)
+            self.ag.model.Game.last_checkpoints_map.set(current_map, self.ag.current_save_id)
 
     @dataclass
     class LoadMap(AbstractAction):

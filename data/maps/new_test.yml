@@ -18,7 +18,7 @@ background_data:
 checkpoints:
 - - statue1
   - - 232
-    - 63
+    - 65
 objects_data:
   additional_dec_1_0_structure:
     is_built: false
@@ -76,6 +76,16 @@ objects_data:
         - 32
       - - 187.0
         - 0
+  behind_player_2_structure:
+    is_built: false
+    layer: -1
+    name: behind_player_2
+    pos:
+    - 1556
+    - 32
+    res: structures/mainbuilds/forest/lvl_2_behind_player_obj.st
+    state: base
+    type: structure
   bgdec_1_structure:
     is_built: false
     layer: -2
@@ -84,6 +94,16 @@ objects_data:
     - 836
     - 0
     res: structures/background_decorations/forest/lvl_bg_dec.st
+    state: base
+    type: structure
+  bgdec_2_structure:
+    is_built: false
+    layer: -2
+    name: bgdec_2
+    pos:
+    - 1726
+    - 32
+    res: structures/background_decorations/forest/lvl_2_bg_dec.st
     state: base
     type: structure
   dynamic_struct_1_0_structure:
@@ -120,6 +140,50 @@ objects_data:
         - 32
       - - 64.0
         - 160
+  fg_dec_2_0_structure:
+    3d_effect_layer: 1.2
+    is_built: true
+    layer: 4
+    name: fg_dec_2_0
+    pos:
+    - 1841
+    - 597
+    res: foreground_decorations/forest/flipped_big_bush.obj
+    state: base
+    type: structure
+  fg_dec_2_1_structure:
+    3d_effect_layer: 1.2
+    is_built: true
+    layer: 4
+    name: fg_dec_2_1
+    pos:
+    - 1688
+    - -48
+    res: foreground_decorations/forest/bush.obj
+    state: base
+    type: structure
+  fg_dec_2_2_structure:
+    3d_effect_layer: 1.2
+    is_built: true
+    layer: 5
+    name: fg_dec_2_2
+    pos:
+    - 2158
+    - 587
+    res: foreground_decorations/forest/bush_w_thorns.obj
+    state: base
+    type: structure
+  fg_dec_2_3_structure:
+    3d_effect_layer: 1.2
+    is_built: true
+    layer: 5
+    name: fg_dec_2_3
+    pos:
+    - 2217
+    - -114
+    res: foreground_decorations/forest/big_bush_and_trees.obj
+    state: base
+    type: structure
   fgdec_1_0_structure:
     3d_effect_layer: 1.2
     is_built: true
@@ -159,19 +223,19 @@ objects_data:
     layer: 5
     name: fgdec_1_3
     pos:
-    - 1475
-    - 647
+    - 1471
+    - 622
     res: foreground_decorations/forest/flipped_bush.obj
     state: base
     type: structure
   fgdec_1_4_structure:
     3d_effect_layer: 1.2
     is_built: true
-    layer: 4
+    layer: 5
     name: fgdec_1_4
     pos:
     - 1387
-    - -111
+    - -78
     res: foreground_decorations/forest/big_bush_and_trees.obj
     state: base
     type: structure
@@ -258,46 +322,6 @@ objects_data:
     state: base
     type: structure
     walls:
-    - - - -232.0
-        - 64
-      - - -232.0
-        - 192
-    - - - -184.0
-        - 192
-      - - -184.0
-        - 64
-    - - - 264.0
-        - 384
-      - - 264.0
-        - 256
-    - - - 264.0
-        - 256
-      - - 208.0
-        - 256
-    - - - 152.0
-        - 320
-      - - 208.0
-        - 256
-    - - - 152.0
-        - 384
-      - - 152.0
-        - 320
-    - - - -104.0
-        - 192
-      - - -104.0
-        - 64
-    - - - -96.0
-        - 208.0
-      - - -96.0
-        - 192
-    - - - 0.0
-        - 208.0
-      - - 0.0
-        - 144.0
-    - - - 32.0
-        - 144.0
-      - - 32.0
-        - 80.0
     - - - 96.0
         - 80.0
       - - 96.0
@@ -378,35 +402,55 @@ objects_data:
         - 400.0
       - - -472.0
         - 416
+    - - - -232.0
+        - 64
+      - - -232.0
+        - 192
+    - - - -184.0
+        - 192
+      - - -184.0
+        - 64
+    - - - 264.0
+        - 384
+      - - 264.0
+        - 256
+    - - - 264.0
+        - 256
+      - - 208.0
+        - 256
+    - - - 152.0
+        - 320
+      - - 208.0
+        - 256
+    - - - 152.0
+        - 384
+      - - 152.0
+        - 320
+    - - - -104.0
+        - 192
+      - - -104.0
+        - 64
+    - - - -96.0
+        - 208.0
+      - - -96.0
+        - 192
+    - - - 0.0
+        - 208.0
+      - - 0.0
+        - 144.0
+    - - - 32.0
+        - 156.0
+      - - 32.0
+        - 80.0
   mainbuild_2_structure:
     ground:
-    - - - -400.0
-        - 32
-      - - 96.0
-        - 32
-    - - - -296.0
-        - 320
-      - - -248.0
-        - 320
-    - - - -256.0
-        - 192
-      - - -168.0
-        - 192
-    - - - -96.0
-        - 576
-      - - -8.0
-        - 576
-    - - - 8.0
-        - 416
-      - - 152.0
-        - 416
     - - - 232.0
         - 512
       - - 360.0
         - 512
-    - - - 216.0
+    - - - 248.0
         - 672
-      - - 328.0
+      - - 360.0
         - 672
     - - - -128.0
         - 64
@@ -440,8 +484,28 @@ objects_data:
         - 128
       - - 392.0
         - 128
+    - - - -400.0
+        - 32
+      - - 96.0
+        - 32
+    - - - -296.0
+        - 320
+      - - -248.0
+        - 320
+    - - - -256.0
+        - 192
+      - - -168.0
+        - 192
+    - - - -96.0
+        - 576
+      - - -8.0
+        - 576
+    - - - 8.0
+        - 416
+      - - 152.0
+        - 416
     is_built: false
-    layer: -1
+    layer: 2
     name: mainbuild_2
     pos:
     - 1732
@@ -450,6 +514,50 @@ objects_data:
     state: base
     type: structure
     walls:
+    - - - 256.0
+        - 624.0
+      - - 288.0
+        - 608
+    - - - 288.0
+        - 608
+      - - 320.0
+        - 608
+    - - - 320.0
+        - 608
+      - - 352.0
+        - 624.0
+    - - - 352.0
+        - 624.0
+      - - 360.0
+        - 672
+    - - - -128.0
+        - 64
+      - - -128.0
+        - 32
+    - - - 0.0
+        - 64
+      - - 0.0
+        - 32
+    - - - 8.0
+        - 416
+      - - 32.0
+        - 368.0
+    - - - 32.0
+        - 368.0
+      - - 64.0
+        - 352
+    - - - 96.0
+        - 352
+      - - 64.0
+        - 352
+    - - - 96.0
+        - 352
+      - - 128.0
+        - 368.0
+    - - - 128.0
+        - 368.0
+      - - 152.0
+        - 416
     - - - -296.0
         - 32
       - - -296.0
@@ -538,56 +646,12 @@ objects_data:
         - 640
       - - -88.0
         - 624
-    - - - 216.0
+    - - - 248.0
         - 672
-      - - 224.0
-        - 624.0
-    - - - 224.0
-        - 624.0
       - - 256.0
-        - 608
-    - - - 256.0
-        - 608
-      - - 288.0
-        - 608
-    - - - 288.0
-        - 608
-      - - 320.0
         - 624.0
-    - - - 320.0
-        - 624.0
-      - - 328.0
-        - 672
-    - - - -128.0
-        - 64
-      - - -128.0
-        - 32
-    - - - 0.0
-        - 64
-      - - 0.0
-        - 32
-    - - - 8.0
-        - 416
-      - - 32.0
-        - 368.0
-    - - - 32.0
-        - 368.0
-      - - 64.0
-        - 352
-    - - - 96.0
-        - 352
-      - - 64.0
-        - 352
-    - - - 96.0
-        - 352
-      - - 128.0
-        - 368.0
-    - - - 128.0
-        - 368.0
-      - - 152.0
-        - 416
   player:
-    res: player/white_guy.obj
+    res: player/mage.obj
     type: player
   small_bush_0_structure:
     3d_effect_layer: 0.8
@@ -612,7 +676,7 @@ objects_data:
     state: base
     type: structure
   spikes_1_structure:
-    action_on_touch:
+    action_on_touch: &id001
     - die
     - []
     ground: []
@@ -634,16 +698,234 @@ objects_data:
         - 144.0
       - - 62.0
         - 144.0
-  structure2_structure:
-    is_built: true
-    layer: -1
-    name: structure2
+  spikes_2_0_structure:
+    action_on_touch: *id001
+    ground: []
+    is_built: false
+    layer: 3
+    name: spikes_2_0
     pos:
-    - 235
-    - 23
-    res: special_objects/statue.obj
+    - 1380
+    - 32
+    res: structures/spikes/forest/spikes_len3_1.st
     state: base
     type: structure
+    walls:
+    - - - -32.0
+        - 16.0
+      - - 32.0
+        - 16.0
+  spikes_2_1_structure:
+    action_on_touch: *id001
+    ground: []
+    is_built: false
+    layer: 3
+    name: spikes_2_1
+    pos:
+    - 1339
+    - 52
+    res: structures/spikes/forest/spikes_height6_1.st
+    state: base
+    type: structure
+    walls:
+    - - - 0.0
+        - 176.0
+      - - 0.0
+        - 16.0
+  spikes_2_2_structure:
+    action_on_touch: *id001
+    ground: []
+    is_built: false
+    layer: 3
+    name: spikes_2_2
+    pos:
+    - 1420
+    - 50
+    res: structures/spikes/forest/spikes_height4_1.st
+    state: base
+    type: structure
+    walls:
+    - - - 0.0
+        - 112.0
+      - - 0.0
+        - 16.0
+  structure1_structure:
+    ground:
+    - - - -320.0
+        - 240.0
+      - - -256.0
+        - 240.0
+    - - - -96.0
+        - 32
+      - - 320.0
+        - 32
+    - - - -320.0
+        - 32
+      - - -288.0
+        - 32
+    - - - -128.0
+        - 640
+      - - 96.0
+        - 640
+    is_built: false
+    layer: 0
+    name: structure1
+    pos:
+    - 2452
+    - 0
+    res: structures/mainbuilds/forest/lvl_3_shadow.st
+    state: base
+    type: structure
+    walls:
+    - - - -128.0
+        - 640
+      - - -128.0
+        - 576
+    - - - -128.0
+        - 576
+      - - -96.0
+        - 576
+    - - - -96.0
+        - 576
+      - - -96.0
+        - 544
+    - - - -96.0
+        - 544
+      - - 64.0
+        - 544
+    - - - 64.0
+        - 544
+      - - 64.0
+        - 576
+    - - - 64.0
+        - 576
+      - - 96.0
+        - 576
+    - - - 96.0
+        - 576
+      - - 96.0
+        - 640
+    - - - -160.0
+        - 704
+      - - 128.0
+        - 704
+    - - - -160.0
+        - 704
+      - - -160.0
+        - 736
+    - - - 128.0
+        - 704
+      - - 128.0
+        - 736
+    - - - -304.0
+        - 464.0
+      - - -80.0
+        - 464.0
+    - - - -16.0
+        - 496.0
+      - - 112.0
+        - 496.0
+    - - - 144.0
+        - 448
+      - - 144.0
+        - 480
+    - - - -48.0
+        - 448
+      - - -48.0
+        - 480
+    - - - -48.0
+        - 416
+      - - -48.0
+        - 448
+    - - - -288.0
+        - 384
+      - - -96.0
+        - 384
+    - - - -176.0
+        - 176.0
+      - - 80.0
+        - 176.0
+    - - - -208.0
+        - 160
+      - - -208.0
+        - 128
+    - - - 112.0
+        - 160
+      - - 112.0
+        - 128
+    - - - -160.0
+        - 96
+      - - 64.0
+        - 96
+    - - - -288.0
+        - 96
+      - - -288.0
+        - 128
+    - - - -288.0
+        - 128
+      - - -256.0
+        - 128
+    - - - -256.0
+        - 128
+      - - -256.0
+        - 96
+    - - - -256.0
+        - 96
+      - - -288.0
+        - 96
+    - - - -272.0
+        - 128
+      - - -272.0
+        - 144.0
+    - - - 96.0
+        - 448
+      - - 96.0
+        - 416
+    - - - 96.0
+        - 416
+      - - 0.0
+        - 416
+    - - - 0.0
+        - 416
+      - - 0.0
+        - 448
+  structure2_structure:
+    ground: []
+    is_built: false
+    is_slippery_slope: true
+    layer: 0
+    name: structure2
+    pos:
+    - 2692
+    - 160
+    res: structures/slippery_slopes/forest/slope22_top_part_flipped.st
+    state: base
+    type: structure
+    walls:
+    - - - -80.0
+        - 67
+      - - 72.0
+        - 0
+  structure3_structure:
+    ground: []
+    is_built: false
+    layer: 0
+    name: structure3
+    pos:
+    - 2676
+    - 96
+    res: structures/slope_props/forest/slope22_prop_flipped.st
+    state: base
+    type: structure
+    walls:
+    - - - -80.0
+        - 112.0
+      - - -80.0
+        - 0
+    - - - 80.0
+        - 64
+      - - 80.0
+        - 0
   test_cons_constraint:
     anchor_a:
     - 0
@@ -694,26 +976,22 @@ triggers_data:
     enabled: true
     id: 0
     top: -200
-  death_trigger_1:
+  checkpoint_1:
     actions:
-    - action_name: die
-      arg: []
-      entity_name: player
-      type_: ActionOnEntity
-    bottom: 0
+    - checkpoint_id: 0
+      type_: SetCheckpoint
+    - target: 8
+      type_: DisableTrigger
     enabled: true
-    id: 6
-    left: 1324
-    right: 1450
-    top: 106
+    id: 8
+    left: 190
+    right: 270
   inbounds_world:
     actions:
     - target: 0
       type_: EnableTrigger
     - target: 5
       type_: DisableTrigger
-    - target: 6
-      type_: EnableTrigger
     bottom: 0
     enabled: false
     id: 5
@@ -739,9 +1017,9 @@ triggers_data:
     actions:
     - dx: 600
       dy: 0
-      fade_in: 20
-      fade_out: 20
-      total_duration: 100
+      fade_in: 1
+      fade_out: 1
+      total_duration: 40
       type_: RelativeMovecam
     - target: 7
       type_: DisableTrigger

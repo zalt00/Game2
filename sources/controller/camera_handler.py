@@ -30,6 +30,12 @@ class CameraHandler:
         self.max_speed = 2_147_483_640
 
     def add_trajectory(self, target, total_duration, fade_in, fade_out, relative=False):
+        target = list(target)
+        if target[0] == 2_147_483_640:
+            target[0] = self.pos[0]
+        if target[1] == 2_147_483_640:
+            target[1] = self.pos[1]
+
         if self.trajectory is None:
             if relative:
                 self.trajectory = CameraMovementTrajectory(

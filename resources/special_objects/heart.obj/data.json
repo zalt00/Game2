@@ -1,0 +1,9 @@
+{
+  "dec": [8, 0],
+  "dimensions": [17, 17],
+  "scale2x": 1,
+  "animations": {
+    "empty": {"filename":  "empty.png"},
+    "full": {"filename":  "full.png"}
+  }
+}

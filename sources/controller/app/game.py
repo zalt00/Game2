@@ -50,6 +50,8 @@ class Game:
         self.already_hidden = []
         self.scheduled_func = set()
 
+        self.player_lives = 3
+
         self.additional_commands = []
 
         self.current_map_id = -1
@@ -60,6 +62,8 @@ class Game:
 
         self._paused = False
         self.debug_draw_activated = False
+
+        self.hearts = []
 
         SaveComponent.load()
         self.level = self.load_map_file(self.model.Game.current_map_id.get(self.current_save_id))
@@ -106,6 +110,8 @@ class Game:
         self.viewer_page.add_group('structures')
         self.viewer_page.add_group('dash_particles')
         self.viewer_page.add_group('texts')
+        self.viewer_page.add_group('hearts')
+        self.hearts = []
 
         self.window.game_page.add_child(self.viewer_page)
         self.window.set_page(self.window.game_page)
@@ -169,7 +175,7 @@ class Game:
         #####
 
         action_manager = GameActionManager(
-            None, return_to_main_menu, self.save_position, self.toggle_debug_draw, self.pause)
+            None, return_to_main_menu, self.save_position, self.toggle_debug_draw, self.pause, self.tp_to_stable_ground)
         self.action_manager = action_manager
 
         ### OBJECTS ###
@@ -188,6 +194,19 @@ class Game:
 
         for cons_data in constraints:
             self.init_constraint(cons_data)
+
+        heart_resource = self.model.Game.get('heart_resource', None)
+        if heart_resource is not None:
+            for pos in self.model.Game.heart_positions:
+                heart_position_handler = StaticPositionHandler(pos)
+                sprite = self.window.add_simple_image(
+                    self.viewer_page, 9, heart_position_handler, heart_resource, self.model.Game.full_heart_state)
+                sprite.affected_by_screen_offset = False
+                sprite.static = True
+                sprite.position_changed = True
+                self.viewer_page.hearts.add(sprite)
+                self.hearts.append(sprite)
+
         #####
 
 
@@ -218,6 +237,16 @@ class Game:
         self.count = 0  # every 4 space update ticks the position handler, the image handler
         # and the physic state updater must be updated
         self.number_of_space_updates = 0
+
+        # Lives
+        self.player_lives = self.model.Game.player_lives.get(self.current_save_id)
+        if self.player_lives == 0:
+            self.player_lives = 3
+        else:
+            lost = 3 - self.player_lives
+            for i in range(lost):
+                heart = self.hearts[-i - 1]
+                heart.state = 'empty'
 
         self.window.update = self.update_positions
         self.window.update_image = self.update_images
@@ -298,7 +327,7 @@ class Game:
             PhysicStateUpdater(self.space.objects[name][0], self.action_manager.land, self.save_position, self.space,
                                player_data.StateDuration),
             ParticleHandler(self.spawn_particle), self.action_manager.set_state,
-            self.player_death
+            self.player_loose_one_life
         )
 
         self.camera_handler.player = self.player
@@ -356,7 +385,33 @@ class Game:
         self.model.Game.BaseBGData.camera_pos_x.set(round(self.window.screen_offset[0]), self.current_save_id)
         self.model.Game.BaseBGData.camera_pos_y.set(round(self.window.screen_offset[1]), self.current_save_id)
 
+    def player_loose_one_life(self):
+        self.player_lives -= 1
+        self.player.position_handler.body.position = self.player.position_handler.body.position.x, 5000
+
+        heart = self.hearts[self.player_lives]
+        heart.state = 'empty'
+
+        if self.player_lives == 0:
+            self.player_lives = 3
+            self.player_death()
+            self.model.Game.player_lives.set(self.player_lives, self.current_save_id)
+
+            return True
+        else:
+            self.player.state = 'hit'
+            self.model.Game.player_lives.set(self.player_lives, self.current_save_id)
+
+            return False
+
+    def tp_to_stable_ground(self):
+        x = self.model.Game.BasePlayerData.pos_x.get(self.current_save_id)
+        y = self.model.Game.BasePlayerData.pos_y.get(self.current_save_id)
+        self.player.position_handler.body.position = x, y
+        self.space.reindex_shapes_for_body(self.player.position_handler.body)
+
     def player_death(self):
+        self.player.state = 'die'
         self.is_player_dead = True
         self.is_camera_handler_activated = False
         for sprite in self.viewer_page.get_all_sprites():
@@ -470,6 +525,9 @@ class Game:
             self.player.direction = 1
             self.action_manager.next_direction = 1
 
+        for heart in self.hearts:
+            heart.state = 'full'
+
         transition = Transition(300, (0, 0, 0, 255), (1280, 720), lambda *_, **__: None, 'out')
         self.window.add_transition(transition)
 
@@ -509,8 +567,7 @@ class Game:
         sprites = self.viewer_page.get_all_sprites()
         for i in range(n1):
             if not self.paused:
-                if not self.is_player_dead:
-                    self.space.step(1/60/4)
+                self.space.step(1/60/4)
                 self.player.update_state(1/60/4)
                 if self.count == 3:
                     self.count = 0

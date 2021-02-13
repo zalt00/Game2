@@ -4,3 +4,5 @@ Pillow
 pymunk
 pyglet
 numpy
+PyQt5
+qimage2ndarray

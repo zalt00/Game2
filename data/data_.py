@@ -48,7 +48,7 @@ class Data(DataContainer):
     }
 
     menu_save_length = 20
-    game_save_length = 7
+    game_save_length = 8
 
     class Options(DataContainer):
         option_types = ('Video', 'Gameplay', 'Controls')
@@ -356,6 +356,17 @@ class Data(DataContainer):
         last_checkpoint = SaveComponent(5)
         last_checkpoints_map = SaveComponent(6)
         default_checkpoint_pos = (200, 300)
+
+        heart_resource = 'special_objects/heart.obj'
+        full_heart_state = 'full'
+        empty_heart_state = 'empty'
+
+        player_lives = SaveComponent(7)
+
+        _x_offset = 30
+        _y = 670
+        _spacing = 40
+        heart_positions = ((_x_offset, _y), (_x_offset + _spacing, _y), (_x_offset + _spacing * 2, _y))
 
         maps = ('data/maps/test.yml', 'data/maps/new_test.yml')
 

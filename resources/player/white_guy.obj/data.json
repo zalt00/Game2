@@ -11,6 +11,7 @@
     "walk": {"filename":  "walk.png"},
     "dash_effect": {"filename":  "dash_effect.png"},
     "jump": {"filename": "jump.png"},
-	"die": {"filename": "die.png"}
+	"die": {"filename": "die.png"},
+	"hit": {"filename": "hit.png"}
   }
 }

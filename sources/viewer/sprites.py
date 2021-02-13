@@ -122,6 +122,7 @@ class Entity(BaseSprite, metaclass=SpriteMetaclass):
                  on_death_callback):
 
         self.dead = False
+        self.sleeping = False
         self.on_death = on_death_callback
 
         # bug fix, prevents the dash velocity to be applied in certain circumstances
@@ -154,9 +155,11 @@ class Entity(BaseSprite, metaclass=SpriteMetaclass):
         super().__init__(batch, layer_group, position_handler, image_handler, screen_offset)
 
     def die(self, trigger_to_enable=0):
-        self.state = 'die'
-        self.dead = True
-        self.on_death()
+        if not self.sleeping and not self.dead:
+            if self.on_death():
+                self.dead = True
+            else:
+                self.sleeping = True
 
     def start_recording_position(self, default_array_size=2000):
         self.record_position = True
@@ -284,6 +287,10 @@ class Particle(BaseSprite, metaclass=SpriteMetaclass):
         self.position_handler.pos = [x, y]
         self.position_changed = True
         self.__position = x, y
+
+
+class SimpleImage(BaseSprite, metaclass=SpriteMetaclass):
+    pass
 
 
 class GeneratedButton(metaclass=SpriteMetaclass):

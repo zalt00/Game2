@@ -120,7 +120,7 @@ class EntityPositionHandler:
         )
 
     def update_position(self, entity, n=1):
-        if not entity.dead:
+        if not entity.dead and not entity.sleeping:
             if entity.state in self.jump_counter_deactivation_states:
                 self.jumped = False
 

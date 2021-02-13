@@ -32,7 +32,7 @@ class GameActionManager(ActionManager):
     SCREENSHOT = 18
 
     def __init__(self, player,
-                 return_to_main_menu, save_callback, toggle_debug_draw_callback, pause_callback):
+                 return_to_main_menu, save_callback, toggle_debug_draw_callback, pause_callback, tp_to_stable_ground):
         super().__init__()
         self.player = player
 
@@ -40,6 +40,8 @@ class GameActionManager(ActionManager):
 
         self.toggle_debug_draw = toggle_debug_draw_callback
         self.pause = pause_callback
+
+        self.tp_to_stable_ground = tp_to_stable_ground
 
         self.do_handlers[self.RIGHT] = self.walk_right
         self.stop_handlers[self.RIGHT] = self.stop_walking_right
@@ -215,7 +217,7 @@ class GameActionManager(ActionManager):
 
     def set_state(self, *args, **kwargs):
 
-        if not self.player.dead:
+        if not self.player.dead and not self.player.sleeping:
             if self.player.state == 'land':
                 self.player.secondary_state = ''
 
@@ -262,11 +264,19 @@ class GameActionManager(ActionManager):
                 if self.still_walking:
                     self.player.air_control = self.player.direction
 
-        else:
+        elif self.player.dead:
             if self.player.state != 'die':
                 self.player.state = 'die'
                 self.next_state = 'die'
             else:
                 self.player.hide()
+
+        else:
+            if self.player.state == 'hit':
+                self.tp_to_stable_ground()
+                self.player.state = 'idle'
+                self.player.sleeping = False
+            else:
+                self.player.state = 'hit'
 
 
