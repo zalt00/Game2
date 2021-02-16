@@ -44,6 +44,8 @@ class CollisionEditorPlugin(AbstractPlugin, metaclass=PluginMeta):
             '[4]': [-1, 0]
         }
 
+        self.previous_collision_segments = deque()
+
     @command('ctrl-left')
     def move_focus_left(self):
         last_element = self.current_collision_segments.pop()
@@ -94,11 +96,13 @@ class CollisionEditorPlugin(AbstractPlugin, metaclass=PluginMeta):
     @command('[+]')
     def increase_multiplier(self):
         self.multiplier += 1
+        pygame.display.set_caption(f'multiplier: {self.multiplier}')
         print(f'multiplier: {self.multiplier}')
 
     @command('[-]')
     def decrease_multiplier(self):
         self.multiplier -= 1
+        pygame.display.set_caption(f'multiplier: {self.multiplier}')
         print(f'multiplier: {self.multiplier}')
 
     def get_position_infos(self, do_print=True):
@@ -261,7 +265,8 @@ class CollisionEditorPlugin(AbstractPlugin, metaclass=PluginMeta):
         self.current_color_id %= len(self.colors)
         self.current_color = self.colors[self.current_color_id]
 
-        self.current_collision_segments = deque()
+        self.current_collision_segments, self.previous_collision_segments = (self.previous_collision_segments,
+                                                                             self.current_collision_segments)
 
         self.redraw()
 
@@ -319,4 +324,25 @@ class CollisionEditorPlugin(AbstractPlugin, metaclass=PluginMeta):
                 print('canceled.')
         else:
             print('canceled.')
+
+    def load_string_collision_data(self, ground_data, walls_data):
+        # format: ax1*ay1+bx1*by1|ax2*ay2+bx2*by2
+        if ground_data:
+            ground = [[[int(coord) for coord in points.split('*')]
+                       for points in segments.split('+')] for segments in ground_data.split('|')]
+        else:
+            ground = []
+
+        for segment in ground:
+            self.add_segment(segment)
+        self.change_color()
+
+        if walls_data:
+            walls = [[[int(coord) for coord in points.split('*')]
+                      for points in segments.split('+')] for segments in walls_data.split('|')]
+        else:
+            walls = []
+        for segment in walls:
+            self.add_segment(segment)
+
 

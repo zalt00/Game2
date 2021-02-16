@@ -84,6 +84,11 @@ objects_data:
     - 96
     correct_angle: false
     dynamic: true
+    ground:
+    - - - -64
+        - 160
+      - - 64
+        - 160
     is_built: false
     layer: 1
     mass: 500
@@ -94,6 +99,19 @@ objects_data:
     res: structures/dynamic_structures/forest/test.st
     state: base
     type: structure
+    walls:
+    - - - 64
+        - 160
+      - - 64
+        - 32
+    - - - 64
+        - 32
+      - - -64
+        - 32
+    - - - -64
+        - 32
+      - - -64
+        - 160
   fg_dec_2_0_structure:
     3d_effect_layer: 1.2
     is_built: true

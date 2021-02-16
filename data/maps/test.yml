@@ -13,156 +13,30 @@ background_data:
   - bush
   pos:
   - 0
-  - -550
-  res: backgrounds/forest/forest.bg
-checkpoints:
-- - base
-  - - 127
-    - 64
-- - cp2
-  - - 2051
-    - 64
+  - 0
+  res: "C:/Users/H\xE9l\xE8ne Le Berre/rp/Game2/resources/backgrounds/forest/forest.bg"
+biome: forest
+checkpoints: []
 objects_data:
   player:
     res: player/white_guy.obj
     type: player
-  statue2_structure:
-    is_built: true
-    layer: -1
-    name: statue2
-    pos:
-    - 2054
-    - 30
-    res: special_objects/statue.obj
-    state: base
-    type: structure
-  statue_structure:
-    is_built: true
-    layer: -1
-    name: statue
-    pos:
-    - 131
-    - 30
-    res: special_objects/statue.obj
-    state: base
-    type: structure
-  structure1_structure:
-    ground:
-    - - - -592.0
-        - 160
-      - - 592.0
-        - 160
+  struct1_structure:
+    ground: []
     is_built: false
-    layer: 1
-    name: structure1
+    layer: 0
+    name: struct1
     pos:
-    - 592
-    - -96
-    res: structures/mainbuilds/forest/ground.st
+    - 592.0
+    - 1.0
+    res: structures/mainbuilds/forest/long_ground.st
     state: base
     type: structure
-    walls: []
-  structure2_structure:
-    ground:
-    - - - -592.0
-        - 160
-      - - 592.0
-        - 160
-    is_built: false
-    layer: 1
-    name: structure2
-    pos:
-    - 1776
-    - -96
-    res: structures/mainbuilds/forest/ground.st
-    state: base
-    type: structure
-    walls: []
-  structure4_structure:
-    ground:
-    - - - -592.0
-        - 160
-      - - 592.0
-        - 160
-    is_built: false
-    layer: 1
-    name: structure4
-    pos:
-    - 2960
-    - -96
-    res: structures/mainbuilds/forest/ground.st
-    state: base
-    type: structure
-    walls: []
+    walls:
+    - - - -592
+        - 64
+      - - 592
+        - 64
 palette: structure_palettes/forest/forest_structure_tilesets.stsp
 space: true
-triggers_data:
-  bottom_of_world:
-    actions:
-    - action_name: die
-      arg: []
-      entity_name: player
-      type_: ActionOnEntity
-    enabled: true
-    id: 2
-    top: -200
-  first_cp:
-    actions:
-    - checkpoint_id: 0
-      type_: SetCheckpoint
-    - target: 3
-      type_: DisableTrigger
-    enabled: true
-    id: 3
-    left: 90
-    right: 170
-  load_next_map:
-    actions:
-    - map_id: 1
-      type_: LoadMap
-    - entity_name: player
-      npos:
-      - 20
-      - 96
-      type_: TPEntity
-    enabled: true
-    id: 5
-    left: 2400
-  lock_cam:
-    actions:
-    - mode: follow
-      type_: LockCamera
-      x: true
-      y: false
-    - target: 0
-      type_: DisableTrigger
-    - follow_sensitivity: 30
-      left_limit: 0
-      moving_threshold: 4
-      type_: CameraSettings
-    - target: 1
-      type_: EnableTrigger
-    enabled: true
-    id: 0
-    left: 185
-  move_cam:
-    actions:
-    - dx: 600
-      dy: 0
-      fade_in: 20
-      fade_out: 20
-      total_duration: 100
-      type_: RelativeMovecam
-    enabled: false
-    id: 1
-    left: 180
-  second_cp:
-    actions:
-    - target: 4
-      type_: DisableTrigger
-    - checkpoint_id: 1
-      type_: SetCheckpoint
-    enabled: true
-    id: 4
-    left: 2012
-    right: 2090
+triggers_data: {}

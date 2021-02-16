@@ -1,6 +1,6 @@
 # -*- coding:Utf-8 -*-
 
-from mapeditor.app import Window
+from mapeditor.app import App
 from PyQt5.QtWidgets import QApplication
 import sys
 
@@ -9,6 +9,6 @@ if __name__ == '__main__':
         path = sys.argv[1]
     else:
         path = ''
-    app = QApplication([])
-    window = Window(path)
-    app.exec_()
+    qapp = QApplication([])
+    app = App(path)
+    qapp.exec_()

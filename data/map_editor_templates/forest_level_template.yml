@@ -1,0 +1,26 @@
+space: true
+palette: "structure_palettes/forest/forest_structure_tilesets.stsp"
+biome: "forest"
+
+background_data:
+    res: ""
+    pos: [0, 0]
+
+    bg_decoration_object_set_res: bg_decoration_sets/forest/forest_bg_decoration_set.bgobj
+    bg_decoration_sequence:
+        - shrub
+        - small_tree
+        - large_tree
+        - stump
+        - small_tree
+        - bush
+    bg_decoration_layer_id: -4
+    bg_decoration_objects_pos: [0, -300]
+
+objects_data:
+    player:
+        type: player
+        res: player/white_guy.obj
+
+triggers_data: {}
+checkpoints: []

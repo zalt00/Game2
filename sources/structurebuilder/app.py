@@ -18,12 +18,18 @@ pygame.init()
 
 
 class App:
-    def __init__(self, width, height, res_directory):
+    def __init__(self, width, height, res_directory, opened_from_map_editor=True, structure_to_edit=None,
+                 ground_collision='', walls_collision=''):
         self.screen = pygame.display.set_mode((width, height))
         self.rl = ResourcesLoader(res_directory)
         self.template_reader = TemplateReader()
 
         self.sleeping = False
+        self.opened_from_map_editor = opened_from_map_editor
+        self.structure_to_edit = structure_to_edit
+
+        self.ground_collision = ground_collision
+        self.walls_collision = walls_collision
 
         self.order = {k: i for (i, k) in enumerate((K_1, K_2, K_3, K_4, K_5, K_6, K_7, K_8, K_9))}
 
@@ -104,8 +110,17 @@ class App:
 
         self.last_opened = ''
 
+        self.last_saved = ''
+
         self.plugins = {}
         self.load_plugins()
+        print(self.plugins)
+
+        if self.structure_to_edit:
+            width, height = self._load_from_res_name(self.structure_to_edit)
+            self.nwpos[:] = width - 1, height
+
+            self.plugins['collision_editor'].load_string_collision_data(self.ground_collision, self.walls_collision)
 
     def load_plugins(self):
         for plugin_name in plugins.plugin_names:
@@ -246,11 +261,15 @@ class App:
 
         self.rebuild()
 
-    def save(self):
+    def create_subtab(self):
         lines = self.tab[self.sepos[1]:self.nwpos[1] + 1]
         sub_tab = []
         for line in lines:
             sub_tab.append(line[self.sepos[0]:self.nwpos[0] + 1])
+        return sub_tab
+
+    def save(self):
+        sub_tab = self.create_subtab()
 
         root = tk.Tk()
         filename = asksaveasfilename(parent=root, filetypes=[("structure", "*.st"), ("all files", "*")])
@@ -263,28 +282,36 @@ class App:
             with open(filename, 'w') as file:
                 file.write(txt)
 
+            self.last_saved = filename
+
+    def _load_from_res_name(self, res_name):
+        res = self.rl.load(res_name)
+        sb = res.string_buffer
+        subtab = [line.split(';') for line in sb.splitlines()]
+        img = self.palette.build(res)
+
+        top = self.sepos[1] * self.th
+        left = self.sepos[0] * self.tw
+        self.bg.blit(img, (left, top))
+
+        width = len(subtab[0])
+        height = len(subtab)
+        lines = self.tab[self.sepos[1]:self.sepos[1] + height]
+        for i, line in enumerate(lines):
+            line[self.sepos[0]:self.sepos[0] + width] = subtab[i]
+
+        self.last_opened = res_name
+
+        return width, height
+
     def load(self):
         root = tk.Tk()
         path = askopenfilename(parent=root, filetypes=[("structure", "*.st"), ("all files", "*")])
         root.destroy()
 
         if path:
-            res, res_name = self.rl.load_from_path(path, return_res_name=True)
-            sb = res.string_buffer
-            subtab = [line.split(';') for line in sb.splitlines()]
-            img = self.palette.build(res)
-
-            top = self.sepos[1] * self.th
-            left = self.sepos[0] * self.tw
-            self.bg.blit(img, (left, top))
-
-            width = len(subtab[0])
-            height = len(subtab)
-            lines = self.tab[self.sepos[1]:self.sepos[1] + height]
-            for i, line in enumerate(lines):
-                line[self.sepos[0]:self.sepos[0] + width] = subtab[i]
-
-            self.last_opened = res_name
+            _, res_name = self.rl.load_from_path(path, return_res_name=True)
+            self._load_from_res_name(res_name)
 
     def rebuild(self):
         top = self.sepos[1] * self.th
@@ -306,7 +333,10 @@ class App:
 
     def generate_structure_file_content(self, sub_tab):
         s = '\n'.join((';'.join(line) for line in sub_tab))
-        tw, th = self.tileset.tile_size
+        try:
+            tw, th = self.tileset.tile_size
+        except AttributeError:
+            tw, th = self.tw / 2, self.th / 2
         w = len(sub_tab[0])
         h = len(sub_tab)
         txt = "dimensions={} {}\ndec={} {}\nscale={}\nlength={}\nstring-buffer:\n{}".format(
@@ -393,6 +423,9 @@ class App:
 
                 if event.type == QUIT:
                     self.stop = True
+
+                    if self.opened_from_map_editor:
+                        self.save_collision_data_for_map_editor()
 
                 elif event.type == ACTIVEEVENT:
                     self.sleeping = not event.gain
@@ -524,5 +557,30 @@ class App:
 
             pygame.display.flip()
 
+    def save_collision_data_for_map_editor(self):
+        if self.last_saved:
+            _, res_name = self.rl.load_from_path(self.last_saved, return_res_name=True)
+        else:
+            res_name = ''
+
+        walls_collision_data = [v[0] for v in self.plugins['collision_editor'].current_collision_segments]
+        ground_collision_data = [v[0] for v in self.plugins['collision_editor'].previous_collision_segments]
+
+        walls_string = self.convert_collision_data_to_db_string(walls_collision_data)
+        ground_string = self.convert_collision_data_to_db_string(ground_collision_data)
+
+        print('#####')
+        print(res_name)
+        print(ground_string)
+        print(walls_string)
+        print('#####')
+        txt = self.generate_structure_file_content(self.create_subtab())
+        print(txt)
+        print('#####')
+
+    @staticmethod
+    def convert_collision_data_to_db_string(collision_data):
+        return '|'.join(['+'.join(['*'.join([str(int(coord)) for coord in point])
+                                   for point in segment]) for segment in collision_data])
 
 
