@@ -1,0 +1,140 @@
+
+absolute_camera_movement:
+  type_: AbsoluteMovecam
+  x:
+    type: int
+    optional: false
+    default: 0
+  y:
+    type: int
+    optional: false
+    default: 0
+  total_duration:
+    type: int
+    optional: false
+    default: 1
+  fade_in:
+    type: int
+    optional: false
+    default: 0
+  fade_out:
+    type: int
+    optional: false
+    default: 0
+
+relative_to_player_camera_movement:
+  type_: RelativeMovecam
+  dx:
+    type: int
+    optional: false
+    default: 640
+  dy:
+    type: int
+    optional: false
+    default: 0
+  total_duration:
+    type: int
+    optional: false
+    default: 1
+  fade_in:
+    type: int
+    optional: false
+    default: 0
+  fade_out:
+    type: int
+    optional: false
+    default: 0
+
+lock_camera:
+  type_: LockCamera
+  x:
+    type: bool
+    optional: false
+    default: false
+  y:
+    type: bool
+    optional: false
+    default: false
+  mode:
+    type: str
+    optional: false
+    default: strict
+
+set_camera_settings:
+  type_: CameraSettings
+  follow_sensitivity:
+    type: int
+    optional: true
+    default: 1
+  moving_threshold:
+    type: int
+    optional: true
+    default: 1
+  left_limit:
+    type: int
+    optional: true
+    default: 0
+  max_speed:
+    type: int
+    optional: true
+    default: 2000
+
+enable_trigger:
+  type_: EnableTrigger
+  target:
+    type: int
+    optional: false
+    default: 0
+
+disable_trigger:
+  type_: DisableTrigger
+  target:
+    type: int
+    optional: false
+    default: 0
+
+apply_action_on_entity:
+  type_: ActionOnEntity
+  entity_name:
+    type: str
+    optional: false
+    default: player
+  action_name:
+    type: str
+    optional: false
+    default: die
+  arg:
+    type: list
+    optional: false
+    default: []
+
+teleport_entity:
+  type_: TPEntity
+  entity_name:
+    type: str
+    optional: false
+    default: player
+  npos:
+    type: list
+    optional: false
+    default: [0, 0]
+
+set_checkpoint:
+  type_: SetCheckpoint
+  checkpoint_id:
+    type: int
+    optional: false
+    default: 0
+
+load_map:
+  type_: LoadMap
+  map_id:
+    type: int
+    optional: false
+    default: 0
+
+
+
+
+
+

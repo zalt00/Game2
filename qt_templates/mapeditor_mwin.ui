@@ -2,12 +2,15 @@
 <ui version="4.0">
  <class>MainWindow</class>
  <widget class="QMainWindow" name="MainWindow">
+  <property name="enabled">
+   <bool>true</bool>
+  </property>
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
     <width>1205</width>
-    <height>824</height>
+    <height>823</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -47,6 +50,35 @@
          <property name="documentMode">
           <bool>false</bool>
          </property>
+         <widget class="QWidget" name="basic_structures">
+          <attribute name="title">
+           <string>Basic</string>
+          </attribute>
+          <layout class="QHBoxLayout" name="horizontalLayout_11">
+           <item>
+            <widget class="QListWidget" name="bs_struct_list">
+             <property name="frameShape">
+              <enum>QFrame::NoFrame</enum>
+             </property>
+             <property name="iconSize">
+              <size>
+               <width>100</width>
+               <height>100</height>
+              </size>
+             </property>
+             <property name="gridSize">
+              <size>
+               <width>70</width>
+               <height>70</height>
+              </size>
+             </property>
+             <property name="uniformItemSizes">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
          <widget class="QWidget" name="mainbuilds">
           <attribute name="title">
            <string>Mainbuilds</string>
@@ -73,6 +105,12 @@
               <size>
                <width>100</width>
                <height>100</height>
+              </size>
+             </property>
+             <property name="gridSize">
+              <size>
+               <width>70</width>
+               <height>70</height>
               </size>
              </property>
              <property name="uniformItemSizes">
@@ -107,6 +145,12 @@
                <height>100</height>
               </size>
              </property>
+             <property name="gridSize">
+              <size>
+               <width>70</width>
+               <height>70</height>
+              </size>
+             </property>
              <property name="uniformItemSizes">
               <bool>true</bool>
              </property>
@@ -137,6 +181,12 @@
               <size>
                <width>100</width>
                <height>100</height>
+              </size>
+             </property>
+             <property name="gridSize">
+              <size>
+               <width>70</width>
+               <height>70</height>
               </size>
              </property>
              <property name="uniformItemSizes">
@@ -171,6 +221,12 @@
                <height>100</height>
               </size>
              </property>
+             <property name="gridSize">
+              <size>
+               <width>70</width>
+               <height>70</height>
+              </size>
+             </property>
              <property name="uniformItemSizes">
               <bool>true</bool>
              </property>
@@ -201,6 +257,12 @@
               <size>
                <width>100</width>
                <height>100</height>
+              </size>
+             </property>
+             <property name="gridSize">
+              <size>
+               <width>70</width>
+               <height>70</height>
               </size>
              </property>
              <property name="uniformItemSizes">
@@ -235,6 +297,12 @@
                <height>100</height>
               </size>
              </property>
+             <property name="gridSize">
+              <size>
+               <width>70</width>
+               <height>70</height>
+              </size>
+             </property>
              <property name="uniformItemSizes">
               <bool>true</bool>
              </property>
@@ -265,6 +333,12 @@
               <size>
                <width>100</width>
                <height>100</height>
+              </size>
+             </property>
+             <property name="gridSize">
+              <size>
+               <width>70</width>
+               <height>70</height>
               </size>
              </property>
              <property name="uniformItemSizes">
@@ -390,7 +464,7 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>242</width>
+             <width>246</width>
              <height>248</height>
             </rect>
            </property>
@@ -547,6 +621,282 @@
        <attribute name="title">
         <string>Triggers</string>
        </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout">
+        <item>
+         <widget class="QGroupBox" name="edit_trigger_groupbox">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="title">
+           <string>Edit trigger</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+          </property>
+          <layout class="QGridLayout" name="gridLayout">
+           <item row="6" column="0" colspan="2">
+            <widget class="QGroupBox" name="groupBox_4">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="title">
+              <string>Actions</string>
+             </property>
+             <layout class="QVBoxLayout" name="verticalLayout_2">
+              <property name="spacing">
+               <number>0</number>
+              </property>
+              <property name="leftMargin">
+               <number>0</number>
+              </property>
+              <property name="topMargin">
+               <number>0</number>
+              </property>
+              <property name="rightMargin">
+               <number>0</number>
+              </property>
+              <property name="bottomMargin">
+               <number>1</number>
+              </property>
+              <item>
+               <widget class="QScrollArea" name="scrollArea_2">
+                <property name="frameShape">
+                 <enum>QFrame::NoFrame</enum>
+                </property>
+                <property name="frameShadow">
+                 <enum>QFrame::Plain</enum>
+                </property>
+                <property name="widgetResizable">
+                 <bool>true</bool>
+                </property>
+                <widget class="QWidget" name="trigger_actions_scroll_area_content">
+                 <property name="geometry">
+                  <rect>
+                   <x>0</x>
+                   <y>0</y>
+                   <width>224</width>
+                   <height>251</height>
+                  </rect>
+                 </property>
+                 <layout class="QVBoxLayout" name="verticalLayout_3"/>
+                </widget>
+               </widget>
+              </item>
+              <item>
+               <layout class="QHBoxLayout" name="horizontalLayout_13">
+                <property name="spacing">
+                 <number>6</number>
+                </property>
+                <property name="leftMargin">
+                 <number>3</number>
+                </property>
+                <property name="topMargin">
+                 <number>3</number>
+                </property>
+                <property name="rightMargin">
+                 <number>3</number>
+                </property>
+                <property name="bottomMargin">
+                 <number>3</number>
+                </property>
+                <item>
+                 <widget class="QComboBox" name="addable_actions_combobox"/>
+                </item>
+                <item>
+                 <widget class="QPushButton" name="add_action_button">
+                  <property name="maximumSize">
+                   <size>
+                    <width>69</width>
+                    <height>16777215</height>
+                   </size>
+                  </property>
+                  <property name="text">
+                   <string>Add action</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item row="2" column="0">
+            <widget class="QCheckBox" name="trigger_right_checkbox">
+             <property name="text">
+              <string>right</string>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="1">
+            <widget class="QSpinBox" name="trigger_bottom_spinbox">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
+             <property name="minimum">
+              <number>-20000</number>
+             </property>
+             <property name="maximum">
+              <number>20000</number>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QSpinBox" name="trigger_right_spinbox">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
+             <property name="minimum">
+              <number>-20000</number>
+             </property>
+             <property name="maximum">
+              <number>20000</number>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="0">
+            <widget class="QCheckBox" name="trigger_top_checkbox">
+             <property name="text">
+              <string>top</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="0">
+            <widget class="QLineEdit" name="trigger_name_lineedit">
+             <property name="placeholderText">
+              <string>name of the trigger...</string>
+             </property>
+            </widget>
+           </item>
+           <item row="7" column="0">
+            <widget class="QCheckBox" name="trigger_enabled_checkbox">
+             <property name="text">
+              <string>enabled</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+             <property name="tristate">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="1">
+            <widget class="QSpinBox" name="trigger_top_spinbox">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
+             <property name="minimum">
+              <number>-20000</number>
+             </property>
+             <property name="maximum">
+              <number>20000</number>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="0">
+            <widget class="QCheckBox" name="trigger_bottom_checkbox">
+             <property name="text">
+              <string>bottom</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QSpinBox" name="trigger_left_spinbox">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
+             <property name="minimum">
+              <number>-20000</number>
+             </property>
+             <property name="maximum">
+              <number>20000</number>
+             </property>
+            </widget>
+           </item>
+           <item row="5" column="0">
+            <widget class="QLabel" name="label_6">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="text">
+              <string>trigger's id</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QCheckBox" name="trigger_left_checkbox">
+             <property name="text">
+              <string>left</string>
+             </property>
+            </widget>
+           </item>
+           <item row="5" column="1">
+            <widget class="QSpinBox" name="trigger_id_spinbox"/>
+           </item>
+           <item row="7" column="1">
+            <widget class="QPushButton" name="save_trigger_button">
+             <property name="maximumSize">
+              <size>
+               <width>46</width>
+               <height>16777215</height>
+              </size>
+             </property>
+             <property name="text">
+              <string>Save</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QCheckBox" name="display_trigger_button">
+             <property name="maximumSize">
+              <size>
+               <width>57</width>
+               <height>16777215</height>
+              </size>
+             </property>
+             <property name="text">
+              <string>Display</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="groupBox_3">
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>180</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>200</height>
+           </size>
+          </property>
+          <property name="title">
+           <string>Triggers</string>
+          </property>
+          <layout class="QHBoxLayout" name="horizontalLayout_12">
+           <item>
+            <widget class="QListWidget" name="triggers_listwidget">
+             <property name="frameShape">
+              <enum>QFrame::NoFrame</enum>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+       </layout>
       </widget>
       <widget class="QWidget" name="cp_tab">
        <attribute name="title">
@@ -566,7 +916,7 @@
      <x>0</x>
      <y>0</y>
      <width>1205</width>
-     <height>26</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="edit_menu">
@@ -607,10 +957,17 @@
     </widget>
     <addaction name="menuZoom"/>
    </widget>
+   <widget class="QMenu" name="menuTriggers">
+    <property name="title">
+     <string>Triggers</string>
+    </property>
+    <addaction name="action_new_trigger"/>
+   </widget>
    <addaction name="file_menu"/>
    <addaction name="edit_menu"/>
    <addaction name="menuSelection"/>
    <addaction name="menuDisplay"/>
+   <addaction name="menuTriggers"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="action_load_struct">
@@ -719,7 +1076,80 @@
     <string>Ctrl+E</string>
    </property>
   </action>
+  <action name="action_new_trigger">
+   <property name="text">
+    <string>New trigger</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Alt+N</string>
+   </property>
+  </action>
  </widget>
  <resources/>
- <connections/>
+ <connections>
+  <connection>
+   <sender>trigger_left_checkbox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>trigger_left_spinbox</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>1107</x>
+     <y>127</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>1172</x>
+     <y>129</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>trigger_right_checkbox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>trigger_right_spinbox</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>1107</x>
+     <y>153</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>1172</x>
+     <y>155</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>trigger_top_checkbox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>trigger_top_spinbox</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>1107</x>
+     <y>179</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>1172</x>
+     <y>181</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>trigger_bottom_checkbox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>trigger_bottom_spinbox</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>1107</x>
+     <y>205</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>1172</x>
+     <y>207</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
 </ui>

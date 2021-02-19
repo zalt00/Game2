@@ -1,7 +1,7 @@
 structures/dynamic_structures/forest/test.st:
     center_of_gravity: [0, 96]
-    mass: 500
-    correct_angle: false
+    mass: 100
+    correct_angle: true
 
 structure_families:
     decorations:

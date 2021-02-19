@@ -2,3 +2,5 @@
 structure_data_path: "data/map_editor_data/structure_data.yml"
 collision_database_path: "data/collisions.db"
 map_editor_templates_dir: "data/map_editor_templates"
+qt_templates_dir: "qt_templates/"
+trigger_actions_templates_path: "data/map_editor_data/trigger_actions_templates.yml"

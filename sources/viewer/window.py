@@ -43,6 +43,8 @@ class Window(pyglet.window.Window):
 
     def create_resources_loader(self, dir_):
         self.resource_loader = ResourcesLoader(dir_)
+        self.resource_loader.load_font('m3x6.ttf')
+        self.resource_loader.load_font('m5x7.ttf')
 
     def init_joysticks(self):
         self.joysticks = pyglet.input.get_joysticks()

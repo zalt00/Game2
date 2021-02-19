@@ -161,3 +161,20 @@ class SceneHandler:
 
             self.window.infos_panel_handler.update_structure_infos()
 
+    def display_trigger_bbox(self, left, right, top, bottom):
+        pen = QtGui.QPen(QtGui.QColor(7389830))
+
+        line1 = self._scene.addLine(left, top, right, top)
+        line2 = self._scene.addLine(left, bottom, right, bottom)
+        line3 = self._scene.addLine(left, bottom, left, top)
+        line4 = self._scene.addLine(right, bottom, right, top)
+
+        lines = line1, line2, line3, line4
+        for line in lines:
+            line.setPen(pen)
+        return lines
+
+    def remove_trigger_bbox(self, bbox):
+        for line in bbox:
+            self._scene.removeItem(line)
+

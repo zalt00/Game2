@@ -18,7 +18,8 @@ import re
 import json
 import qimage2ndarray
 import yaml
-from . import obj_list_handler, scene_handler, infos_panel_handler, edit_panel_handler, file_handler
+from . import obj_list_handler, scene_handler,\
+    infos_panel_handler, edit_panel_handler, file_handler, trigger_panel_handler
 
 
 dir_path = '\\'.join(__file__.split('\\')[:-1])
@@ -45,6 +46,8 @@ class Window(QMainWindow):
         self.obj_list_handler = obj_list_handler.ObjListHandler(self)
         self.scene_handler = scene_handler.SceneHandler(self)
         self.edit_panel_handler = edit_panel_handler.EditPanelHandler(self)
+
+        self.trigger_panel_handler = trigger_panel_handler.TriggerPanelHandler(self)
 
         self.scene_handler.init_scene()
 
@@ -92,6 +95,12 @@ class Window(QMainWindow):
         self.action_new_struct.triggered.connect(self.edit_panel_handler.new_structure)
         self.action_remove_current_struct.triggered.connect(self.edit_panel_handler.remove_structure)
         self.action_edit_current_struct.triggered.connect(self.edit_panel_handler.edit_current_structure)
+
+        self.triggers_listwidget.currentRowChanged.connect(self.trigger_panel_handler.select_trigger)
+        self.action_new_trigger.triggered.connect(self.trigger_panel_handler.add_trigger)
+        self.save_trigger_button.clicked.connect(self.trigger_panel_handler.save_trigger)
+        self.add_action_button.clicked.connect(self.trigger_panel_handler.add_action)
+        self.display_trigger_button.clicked.connect(self.trigger_panel_handler.display_trigger)
 
     @staticmethod
     def canvasx2datax(x, rect):

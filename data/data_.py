@@ -368,7 +368,7 @@ class Data(DataContainer):
         _spacing = 40
         heart_positions = ((_x_offset, _y), (_x_offset + _spacing, _y), (_x_offset + _spacing * 2, _y))
 
-        maps = ('data/maps/test.yml', 'data/maps/new_test.yml')
+        maps = ('data/maps/temp2.yml', 'data/maps/temp2.yml')
 
         death_screen_res_path = 'special_objects/death_screen.obj'
 

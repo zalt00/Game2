@@ -4,7 +4,7 @@ biome: "forest"
 
 background_data:
     res: ""
-    pos: [0, 0]
+    pos: [0, -550]
 
     bg_decoration_object_set_res: bg_decoration_sets/forest/forest_bg_decoration_set.bgobj
     bg_decoration_sequence:
@@ -22,5 +22,46 @@ objects_data:
         type: player
         res: player/white_guy.obj
 
-triggers_data: {}
 checkpoints: []
+
+triggers_data:
+  bottom_of_world:
+    actions:
+    - entity_name: player
+      npos:
+      - 300
+      - 300
+      type_: TPEntity
+    enabled: true
+    id: 0
+    top: -200
+  lock_cam:
+    actions:
+    - mode: follow
+      type_: LockCamera
+      x: true
+      y: false
+    - target: 3
+      type_: DisableTrigger
+    - follow_sensitivity: 30
+      left_limit: 0
+      moving_threshold: 4
+      type_: CameraSettings
+    - target: 7
+      type_: EnableTrigger
+    enabled: true
+    id: 3
+    left: 10
+  move_cam:
+    actions:
+    - dx: 600
+      dy: 0
+      fade_in: 1
+      fade_out: 1
+      total_duration: 40
+      type_: RelativeMovecam
+    - target: 7
+      type_: DisableTrigger
+    enabled: false
+    id: 7
+    left: 9

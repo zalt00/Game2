@@ -85,6 +85,10 @@ class ResourcesLoader:
         """loads a structure from a string buffer"""
         return Structure(s)
 
+    def load_font(self, name):
+        path = os.path.join(self.dir_, 'fonts', name).replace('\\', '/')
+        pyglet.font.add_file(path)
+
 
 class StructTSPalette:
     def __init__(self, data, directory, resources_directory='resources'):

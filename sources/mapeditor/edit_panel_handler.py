@@ -26,6 +26,7 @@ class EditPanelHandler:
         self._item_to_data = {}
 
         self._tab_id_to_resource_name_template = [
+            'structures/basic_structures/{biome}/{name}',
             'structures/mainbuilds/{biome}/{name}',
             'structures/background_decorations/{biome}/{name}',
             'structures/dynamic_structures/{biome}/{name}',
@@ -35,6 +36,7 @@ class EditPanelHandler:
             'special_objects/{name}'
         ]
         self._tab_id_to_structure_type = [
+            'basic_structures',
             'mainbuilds',
             'background_decorations',
             'dynamic_structures',
@@ -53,6 +55,7 @@ class EditPanelHandler:
         self.biome = biome
 
         self._struct_lists = dict(
+            basic_structures=self.window.bs_struct_list,
             mainbuilds=self.window.mb_struct_list,
             background_decorations=self.window.bgd_struct_list,
             dynamic_structures=self.window.ds_struct_list,
@@ -65,7 +68,7 @@ class EditPanelHandler:
         for struct_list in self._struct_lists.values():
             struct_list.setViewMode(QtWidgets.QListView.IconMode)
 
-        main_structures = 'mainbuilds', 'background_decorations', 'dynamic_structures', 'spikes'
+        main_structures = 'basic_structures', 'mainbuilds', 'background_decorations', 'dynamic_structures', 'spikes'
         for struct_type in main_structures:
             for path in glob.glob(f'resources/structures/{struct_type}/{biome}/*.st', recursive=True):
                 res_name = path.replace('\\', '/').replace('resources/', '')
@@ -149,6 +152,7 @@ class EditPanelHandler:
             yield struct_list.item(i)
 
     def remove_structure(self):
+        # TODO: change this, garbage solution
         struct_list = self._struct_lists[
                             self._tab_id_to_structure_type[self.window.structures_tab.currentIndex()]]
         item_to_remove = struct_list.currentItem()
@@ -223,13 +227,17 @@ class EditPanelHandler:
 
                     res_name = item_to_edit_data.res
 
-                    self.remove_structure()
-
                     with open(os.path.join('resources/', res_name), 'w') as file:
                         file.write(structure_text)
 
                     self._resource_loader.cache.pop(res_name)
-                    self._add_structure(res_name, struct_list)
+
+                    icon = QtGui.QIcon()
+                    qimage = self.window.load_image(res_name, self.palette)
+                    pixmap = QtGui.QPixmap(qimage)
+                    icon.addPixmap(pixmap, QtGui.QIcon.Normal, QtGui.QIcon.Off)
+
+                    item_to_edit.setIcon(icon)
 
                     self.window.file_handler.add_collision_data(res_name, ground_string, walls_string)
 
