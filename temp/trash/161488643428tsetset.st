@@ -1,0 +1,8 @@
+dimensions=48 48
+dec=24 0
+scale=2
+length=3
+string-buffer:
+LU0000;LU0000;LU0000
+LU0000;LU0000;LU0000
+LU0000;LU0000;LU0000

@@ -157,7 +157,7 @@ class EditPanelHandler:
     def new_structure(self):
         process = Popen("cmd.exe", shell=False, universal_newlines=True, stdin=PIPE, stdout=PIPE, stderr=PIPE)
 
-        commands = '.\\commands\\activate.cmd\npython.exe structure_builder.py -e "" -g "" -w ""\n'
+        commands = f'.\\commands\\activate.cmd\n{config["structure_builder_command"]} -e "" -g "" -w ""\n'
         out, err = process.communicate(commands)
 
         print(err, file=sys.stderr)
@@ -259,7 +259,7 @@ class EditPanelHandler:
                 if item_to_edit_data.res.endswith('.st'):
 
                     process = Popen("cmd.exe", shell=False, universal_newlines=True, stdin=PIPE, stdout=PIPE, stderr=PIPE)
-                    commands = f'.\\commands\\activate.cmd\npython.exe structure_builder.py -e "{item_to_edit_data.res}"'
+                    commands = f'.\\commands\\activate.cmd\n{config["structure_builder_command"]} -e "{item_to_edit_data.res}"'
 
                     raw_collision_data = self.window.file_handler.get_raw_collision_data(item_to_edit_data.res)
 
