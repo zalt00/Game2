@@ -19,6 +19,7 @@ from viewer.transition import Transition
 from ..camera_handler import CameraHandler
 from utils.logger import logger
 import os
+from ..trigger_mapping import TriggerMapping
 
 
 class Game:
@@ -60,6 +61,8 @@ class Game:
 
         self.viewer_page = None
 
+        self.player_debug_values = None
+
         self._paused = False
         self.debug_draw_activated = False
 
@@ -71,6 +74,14 @@ class Game:
         self.level_res = self.level['background_data']['res']
 
         self.window.reset_event_manager()
+
+    def show_player_debug_values(self, hide=False):
+        if self.player_debug_values is not None and hide:
+            self.viewer_page.texts.remove(self.player_debug_values)
+            self.player_debug_values.delete()
+            self.player_debug_values = None
+        elif not hide:
+            self.player_debug_values = self.init_text(self.model.Game.PlayerDebugData)
 
     @property
     def paused(self):
@@ -166,7 +177,7 @@ class Game:
                                     y=self.model.Game.BaseBGData.camera_pos_y.get(self.current_save_id))
 
         ### TRIGGERS ###
-        self.triggers = dict()
+        self.triggers = TriggerMapping(100)
         self.ag = GameActionGetter(self.triggers, self.window, self.camera_handler, self.entities, self.model,
                                    self.current_save_id, self.load_map_on_next_frame)
         for trigdata in self.level['triggers_data'].values():
@@ -175,7 +186,8 @@ class Game:
         #####
 
         action_manager = GameActionManager(
-            None, return_to_main_menu, self.save_position, self.toggle_debug_draw, self.pause, self.tp_to_stable_ground)
+            None, return_to_main_menu, self.save_position, self.toggle_debug_draw, self.pause, self.tp_to_stable_ground,
+            self.show_player_debug_values)
         self.action_manager = action_manager
 
         ### OBJECTS ###
@@ -217,7 +229,7 @@ class Game:
             action_id = getattr(GameActionManager, action.upper())
 
             ctrls[kb.get()] = action_id
-            ctrls[controller.get_shorts()] = action_id
+            ctrls[controller.get_bytes()] = action_id
 
         if self.debug:
             self.window.set_event_manager('DebugGameEventManager', action_manager, ctrls,
@@ -322,7 +334,8 @@ class Game:
                                                            player_data.pos_y.get(self.current_save_id)), name)
 
         self.player = self.window.add_entity(
-            self.viewer_page, 0, PlayerPositionHandler(self.space.objects[name][0], self.triggers),
+            self.viewer_page, 0, PlayerPositionHandler(self.space.objects[name][0], self.triggers,
+                                                       self.model.Game.BasePlayerData),
             additional_data['res'],
             PhysicStateUpdater(self.space.objects[name][0], self.action_manager.land, self.save_position, self.space,
                                player_data.StateDuration),
@@ -359,6 +372,7 @@ class Game:
         sprite = self.window.add_text(
             self.viewer_page, 0, 'm5x7', data['size'], text_getter, position_handler)
         self.viewer_page.texts.add(sprite)
+        return sprite
 
     def init_constraint(self, data):
         self.structures[data['object_a']].constrained = True

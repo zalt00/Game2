@@ -1,7 +1,7 @@
 # -*- coding:Utf-8 -*-
 
 from utils.save_modifier import SaveComponent
-from utils.types import Trigger, DataContainer
+from utils.types import DataContainer
 from pymunk.vec2d import Vec2d
 from pyglet.window.key import *
 
@@ -366,26 +366,55 @@ class Data(DataContainer):
         _x_offset = 30
         _y = 670
         _spacing = 40
-        heart_positions = ((_x_offset, _y), (_x_offset + _spacing, _y), (_x_offset + _spacing * 2, _y))
+        _number = 3
+
+        heart_positions = [(x_offset + spacing * i, y) for (i, x_offset, spacing, y)
+                           in zip(range(_number), [_x_offset] * _number, [_spacing] * _number, [_y] * _number)]
 
         maps = ('data/maps/temp2.yml', 'data/maps/temp2.yml')
 
         death_screen_res_path = 'special_objects/death_screen.obj'
 
-        class BasePlayerData:
+        class PlayerDebugData(DataContainer):
+            pos = [1100, 690]
+            text = ("x velocity: {}\n" +
+                    "y velocity: {}\n" +
+                    "x coordinate: {}\n" +
+                    "y coordinate: {}\n" +
+                    "framerate: {}")
+
+            values = [
+                ['player', 'position_handler', 'body', 'velocity', 'x'],
+                ['player', 'position_handler', 'body', 'velocity', 'y'],
+                ['player', 'position_handler', 'body', 'position', 'x'],
+                ['player', 'position_handler', 'body', 'position', 'y'],
+                ['window', 'current_framerate']
+            ]
+
+            color = "#ffffff"
+            size = 18
+
+        class BasePlayerData(DataContainer):
             height = 50
             width = 30
             name = "player"
             pos_x = SaveComponent(2)
             pos_y = SaveComponent(3)
 
+            jump_y_impulse = 500
+            walking_max_velocity = 50
+            running_max_velocity = 132
+            air_control_max_velocity = 100
+            acceleration = 33
+            air_control_acceleration = 15
+
             class StateDuration(DataContainer):
                 idle = 0.016
                 fall = 0.016
-                jump = 0.08
+                jump = 0.016
                 dash = 0.092
 
-        class BaseBGData:
+        class BaseBGData(DataContainer):
             camera_pos_x = SaveComponent(0)
             camera_pos_y = SaveComponent(1)
 

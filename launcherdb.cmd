@@ -1,3 +1,3 @@
 @call "%~dp0\commands\activate.cmd"
-@call python main.py --debug
+@call python sources\main.py --debug
 pause

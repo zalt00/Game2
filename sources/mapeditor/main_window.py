@@ -19,7 +19,8 @@ import json
 import qimage2ndarray
 import yaml
 from . import obj_list_handler, scene_handler,\
-    infos_panel_handler, edit_panel_handler, file_handler, trigger_panel_handler
+    infos_panel_handler, edit_panel_handler, file_handler, trigger_panel_handler, checkpoint_panel_handler, \
+    constraint_panel_handler
 
 
 dir_path = '\\'.join(__file__.split('\\')[:-1])
@@ -44,10 +45,15 @@ class Window(QMainWindow):
 
         self.infos_panel_handler = infos_panel_handler.InfosPanelHandler(self)
         self.obj_list_handler = obj_list_handler.ObjListHandler(self)
+
+        self.constraint_panel_handler = constraint_panel_handler.ConstraintPanelHandler(self)
+
         self.scene_handler = scene_handler.SceneHandler(self)
         self.edit_panel_handler = edit_panel_handler.EditPanelHandler(self)
 
         self.trigger_panel_handler = trigger_panel_handler.TriggerPanelHandler(self)
+
+        self.checkpoint_panel_handler = checkpoint_panel_handler.CheckpointPanelHandler(self)
 
         self.scene_handler.init_scene()
 
@@ -61,6 +67,9 @@ class Window(QMainWindow):
             self.edit_panel_handler.init_struct_lists(self.template_data['biome'],
                                                       self.template_data['palette'])
             self.file_handler = file_handler.FileHandler(self)
+
+            if 'triggers_data' in self.template_data:
+                self.trigger_panel_handler.init_triggers_data(data['triggers_data'])
             self._init_slots()
 
         else:
@@ -101,6 +110,13 @@ class Window(QMainWindow):
         self.save_trigger_button.clicked.connect(self.trigger_panel_handler.save_trigger)
         self.add_action_button.clicked.connect(self.trigger_panel_handler.add_action)
         self.display_trigger_button.clicked.connect(self.trigger_panel_handler.display_trigger)
+        self.action_remove_trigger.triggered.connect(self.trigger_panel_handler.remove_trigger)
+
+        self.add_checkpoint_button.clicked.connect(self.checkpoint_panel_handler.add_checkpoint)
+        self.apply_checkpoints_data_button.clicked.connect(self.checkpoint_panel_handler.apply_changes)
+
+        self.add_constraint_button.clicked.connect(self.constraint_panel_handler.add_constraint_slot)
+        self.apply_constraints_data_button.clicked.connect(self.constraint_panel_handler.apply_changes)
 
     @staticmethod
     def canvasx2datax(x, rect):

@@ -38,7 +38,14 @@ class DynamicStructurePositionHandler:
         self.body = body
         self.relative_angle = 0
 
-    def get_anchor_y(self):
+        self._correct_angle = correct_angle
+
+    def get_anchor_y(self, constrained=False):
+        if constrained:
+            self.correct_angle = False
+        else:
+            self.correct_angle = self._correct_angle
+
         if self.correct_angle:
             return self.body.center_of_gravity.y
         else:
@@ -47,8 +54,7 @@ class DynamicStructurePositionHandler:
     def update_position(self, struct, n=1):
 
         if struct.constrained:
-            self.body.velocity = self.body.velocity / 1.001
-            self.body.angular_velocity = self.body.angular_velocity / 1.001
+            self.body.velocity = self.body.velocity / 1.002
 
         if self.correct_angle:
             while self.body.angle > pi / 4:
@@ -105,9 +111,21 @@ class BgLayerPositionHandler:
                 
 
 class EntityPositionHandler:
-    def __init__(self, body):
+    def __init__(self, body, entity_data):
         self.body = body
         self.pos = [0, 0]
+
+        self.entity_data = entity_data
+
+        self.running_max_speed = self.entity_data.running_max_velocity
+        self.walking_max_speed = self.entity_data.walking_max_velocity
+        self.jump_y_impulse = self.entity_data.jump_y_impulse
+        self.air_control_max_speed = self.entity_data.air_control_max_velocity
+        self.acceleration = self.entity_data.acceleration
+        self.air_control_acceleration = self.entity_data.air_control_acceleration
+
+        self.running_states = {'run', 'slowly_run'}
+        self.walking_states = {'walk', 'slowly_walk'}
 
         self.jumped = False
         self.jump_counter_deactivation_states = {'fall', 'land', 'walk', 'idle', 'run'}
@@ -124,46 +142,73 @@ class EntityPositionHandler:
             if entity.state in self.jump_counter_deactivation_states:
                 self.jumped = False
 
-            m = max(self.mapping.get(entity.state, -1),
-                    self.mapping.get(entity.secondary_state, -1))
-            if abs(round(self.body.velocity.x)) <= m and entity.is_on_ground:
-                entity.thrust[0] = 200000 * entity.direction / max(abs(self.body.velocity.x * 5 / m), 1)
+            current_x_velocity = round(self.body.velocity.x)
+            impulse = [0., 0.]
 
             if entity.state == 'jump' and entity.is_on_ground and not self.jumped:
                 self.jumped = True
-                entity.thrust[1] = 1_250_000
-
-            elif entity.state == 'dash' and entity.can_dash_velocity_be_applied:
-                entity.thrust = np.array((0, 0))
-                self.body.velocity = Vec2d(2500 * entity.direction, 0)
-
-            elif entity.air_control and entity.can_air_control:
-                if (abs(self.body.velocity.x) < 100 or
-                        (entity.direction == -1 and self.body.velocity.x > 0) or
-                        (entity.direction == 1 and self.body.velocity.x < 0)):
-
-                    v = max(min(100 * entity.air_control - self.body.velocity.x, 50), -50)
-                    self.body.velocity = self.body.velocity + Vec2d(v, 0)
-                entity.air_control = 0
+                impulse[1] = self.jump_y_impulse
 
             if entity.collide_with_dynamic_ground is not None:
                 body = entity.collide_with_dynamic_ground
-                body.apply_force_at_local_point(Vec2d(*(-entity.thrust)), self.body.center_of_gravity)
+                ground_vx = body.velocity_at_world_point(self.body.position).x * entity.direction
+            else:
+                ground_vx = 0
 
-            self.body.apply_force_at_local_point(Vec2d(*entity.thrust), self.body.center_of_gravity)
+            if entity.state in self.running_states or entity.secondary_state in self.running_states:
+                if abs(current_x_velocity) <= self.running_max_speed + ground_vx and entity.is_on_ground:
+                    abs_x_impulse = min(self.acceleration, self.running_max_speed - abs(current_x_velocity) + ground_vx)
+                    impulse[0] = abs_x_impulse * entity.direction
 
-            entity.thrust = np.array((0, 0))
+            elif entity.state in self.walking_states or entity.secondary_state in self.walking_states:
+                if abs(current_x_velocity) <= self.walking_max_speed + ground_vx and entity.is_on_ground:
+                    abs_x_impulse = min(self.acceleration, self.walking_max_speed - abs(current_x_velocity) + ground_vx)
+                    impulse[0] = abs_x_impulse * entity.direction
 
+            elif entity.state == 'dash' and entity.can_dash_velocity_be_applied:
+                self.body.velocity = Vec2d(2500 * entity.direction, 0)
+
+            elif entity.air_control and entity.can_air_control and not entity.is_on_ground:
+                if abs(current_x_velocity) <= self.air_control_max_speed - 1:
+                    abs_x_impulse = min(self.air_control_acceleration,
+                                        self.air_control_max_speed - abs(current_x_velocity))
+                    impulse[0] = abs_x_impulse * entity.air_control
+                elif ((entity.direction == -1 and self.body.velocity.x > 0) or
+                        (entity.direction == 1 and self.body.velocity.x < 0)):
+                    impulse[0] = self.air_control_acceleration * entity.direction
+                entity.air_control = 0
+
+            vector = Vec2d(*impulse)
+
+            if entity.collide_with_dynamic_ground is not None and entity.state != 'dash':
+                body = entity.collide_with_dynamic_ground
+
+                if vector.y == 0:
+                    vector = vector.rotated(body.angle)
+
+                vx = vector.x * self.body.mass / body.mass
+                vy = vector.y * self.body.mass / body.mass
+                body.velocity = body.velocity + (-vx, -vy)
+
+            self.body.velocity = self.body.velocity + vector
             self.pos = self.body.position
             return self.body.position.x, self.body.position.y
         return self.pos
-    
+
+    def end_of_dash(self, state, entity):
+        if state == 'running':
+            self.body.velocity = Vec2d((self.running_max_speed + self.acceleration) * entity.direction, 0)
+        elif state == 'walking':
+            self.body.velocity = Vec2d((self.walking_max_speed + self.acceleration) * entity.direction, 0)
+        else:
+            self.body.velocity = Vec2d(0, 0)
+
 
 class PlayerPositionHandler(EntityPositionHandler):
-    def __init__(self, body, triggers):
+    def __init__(self, body, triggers, entity_data):
         self.triggers = triggers
         self.do_update_triggers = False
-        super().__init__(body)
+        super().__init__(body, entity_data)
 
     def update_position(self, entity, n=1):
         if not entity.dead:
@@ -174,6 +219,6 @@ class PlayerPositionHandler(EntityPositionHandler):
         return self.pos
 
     def update_triggers(self):
-        for trigger in self.triggers.values():
-            trigger.update(self.body.position.x, self.body.position.y)
+        self.triggers.update(self.body.position.x, self.body.position.y)
+
 

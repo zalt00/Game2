@@ -14,10 +14,16 @@ class TriggerPanelHandler:
         with open(config['trigger_actions_templates_path']) as datafile:
             self.trigger_actions_templates = yaml.safe_load(datafile)
 
+        self.action_type_to_action_name = dict()
+        for action_name, action_parameters in self.trigger_actions_templates.items():
+            self.action_type_to_action_name[action_parameters['type_']] = action_name
+
         for action_name in self.trigger_actions_templates.keys():
             self.window.addable_actions_combobox.addItem(action_name)
 
         self._triggers = []  # list[] -> [name, dict[property_name] -> property_value]
+
+        # trigger properties:
         #  - id: int
         #  - enabled: bool
         #  - actions: list[] -> [action_name: str, action_data: (dict[str] -> Any)]
@@ -26,7 +32,8 @@ class TriggerPanelHandler:
         #  - top: Union[NoneType, int]         | describe the trigger's bounding box
         #  - bottom: Union[NoneType, int]     /
 
-        self._selected_trigger = None  # index of the trigger in the self._triggers list or None
+        self._selected_trigger = None  # index of the trigger in the self._triggers list or None if no trigger is
+        # selected
 
         self._action_widgets = []
 
@@ -36,19 +43,48 @@ class TriggerPanelHandler:
 
     def add_trigger(self):
         id_ = self.window.generate_identifier()
+        while id_ in set(_d['id'] for (_, _d) in self._triggers):
+            id_ += 1
 
         name = f'trigger{id_}'
 
+        # default values for the properties of the trigger
+        self._init_trigger(name, dict(enabled=True, id=id_, actions=list(), left=None,
+                                      right=None, bottom=None, top=None))
+
+    def _init_trigger(self, name, properties):
         self.window.triggers_listwidget.addItem(name)
 
-        # default values for the properties of the trigger
-        self._triggers.append([name, dict(enabled=True, id=id_, actions=list(), left=None,
-                                          right=None, bottom=None, top=None)])
+        self._triggers.append([name, properties])
+
+    def init_triggers_data(self, triggers_data):
+        self.clear_triggers()
+        for trigger_name, trigger_properties in triggers_data.items():
+            actions = []
+            for action_parameters in trigger_properties['actions']:
+                action_name = self.action_type_to_action_name[action_parameters['type_']]
+                actions.append([action_name, action_parameters])
+            trigger_properties['actions'] = actions
+
+            for property_name in ('left', 'right', 'top', 'bottom'):
+                if property_name not in trigger_properties:
+                    trigger_properties[property_name] = None
+            self._init_trigger(trigger_name, trigger_properties)
+
+    def clear_triggers(self):
+        self.window.edit_trigger_groupbox.setEnabled(False)
+        self._selected_trigger = None
+        self.window.triggers_listwidget.clear()
+        self._triggers.clear()
 
     def select_trigger(self, index):
-        self.window.edit_trigger_groupbox.setEnabled(True)
-        self._selected_trigger = index
-        self.refresh_edit_trigger_box()
+        if index != -1 and index < len(self._triggers):
+            self.window.edit_trigger_groupbox.setEnabled(True)
+            self._selected_trigger = index
+            self.refresh_edit_trigger_box()
+        else:
+            self._selected_trigger = None
+            self.window.edit_trigger_groupbox.setEnabled(False)
 
     def refresh_edit_trigger_box(self):
         if self._selected_trigger is not None:
@@ -92,9 +128,10 @@ class TriggerPanelHandler:
                     trigger_data[side] = None
 
             new_id = self.window.trigger_id_spinbox.value()
-            for _, _data in self._triggers:
-                if new_id == _data['id']:
-                    new_id = trigger_data['id']
+
+            while new_id in set(_d['id'] for (_name, _d) in self._triggers if _name != name):
+                new_id += 1
+
             trigger_data['id'] = new_id
 
             trigger_data['enabled'] = self.window.trigger_enabled_checkbox.isChecked()
@@ -109,6 +146,14 @@ class TriggerPanelHandler:
                     trigger_data['actions'].append([action_widget.action_name, parameters])
 
             self.refresh_edit_trigger_box()
+
+    def remove_trigger(self):
+        if self._selected_trigger is not None:
+            id_to_remove = self._selected_trigger
+            self._selected_trigger = None
+            self._triggers.pop(id_to_remove)
+            self.window.triggers_listwidget.takeItem(id_to_remove)
+            self.window.edit_trigger_groupbox.setEnabled(False)
 
     def display_trigger(self, display=True):
         if self._selected_trigger is not None:
@@ -143,6 +188,25 @@ class TriggerPanelHandler:
         self.window.trigger_actions_scroll_area_content.layout().addWidget(widget)
         self._action_widgets.append(widget)
         return widget
+
+    def get_triggers_data(self):
+        output_data = dict()
+        for trigger_name, trigger_properties in self._triggers:
+            trigger_data = dict()
+            output_data[trigger_name] = trigger_data
+            for property_name, property_value in trigger_properties.items():
+                if property_name in ('left', 'right', 'top', 'bottom'):
+                    if property_value is not None:
+                        trigger_data[property_name] = property_value
+                elif property_name == 'actions':
+                    actions = []
+                    for _, action_data in property_value:
+                        actions.append(action_data)
+                    trigger_data[property_name] = actions
+                else:
+                    trigger_data[property_name] = property_value
+
+        return output_data
 
     def empty_actions_scroll_area_content_layout(self):
         self._action_widgets.clear()

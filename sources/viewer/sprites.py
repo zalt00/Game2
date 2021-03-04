@@ -233,7 +233,7 @@ class BgLayer(BaseSprite, metaclass=SpriteMetaclass):
 class Structure(BaseSprite, metaclass=SpriteMetaclass):
     def __init__(self, batch, layer_group, position_handler, image_handler, screen_offset, state='base', dynamic=False):
         self.dynamic = dynamic
-        self.constrained = False
+        self._constrained = False
 
         super(Structure, self).__init__(batch, layer_group, position_handler, image_handler, screen_offset, 'base')
         self.animated = False
@@ -244,6 +244,22 @@ class Structure(BaseSprite, metaclass=SpriteMetaclass):
             self.anchor_y = 0
 
         self.image_changed = True
+
+    @property
+    def constrained(self):
+        return self._constrained
+
+    @constrained.setter
+    def constrained(self, value):
+        if value:
+            if self.dynamic:
+                self.anchor_y = self.position_handler.get_anchor_y(True) / self.scale
+            self._constrained = True
+
+        else:
+            if self.dynamic:
+                self.anchor_y = self.position_handler.get_anchor_y(False) / self.scale
+            self._constrained = False
 
     def __repr__(self):
         return f'Structure(image={self.image}, position={self.position})'
@@ -392,21 +408,24 @@ class Text(pyglet.text.Label, metaclass=SpriteMetaclass):
 
         self.get_text = text_getter
 
+        self.visible = None
+
         text = self.get_text()
         self.a = 0
-        super(Text, self).__init__(text, font, size, batch=batch, group=layer_group, color=color, multiline=True, width=800)
+        super(Text, self).__init__(text, font, size, batch=batch, group=layer_group, color=color, multiline=True,
+                                   width=800)
 
         self.position_handler = position_handler
 
         self.update_()
 
-    def update_position(self):
+    def update_position(self, _=None):
         self.x, self.y = self.position_handler.update_position(self)
 
-    def update_image(self):
+    def update_image(self, _=None):
         self.a += 1
-        self.a %= 12
-        if self.a == -1:
+        self.a %= 3
+        if self.a == 0:
             text = self.get_text()
             self.text = text
 

@@ -5,16 +5,43 @@ from PyQt5.QtCore import Qt
 import os
 
 
+class GraphicsViewItemsDict(dict):
+
+    def __init__(self, callback):
+        self.callback = callback
+        super(GraphicsViewItemsDict, self).__init__()
+
+    def pop(self, k):
+        value = super(GraphicsViewItemsDict, self).pop(k)
+        self.callback()
+        return value
+
+    def __setitem__(self, key, value):
+        super(GraphicsViewItemsDict, self).__setitem__(key, value)
+        self.callback()
+
+
 class SceneHandler:
     def __init__(self, window):
         self.window = window
         self.graphics_view = self.window.graphics_view
-        self._graphics_view_items = {}
+        self.graphics_view.setMouseTracking(True)
+
+        self.base_mouse_event = self.graphics_view.mouseMoveEvent
+        self.graphics_view.mouseMoveEvent = self.mouse_mouse_event
+
+        self._graphics_view_items = GraphicsViewItemsDict(self.window.constraint_panel_handler.update_constraints)
 
         self._scene = None
         self._selected_item = None
         self._bg = None
         self._bg_res = None
+
+    def mouse_mouse_event(self, event):
+        self.base_mouse_event(event)
+        if self._scene is not None:
+            pos = self.graphics_view.mapToScene(event.pos())
+            self.window.position_label.setText(f'    Mouse position: {int(pos.x())}, {-int(pos.y())}')
 
     @property
     def scene(self):

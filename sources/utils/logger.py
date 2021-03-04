@@ -33,8 +33,9 @@ class GameLogger:
 
         self.base_directory = os.path.normpath(os.environ.get('base', '.\\'))
 
-        self.base_handler = RotatingFileHandler(self.base_directory + '\\main.log', 'a', 1000000, 1, encoding='utf8')
-        self.error_handler = lg.FileHandler(self.base_directory + '\\main.error.log', encoding='utf8')
+        self.base_handler = RotatingFileHandler(self.base_directory + '\\logs\\main.log',
+                                                'a', 1000000, 1, encoding='utf8')
+        self.error_handler = lg.FileHandler(self.base_directory + '\\logs\\main.error.log', encoding='utf8')
         self.stream_handler = lg.StreamHandler()
 
         fmtb = lg.Formatter('%(asctime)s | %(levelname)s | %(message)s')

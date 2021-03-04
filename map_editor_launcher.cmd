@@ -1,2 +1,2 @@
 @call "%~dp0\commands\activate.cmd"
-@call python structure_builder.py
+@call python sources\map_editor.py

@@ -222,7 +222,7 @@ class Menu:
         if font_data[0] == 'nkb':
             txt = self.get_key_name(font_data[2].get())
         elif font_data[0] == 'ncon':
-            txt = self.get_controller_value_name(font_data[2].get_shorts())
+            txt = self.get_controller_value_name(font_data[2].get_bytes())
 
         elif font_data[0] == 'txt':
             txt = font_data[2]

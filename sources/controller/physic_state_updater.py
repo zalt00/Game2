@@ -102,20 +102,26 @@ class PhysicStateUpdater:
             self.x1, self.x2 = points[0].point_a.x, points[1].point_a.x
         for contact_point in points:
             py = round(self.body.position.y)
+
+            on_dynamic_ground = self.collide_with_dynamic_ground is not None
+
             if (((py - 8 <= round(contact_point.point_a.y) <= py + 8)
                     and (py - 8 <= round(contact_point.point_b.y) <= py + 8))
                 and (round(contact_point.point_a.y) == py - 1 or
-                     round(contact_point.point_b.y) == py - 1)):
+                     round(contact_point.point_b.y) == py - 1)) or on_dynamic_ground:
 
-                if self.current_state_name != 'jump' or self.body.velocity.y < 1:
+                if (self.current_state_name != 'jump' or self.body.velocity.y < 1
+                        or on_dynamic_ground):
+
                     self.on_ground = True
                     self.collide_with_slippery_slope = False
+
                     body = arbiter.shapes[1].body
                     self.stable_ground = body.body_type == pymunk.Body.STATIC
                     if not self.stable_ground:
                         self.collide_with_dynamic_ground = body
                     return True
-        return False
+        return self.collide_with_dynamic_ground is not None
 
     def collision_with_ground_post_solve(self, arbiter, *_, **__):
         self.landing_strength = max(self.landing_strength, arbiter.total_impulse.y)
@@ -170,7 +176,7 @@ class PhysicStateUpdater:
                     entity.can_air_control = True
 
                     # bug fix (prevents the player to keep his/her speed during the dash if he or she hits the ground)
-                    if self.on_ground and entity.state == 'dash':
+                    if (self.on_ground or self.collide_with_dynamic_ground is not None) and entity.state == 'dash':
                         self.body.velocity /= 20
                         entity.state = 'fall'
 

@@ -16,59 +16,39 @@ background_data:
   - -550
   res: backgrounds/forest/forest.bg
 biome: forest
-checkpoints: []
+checkpoints:
+- - checkpoint0
+  - - 107
+    - 32
 objects_data:
-  player:
-    res: player/white_guy.obj
-    type: player
-  struct10_structure:
-    3d_effect_layer: 0.8
-    is_built: true
-    layer: -3
-    name: struct10
-    pos:
-    - 636.0
-    - -15.0
-    res: decorations/forest/big_tree1.obj
-    state: base
-    type: structure
-  struct15_structure:
-    3d_effect_layer: 0.8
-    is_built: true
-    layer: -3
-    name: struct15
-    pos:
-    - 485.0
-    - 116.0
-    res: decorations/forest/small_bush.obj
-    state: base
-    type: structure
-  struct16_structure:
-    3d_effect_layer: 0.8
-    is_built: true
-    layer: -3
-    name: struct16
-    pos:
-    - 374.0
-    - 13.0
-    res: decorations/forest/very_long_bush.obj
-    state: base
-    type: structure
-  struct20_structure:
-    3d_effect_layer: 0.8
-    is_built: true
-    layer: -3
-    name: struct20
-    pos:
-    - 173.0
-    - 17.0
-    res: decorations/forest/big_bush.obj
-    state: base
-    type: structure
-  struct21_structure:
+  constraint19_constraint:
+    anchor_a:
+    - 20
+    - 160
+    anchor_b:
+    - 5
+    - 0
+    name: constraint19
+    object_a: dynamic
+    object_b: support
+    res: special_objects/rope.obj
+    type: constraint
+  constraint20_constraint:
+    anchor_a:
+    - -20
+    - 160
+    anchor_b:
+    - -5
+    - 0
+    name: constraint20
+    object_a: dynamic
+    object_b: support
+    res: special_objects/rope.obj
+    type: constraint
+  dynamic_structure:
     center_of_gravity:
     - 0
-    - 96
+    - 32
     correct_angle: true
     dynamic: true
     ground:
@@ -79,10 +59,10 @@ objects_data:
     is_built: false
     layer: 0
     mass: 100
-    name: struct21
+    name: dynamic
     pos:
-    - 408.0
-    - 545.0
+    - 384.0
+    - 405.0
     res: structures/dynamic_structures/forest/test.st
     state: base
     type: structure
@@ -99,6 +79,187 @@ objects_data:
         - 32
       - - -64
         - 160
+  player:
+    res: player/white_guy.obj
+    type: player
+  statue_structure:
+    is_built: true
+    layer: -1
+    name: statue
+    pos:
+    - 107.0
+    - -12.0
+    res: special_objects/statue.obj
+    state: base
+    type: structure
+  struct10_structure:
+    ground:
+    - - - -72
+        - 96
+      - - 72
+        - 96
+    is_built: false
+    layer: 2
+    name: struct10
+    pos:
+    - 649.0
+    - 471.0
+    res: structures/basic_structures/forest/platform4x2.st
+    state: base
+    type: structure
+    walls:
+    - - - -32
+        - 32
+      - - 32
+        - 32
+    - - - 32
+        - 32
+      - - 72
+        - 96
+    - - - -72
+        - 96
+      - - -32
+        - 32
+  struct11_structure:
+    ground:
+    - - - -72
+        - 96
+      - - 72
+        - 96
+    is_built: false
+    layer: 2
+    name: struct11
+    pos:
+    - 1084.0
+    - 281.0
+    res: structures/basic_structures/forest/platform4x2.st
+    state: base
+    type: structure
+    walls:
+    - - - -32
+        - 32
+      - - 32
+        - 32
+    - - - 32
+        - 32
+      - - 72
+        - 96
+    - - - -72
+        - 96
+      - - -32
+        - 32
+  struct12_structure:
+    ground:
+    - - - -56
+        - 160
+      - - 56
+        - 160
+    is_built: false
+    layer: 2
+    name: struct12
+    pos:
+    - 914.0
+    - 104.0
+    res: structures/basic_structures/forest/platform4x4_slope_left.st
+    state: base
+    type: structure
+    walls:
+    - - - -56
+        - 160
+      - - -56
+        - 96
+    - - - 56
+        - 160
+      - - 56
+        - 32
+    - - - 56
+        - 32
+      - - -32
+        - 56
+    - - - -32
+        - 56
+      - - -56
+        - 96
+  struct13_structure:
+    ground:
+    - - - -80
+        - 64
+      - - 80
+        - 64
+    is_built: false
+    layer: -2
+    name: struct13
+    pos:
+    - 624.0
+    - 57.0
+    res: structures/mainbuilds/forest/blah.st
+    state: base
+    type: structure
+    walls: []
+  struct14_structure:
+    is_built: false
+    layer: 1
+    name: struct14
+    pos:
+    - 608.0
+    - -7.0
+    res: structures/basic_structures/forest/hole4x2.st
+    state: base
+    type: structure
+  struct16_structure:
+    is_built: false
+    layer: -2
+    name: struct16
+    pos:
+    - 701.0
+    - -5.0
+    res: structures/basic_structures/forest/black_area2x2.st
+    state: base
+    type: structure
+  struct17_structure:
+    ground: []
+    is_built: false
+    layer: 0
+    name: struct17
+    pos:
+    - -16.0
+    - 32.0
+    res: structures/mainbuilds/forest/wall.st
+    state: base
+    type: structure
+    walls:
+    - - - 16
+        - 736
+      - - 16
+        - 0
+  struct1_structure:
+    ground:
+    - - - -80
+        - 128
+      - - 80
+        - 128
+    is_built: false
+    layer: 2
+    name: struct1
+    pos:
+    - 80.0
+    - -96.0
+    res: structures/basic_structures/forest/ground5x5.st
+    state: base
+    type: structure
+    walls: []
+  struct20_structure:
+    ground: []
+    is_built: false
+    layer: 9
+    name: struct20
+    pos:
+    - 657.0
+    - -188.0
+    res: special_objects/mesures_util.st
+    state: base
+    type: structure
+    walls: []
   struct2_structure:
     ground:
     - - - -80
@@ -109,7 +270,7 @@ objects_data:
     layer: 2
     name: struct2
     pos:
-    - 78.0
+    - 400.0
     - -96.0
     res: structures/basic_structures/forest/ground5x5.st
     state: base
@@ -125,7 +286,7 @@ objects_data:
     layer: 2
     name: struct3
     pos:
-    - 238.0
+    - 240.0
     - -96.0
     res: structures/basic_structures/forest/ground5x5.st
     state: base
@@ -145,7 +306,7 @@ objects_data:
     layer: 2
     name: struct4
     pos:
-    - 350.0
+    - 512.0
     - -32.0
     res: structures/basic_structures/forest/left_connector2x6.st
     state: base
@@ -157,47 +318,27 @@ objects_data:
         - 64
   struct5_structure:
     ground:
-    - - - -80
-        - 128
-      - - 80
-        - 128
+    - - - -56
+        - 64
+      - - 56
+        - 64
     is_built: false
-    layer: -2
+    layer: -1
     name: struct5
     pos:
-    - 462.0
-    - -0.0
-    res: structures/basic_structures/forest/ground5x5.st
-    state: base
-    type: structure
-    walls: []
-  struct6_structure:
-    ground:
-    - - - -72
-        - 96
-      - - 72
-        - 96
-    is_built: false
-    layer: 2
-    name: struct6
-    pos:
-    - 159.0
-    - 67.0
-    res: structures/basic_structures/forest/platform4x2.st
+    - 624.0
+    - 94.0
+    res: structures/basic_structures/forest/left_shrub5x3.st
     state: base
     type: structure
     walls:
-    - - - -32
+    - - - -56
+        - 64
+      - - -56
         - 32
-      - - 32
-        - 32
-    - - - 32
-        - 32
-      - - 72
-        - 96
-    - - - -72
-        - 96
-      - - -32
+    - - - 56
+        - 64
+      - - 56
         - 32
   struct7_structure:
     ground:
@@ -213,7 +354,7 @@ objects_data:
     layer: 2
     name: struct7
     pos:
-    - 574.0
+    - 736.0
     - -32.0
     res: structures/basic_structures/forest/right_connector2x6.st
     state: base
@@ -225,16 +366,32 @@ objects_data:
         - 64
   struct8_structure:
     ground:
+    - - - -80
+        - 128
+      - - 80
+        - 128
+    is_built: false
+    layer: 2
+    name: struct8
+    pos:
+    - 848.0
+    - -96.0
+    res: structures/basic_structures/forest/ground5x5.st
+    state: base
+    type: structure
+    walls: []
+  struct9_structure:
+    ground:
     - - - -72
         - 96
       - - 72
         - 96
     is_built: false
     layer: 2
-    name: struct8
+    name: struct9
     pos:
-    - 388.0
-    - 326.0
+    - 752.0
+    - 363.0
     res: structures/basic_structures/forest/platform4x2.st
     state: base
     type: structure
@@ -251,29 +408,33 @@ objects_data:
         - 96
       - - -32
         - 32
-  struct9_structure:
+  support_structure:
     ground:
-    - - - -56
-        - 64
-      - - 56
-        - 64
+    - - - -72
+        - 96
+      - - 72
+        - 96
     is_built: false
-    layer: -1
-    name: struct9
+    layer: 0
+    name: support
     pos:
-    - 462.0
-    - 98.0
-    res: structures/basic_structures/forest/left_shrub5x3.st
+    - 384.0
+    - 822.0
+    res: structures/basic_structures/forest/platform4x2.st
     state: base
     type: structure
     walls:
-    - - - -56
-        - 64
-      - - -56
+    - - - -32
         - 32
-    - - - 56
-        - 64
-      - - 56
+      - - 32
+        - 32
+    - - - 32
+        - 32
+      - - 72
+        - 96
+    - - - -72
+        - 96
+      - - -32
         - 32
 palette: structure_palettes/forest/forest_structure_tilesets.stsp
 space: true
@@ -288,33 +449,42 @@ triggers_data:
     enabled: true
     id: 0
     top: -200
+  bottom_of_world_killbox:
+    actions:
+    - action_name: die
+      arg: []
+      entity_name: player
+      type_: ActionOnEntity
+    enabled: true
+    id: 3
+    top: -50
   lock_cam:
     actions:
     - mode: follow
       type_: LockCamera
       x: true
       y: false
-    - target: 3
+    - target: 1
       type_: DisableTrigger
     - follow_sensitivity: 30
       left_limit: 0
       moving_threshold: 4
       type_: CameraSettings
-    - target: 7
+    - target: 2
       type_: EnableTrigger
     enabled: true
-    id: 3
+    id: 1
     left: 10
   move_cam:
     actions:
-    - dx: 600
+    - dx: 640
       dy: 0
       fade_in: 1
       fade_out: 1
       total_duration: 40
       type_: RelativeMovecam
-    - target: 7
+    - target: 2
       type_: DisableTrigger
     enabled: false
-    id: 7
+    id: 2
     left: 9

@@ -30,9 +30,11 @@ class GameActionManager(ActionManager):
     RECORD = 16
     GOD = 17
     SCREENSHOT = 18
+    TOGGLE_PLAYER_DEBUG_VALUES = 19
 
     def __init__(self, player,
-                 return_to_main_menu, save_callback, toggle_debug_draw_callback, pause_callback, tp_to_stable_ground):
+                 return_to_main_menu, save_callback, toggle_debug_draw_callback, pause_callback, tp_to_stable_ground,
+                 show_player_debug_values):
         super().__init__()
         self.player = player
 
@@ -62,6 +64,8 @@ class GameActionManager(ActionManager):
         self.do_handlers[self.MANUALLY_RAISE_ERROR] = self.manually_raise_error
         self.do_handlers[self.PAUSE] = self.pause
 
+        self.do_handlers[self.TOGGLE_PLAYER_DEBUG_VALUES] = self.toggle_player_debug_values
+
         self.do_handlers[self.DEV_COMMAND] = self.dev_command
         self.do_handlers[self.GOD] = self.toggle_god_mod
 
@@ -77,13 +81,20 @@ class GameActionManager(ActionManager):
 
         self.already_dashed = True
 
+        self.are_player_debug_values_hidden = False
         self.god = False
+
+        self.show_player_debug_values = show_player_debug_values
 
     def dev_command(self):
         logger.info('dev debug command')
 
     def toggle_god_mod(self):
         self.god = not self.god
+
+    def toggle_player_debug_values(self):
+        self.show_player_debug_values(self.are_player_debug_values_hidden)
+        self.are_player_debug_values_hidden = not self.are_player_debug_values_hidden
 
     def screenshot(self):
         name = 'screenshots/screenshot-{}.png'
@@ -225,11 +236,11 @@ class GameActionManager(ActionManager):
                 self.player.state = 'fall'
                 if self.still_walking:
                     if self.still_running:
-                        self.player.position_handler.body.velocity = Vec2d(150 * self.player.direction, 0)
+                        self.player.position_handler.end_of_dash('running', self.player)
                     else:
-                        self.player.position_handler.body.velocity = Vec2d(100 * self.player.direction, 0)
+                        self.player.position_handler.end_of_dash('walking', self.player)
                 else:
-                    self.player.position_handler.body.velocity = Vec2d(0, 0)
+                    self.player.position_handler.end_of_dash('', self.player)
 
             if not self.player.is_on_ground:
                 if self.player.state in ('jump',) or self.next_state in ('walk', 'run', 'prejump'):

@@ -8,18 +8,25 @@ class Trigger:
         self.right = data.get('right', None)
         self.left = data.get('left', None)
         self.enabled = data['enabled']
-        
+
+        self.id = data['id']
+
         self.actions = []
         for action_data in data['actions']:
             action = action_getter(**action_data)
             self.actions.append(action)
-    
+
+    def activate(self):
+        if self.enabled:
+            for action in self.actions:
+                action()
+
     def update(self, x, y):
         if self.enabled:
             if self.collide(x, y):
                 for action in self.actions:
                     action()
-    
+
     def collide(self, x, y):
         if self.top is not None:
             if y > self.top:

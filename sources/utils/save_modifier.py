@@ -10,6 +10,11 @@ except ImportError:
     logger = None
 
 
+# TODO: corriger l'erreur sur la taille des valeurs, il s'agit d'int32 et non d'int16, et peut donc stocker 2 int 16
+#       et 32 booleens dans un seul compartiment (c'etait en fait bien get_shorts et non get_bytes)
+#       (peu important vu qu'en terme d'espace disque c'est deja tres leger et qu'on voudra rarement stocker
+#       des grandes valeurs dans les paires de nombres)
+
 class SaveComponent:
     data = None
     path = ""
@@ -27,26 +32,48 @@ class SaveComponent:
 
     def get(self, save_id=0):
         return self.data[self._get_index(save_id)]
-    
+
+    def get_booleans(self, save_id=0):
+        n = self.get(save_id)
+        return self._get_binary(n, 16)
+
+    def get_single_boolean(self, bool_id, save_id=0):
+        n = self.get(save_id)
+        return (n >> (16 - bool_id - 1)) % 2
+
+    @staticmethod
+    def _get_binary(n, size):
+        return [(n >> i) % 2 for i in range(size - 1, -1, -1)]
+
     def get_chars(self, save_id=0):
-        a, b = self.get_shorts(save_id)
+        a, b = self.get_bytes(save_id)
         return chr(a) + chr(b)
     
-    def get_shorts(self, save_id=0):
-        index_ = self._get_index(save_id)
-        a = self.data[index_] % 256
-        b = self.data[index_] >> 8
+    def get_bytes(self, save_id=0):
+        n = self.get(save_id)
+        a = n % 256
+        b = n >> 8
         return a, b
         
     def set(self, value, save_id=0):
         self.data[self._get_index(save_id)] = value
-        
-    def set_shorts(self, a, b, save_id=0):
+
+    def set_booleans(self, binary_values, save_id=0):
+        value = int(''.join([str(v) for v in binary_values]), base=2)
+        self.set(value, save_id)
+
+    def set_single_boolean(self, bool_value, bool_id, save_id=0):
+        if self.get_single_boolean(bool_id, save_id) != bool_value:
+            n = 32768 >> bool_id
+            int_value = self.get(save_id)
+            self.set(int_value ^ n, save_id)
+
+    def set_bytes(self, a, b, save_id=0):
         value = a | (b << 8)
-        self.data[self._get_index(save_id)] = value
+        self.set(value, save_id)
         
     def set_chars(self, s, save_id=0):
-        self.set_shorts(ord(s[0]), ord(s[1]), save_id)
+        self.set_bytes(ord(s[0]), ord(s[1]), save_id)
     
     @classmethod
     def init(cls, path, menu_save_length=0, game_save_length=0):
@@ -91,7 +118,7 @@ class SaveCombination(list):
         for value, save in zip(iterable, self):
             save.set(value, save_id)
             
-    def get_long(self):
+    def get_int(self):
         if len(self) == 2:
             value = self[1].get() | (self[0].get() << 16)
             return value
@@ -117,7 +144,7 @@ def main():
     while not stop:
         for i, (l, t) in enumerate(labels):
             if t == 'shorts':
-                value = SaveComponent(i).get_shorts()
+                value = SaveComponent(i).get_bytes()
             else:
                 value = SaveComponent(i).get()
             print(f'{i}-{l}: {value}')
@@ -145,7 +172,7 @@ def main():
                 SaveComponent(i).set(value)
             elif t == 'shorts':
                 value = map(int, input('enter the new value: ').split(' '))
-                SaveComponent(i).set_shorts(*value)
+                SaveComponent(i).set_bytes(*value)
             labels[i][1] = t
             
         elif command == 'a':
@@ -174,7 +201,7 @@ def main():
                 
         elif command == 'gs':
             i = int(input('enter the id of the shorts you want to get: '))
-            print(SaveComponent(i).get_shorts())
+            print(SaveComponent(i).get_bytes())
             input()
             
         os.system('cls')
@@ -183,4 +210,4 @@ def main():
 if __name__ == '__main__':
     main()
     
-    
+

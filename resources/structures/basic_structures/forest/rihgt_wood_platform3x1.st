@@ -1,0 +1,7 @@
+dimensions=64 32
+dec=32 0
+scale=2
+length=2
+string-buffer:
+WG0000;WG0001;WG0002;CN1007
+WP0000;WP0001;WP0002;CN1008

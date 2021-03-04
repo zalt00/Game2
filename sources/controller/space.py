@@ -60,9 +60,9 @@ class GameSpace(pymunk.Space):
         body.position = pos
         self.reindex_shapes_for_body(body)
 
-        self._add_structure(pos, walls, segments, name, action_on_touch, is_slippery_slope, body, (1, 1))
+        self._add_structure(pos, walls, segments, name, action_on_touch, is_slippery_slope, body, (0.7, 1))
 
-    def _add_structure(self, pos, walls, segments, name, action_on_touch, is_slippery_slope, body, frictions=(0, 1)):
+    def _add_structure(self, pos, walls, segments, name, action_on_touch, is_slippery_slope, body, frictions=(0.3, 1)):
         shapes = []
         for a, b in walls:
             assert is_slippery_slope == 0 or is_slippery_slope == 1

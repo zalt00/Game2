@@ -385,7 +385,7 @@ class OptionsActionManager(BaseMenuActionManager):
             self.remove_confirmation_messages('reset')
             for save, value in self.options_data.default_values:
                 if isinstance(value, tuple):
-                    save.set_shorts(*value)
+                    save.set_bytes(*value)
                 else:
                     save.set(value)
             self.reinit_page()
@@ -406,7 +406,7 @@ class OptionsActionManager(BaseMenuActionManager):
 
     def set_ctrl(self, value):
         if isinstance(value, tuple):
-            self.options_data.Controls.get(self.changing_ctrl)[1].set_shorts(*value)
+            self.options_data.Controls.get(self.changing_ctrl)[1].set_bytes(*value)
         else:
             self.options_data.Controls.get(self.changing_ctrl)[0].set(value)
 

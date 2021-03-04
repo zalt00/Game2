@@ -87,6 +87,21 @@ class FileHandler:
                 item.setX(self.window.datax2canvasx(pos[0], rect))
                 item.setY(self.window.datay2canvasy(pos[1], rect))
 
+            elif obj_data['type'] == 'constraint':
+                self.window.constraint_panel_handler.add_constraint(
+                    name=obj_data['name'],
+                    anchor_a=obj_data['anchor_a'],
+                    anchor_b=obj_data['anchor_b'],
+                    object_a=obj_data['object_a'],
+                    object_b=obj_data['object_b']
+                )
+
+        if 'triggers_data' in data:
+            self.window.trigger_panel_handler.init_triggers_data(data['triggers_data'])
+
+        if 'checkpoints' in data:
+            self.window.checkpoint_panel_handler.set_data(data['checkpoints'])
+
         self.window.scene_handler.set_bg(path=os.path.join('resources/', data['background_data']['res'], 'preview.png'))
 
     def _save(self, path):
@@ -129,7 +144,14 @@ class FileHandler:
                 for key, value in self.additional_structure_data[res].items():
                     obj_data[key] = value
 
+        constraint_data = self.window.constraint_panel_handler.get_data(data['objects_data'])
+        print(constraint_data)
+        data['objects_data'].update(constraint_data)
+
         data['background_data']['res'] = self.window.scene_handler.bg_res
+
+        data['triggers_data'] = self.window.trigger_panel_handler.get_triggers_data()
+        data['checkpoints'] = self.window.checkpoint_panel_handler.get_data()
 
         with open(path, 'w') as datafile:
             yaml.safe_dump(data, datafile)
@@ -145,12 +167,13 @@ class FileHandler:
     def save_as(self):
         path, _ = QtWidgets.QFileDialog.getSaveFileName(self.window, 'Sauvegarder sous', 'data/maps',
                                                         "Yaml file (*.yml);;Tous les fichiers (*)")
-        if not path.endswith('.yml'):
-            path += '.yml'
-        path = path.replace('\\', '/')
-        self._save(path)
+        if path:
+            if not path.endswith('.yml'):
+                path += '.yml'
+            path = path.replace('\\', '/')
+            self._save(path)
 
-        self.map_path = path
+            self.map_path = path
 
     def save(self):
         if self.map_path is not None:

@@ -1,2 +1,2 @@
 @call "%~dp0\commands\activate.cmd"
-@call python main.py
+@call python sources\main.py

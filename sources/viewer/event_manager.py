@@ -146,6 +146,11 @@ class DebugGameEventManager(GameEventManager):
                 self.action_manager.do(self.action_manager.DEV_COMMAND)
             except AttributeError:
                 pass
+        elif symbol == pyglet.window.key.F7:
+            try:
+                self.action_manager.do(self.action_manager.TOGGLE_PLAYER_DEBUG_VALUES)
+            except AttributeError:
+                pass
 
 
 class MenuEventManager(EventManager):

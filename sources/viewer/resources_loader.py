@@ -256,19 +256,6 @@ class Structure:
         self.sheets = sheets
 
 
-# TODO: changer ça de place, uniquement utilisé par le structure builder qui fonctionne avec pygame
-class Tileset:
-    def __init__(self, data, directory):
-        if 'pygame' not in vars():
-            import pygame
-            pygame.init()
-        path = os.path.join(directory, data['filename']).replace('\\', '/')
-        self.img = pygame.image.load(path).convert_alpha()
-        self.tile_data = data['tile data']
-        self.tile_size = data['tile size']
-        self.eraser = data.get("eraser", None)
-
-
 class BackgroundObjectSet:
     def __init__(self, data, directory):
         scale = data['scale']

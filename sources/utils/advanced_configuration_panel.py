@@ -99,7 +99,7 @@ class App(BaseApp):
 
         if len(value.split(' ')) == 2:
             a, b = map(int, value.split(' '))
-            SaveComponent(id_).set_shorts(a, b)
+            SaveComponent(id_).set_bytes(a, b)
             type_ = 'shorts'
             data['labels'][label] = 'shorts'
         else:
@@ -129,7 +129,7 @@ class App(BaseApp):
         id_ = min(id_, len(SaveComponent.data) - 1)
         if len(value.split(' ')) == 2:
             a, b = map(int, value.split(' '))
-            SaveComponent(id_).set_shorts(a, b)
+            SaveComponent(id_).set_bytes(a, b)
             type_ = 'shorts'
         else:
             SaveComponent(id_).set(int(value))
@@ -172,7 +172,7 @@ class App(BaseApp):
         i = 0
         for i, (l, t) in enumerate(data['labels'].items()):
             if t == 'shorts':
-                value = SaveComponent(i).get_shorts()
+                value = SaveComponent(i).get_bytes()
             else:
                 value = SaveComponent(i).get()
             print(f' - {i} {l}: {value}')
@@ -218,7 +218,7 @@ def main():
     while not stop:
         for i, (l, t) in enumerate(labels):
             if t == 'shorts':
-                value = SaveComponent(i).get_shorts()
+                value = SaveComponent(i).get_bytes()
             else:
                 value = SaveComponent(i).get()
             print(f'{i}-{l}: {value}')
@@ -246,7 +246,7 @@ def main():
                 SaveComponent(i).set(value)
             elif t == 'shorts':
                 value = map(int, input('enter the new value: ').split(' '))
-                SaveComponent(i).set_shorts(*value)
+                SaveComponent(i).set_bytes(*value)
             labels[i][1] = t
 
         elif command == 'a':
@@ -275,7 +275,7 @@ def main():
 
         elif command == 'gs':
             i = int(input('enter the id of the shorts you want to get: '))
-            print(SaveComponent(i).get_shorts())
+            print(SaveComponent(i).get_bytes())
             input()
 
         os.system('cls')
