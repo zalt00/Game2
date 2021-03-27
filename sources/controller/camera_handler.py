@@ -7,7 +7,10 @@ from .trajectory import CameraMovementTrajectory
 
 class CameraHandler:
     def __init__(self, pos, player):
-        self.pos = list(pos)
+        self.pos = list(pos)  # position is ambiguous, it is actually the offset to apply to the sprites
+        # that means that when the camera travels to the right, the x position of the camera actually decreases
+        # TODO rename and add a position property which indicates the real position of the camera
+
         self.base_pos = tuple(pos)
 
         self.trajectory = None
@@ -19,14 +22,15 @@ class CameraHandler:
 
         self.player = player
 
-        self.relative_pos = [0, 0]
+        self.relative_pos = [0, 0]  # relative to player
         self.locked = [False, False]
         self.lock_mode = ''
         self.possible_modes = {'follow', 'strict'}
 
-        self.follow_sensitivity = 15
-        self.moving_threshold = 2
+        self.follow_sensitivity = 15  # speed of the camera in follow mode
+        self.moving_threshold = 2  # minimal offset between the target and the current position to move the camera
         self.left_limit = 2_147_483_640
+        self.right_limit = -2_147_483_640
         self.max_speed = 2_147_483_640
 
     def add_trajectory(self, target, total_duration, fade_in, fade_out, relative=False):
@@ -55,6 +59,22 @@ class CameraHandler:
 
     def move_to(self, x, y):
         self.pos[:] = x, y
+
+    @property
+    def x(self):
+        return self.pos[0]
+
+    @x.setter
+    def x(self, value):
+        self.pos[0] = value
+
+    @property
+    def y(self):
+        return self.pos[1]
+
+    @y.setter
+    def y(self, value):
+        self.pos[1] = value
 
     def lock_camera(self, x_bool, y_bool, mode):
         if x_bool:
@@ -117,16 +137,23 @@ class CameraHandler:
                     self.pos[0] = self.relative_pos[0] - self.player.position_handler.body.position.x
                     if self.pos[0] > self.left_limit:
                         self.pos[0] = self.left_limit
+                    if self.pos[0] < self.right_limit:
+                        self.pos[0] = self.right_limit
+
                 elif self.lock_mode == 'follow':
                     dif = self.relative_pos[0] - self.player.position_handler.body.position.x - self.pos[0]
                     if self.pos[0] + dif > self.left_limit:
                         dif = self.left_limit - self.pos[0]
+
+                    if self.pos[0] + dif < self.right_limit:
+                        dif = self.right_limit - self.pos[0]
 
                     dx = dif / self.follow_sensitivity
                     if abs(dif) > self.moving_threshold:
                         if abs(dx) > self.max_speed:
                             dx = (dx / abs(dx)) * self.max_speed
                         self.pos[0] += dx
+
             if self.locked[1]:
                 if self.lock_mode == 'strict':
                     self.pos[1] = self.relative_pos[1] - self.player.position_handler.body.position.y

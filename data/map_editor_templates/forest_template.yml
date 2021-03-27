@@ -49,6 +49,10 @@ triggers_data:
       type_: CameraSettings
     - target: 2
       type_: EnableTrigger
+    - fade: "out"
+      color: [0, 0, 0]
+      duration: 8
+      type_: CreateTransition
     enabled: true
     id: 1
     left: 10

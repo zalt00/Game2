@@ -8,6 +8,7 @@ from pyglet.window.key import *
 
 class Data(DataContainer):
     save_path = 'data/saves/save.data'
+    default_save_path = 'data/saves/default_save.data'
     resources_path = './resources/'
 
     key_names = {
@@ -352,6 +353,8 @@ class Data(DataContainer):
 
     class Game(DataContainer):
 
+        fade_out_transition_when_starting_game = False
+
         current_map_id = SaveComponent(4)
         last_checkpoint = SaveComponent(5)
         last_checkpoints_map = SaveComponent(6)
@@ -371,7 +374,7 @@ class Data(DataContainer):
         heart_positions = [(x_offset + spacing * i, y) for (i, x_offset, spacing, y)
                            in zip(range(_number), [_x_offset] * _number, [_spacing] * _number, [_y] * _number)]
 
-        maps = ('data/maps/temp2.yml', 'data/maps/temp2.yml')
+        maps = ('data/maps/temp3.yml', 'data/maps/temp2.yml')
 
         death_screen_res_path = 'special_objects/death_screen.obj'
 
@@ -381,14 +384,20 @@ class Data(DataContainer):
                     "y velocity: {}\n" +
                     "x coordinate: {}\n" +
                     "y coordinate: {}\n" +
-                    "framerate: {}")
+                    "camera x: {}\n" +
+                    "camera y: {}\n" +
+                    "framerate: {}\n" +
+                    "map id: {}")
 
             values = [
                 ['player', 'position_handler', 'body', 'velocity', 'x'],
                 ['player', 'position_handler', 'body', 'velocity', 'y'],
                 ['player', 'position_handler', 'body', 'position', 'x'],
                 ['player', 'position_handler', 'body', 'position', 'y'],
-                ['window', 'current_framerate']
+                ['camera_handler', 'x'],
+                ['camera_handler', 'y'],
+                ['window', 'current_framerate'],
+                ['current_map_id']
             ]
 
             color = "#ffffff"
@@ -407,12 +416,14 @@ class Data(DataContainer):
             air_control_max_velocity = 100
             acceleration = 33
             air_control_acceleration = 15
+            dash_speed = 2000
+            dash_length = 6  # in ticks
 
             class StateDuration(DataContainer):
-                idle = 0.016
-                fall = 0.016
-                jump = 0.016
-                dash = 0.092
+                idle = 0.017
+                fall = 0.017
+                jump = 0.017
+                dash = 7 / 60
 
         class BaseBGData(DataContainer):
             camera_pos_x = SaveComponent(0)

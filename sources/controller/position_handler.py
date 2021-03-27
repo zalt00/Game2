@@ -123,6 +123,10 @@ class EntityPositionHandler:
         self.air_control_max_speed = self.entity_data.air_control_max_velocity
         self.acceleration = self.entity_data.acceleration
         self.air_control_acceleration = self.entity_data.air_control_acceleration
+        self.dash_speed = self.entity_data.dash_speed
+        self.dash_length = self.entity_data.dash_length
+
+        self.dash_ticks_counter = 0
 
         self.running_states = {'run', 'slowly_run'}
         self.walking_states = {'walk', 'slowly_walk'}
@@ -155,18 +159,31 @@ class EntityPositionHandler:
             else:
                 ground_vx = 0
 
-            if entity.state in self.running_states or entity.secondary_state in self.running_states:
-                if abs(current_x_velocity) <= self.running_max_speed + ground_vx and entity.is_on_ground:
-                    abs_x_impulse = min(self.acceleration, self.running_max_speed - abs(current_x_velocity) + ground_vx)
-                    impulse[0] = abs_x_impulse * entity.direction
+            if entity.is_on_ground:
+                if entity.state in self.running_states or entity.secondary_state in self.running_states:
+                    max_speed = self.running_max_speed + ground_vx
 
-            elif entity.state in self.walking_states or entity.secondary_state in self.walking_states:
-                if abs(current_x_velocity) <= self.walking_max_speed + ground_vx and entity.is_on_ground:
-                    abs_x_impulse = min(self.acceleration, self.walking_max_speed - abs(current_x_velocity) + ground_vx)
-                    impulse[0] = abs_x_impulse * entity.direction
+                    if (entity.direction == 1 and current_x_velocity <= max_speed) or (
+                            entity.direction == -1 and -current_x_velocity <= max_speed):
+                        abs_x_impulse = min(self.acceleration, abs(max_speed * entity.direction - current_x_velocity))
+                        impulse[0] = abs_x_impulse * entity.direction
 
-            elif entity.state == 'dash' and entity.can_dash_velocity_be_applied:
-                self.body.velocity = Vec2d(2500 * entity.direction, 0)
+                elif entity.state in self.walking_states or entity.secondary_state in self.walking_states:
+                    max_speed = self.walking_max_speed + ground_vx
+
+                    if (entity.direction == 1 and current_x_velocity <= max_speed) or (
+                            entity.direction == -1 and -current_x_velocity <= max_speed):
+                        abs_x_impulse = min(self.acceleration, abs(max_speed * entity.direction - current_x_velocity))
+                        impulse[0] = abs_x_impulse * entity.direction
+
+            if entity.state == 'dash':
+                if self.dash_ticks_counter < self.dash_length:
+                    if entity.can_dash_velocity_be_applied:
+                        self.body.velocity = Vec2d(self.dash_speed * entity.direction, 0)
+
+                    self.dash_ticks_counter += 1
+                    if self.dash_ticks_counter == self.dash_length:
+                        self.end_of_dash(entity)
 
             elif entity.air_control and entity.can_air_control and not entity.is_on_ground:
                 if abs(current_x_velocity) <= self.air_control_max_speed - 1:
@@ -190,15 +207,18 @@ class EntityPositionHandler:
                 vy = vector.y * self.body.mass / body.mass
                 body.velocity = body.velocity + (-vx, -vy)
 
+            if entity.state != 'dash':
+                self.dash_ticks_counter = 0
+
             self.body.velocity = self.body.velocity + vector
             self.pos = self.body.position
             return self.body.position.x, self.body.position.y
         return self.pos
 
-    def end_of_dash(self, state, entity):
-        if state == 'running':
+    def end_of_dash(self, entity):
+        if entity.secondary_state == 'run':
             self.body.velocity = Vec2d((self.running_max_speed + self.acceleration) * entity.direction, 0)
-        elif state == 'walking':
+        elif entity.secondary_state == 'walk':
             self.body.velocity = Vec2d((self.walking_max_speed + self.acceleration) * entity.direction, 0)
         else:
             self.body.velocity = Vec2d(0, 0)

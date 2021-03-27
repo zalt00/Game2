@@ -75,6 +75,10 @@ class FileHandler:
 
         self.window.clear_objects()
 
+        constraints = self.window.constraint_panel_handler.constraints
+        while len(constraints) != 0:
+            constraints[-1].remove()
+
         for obj_data in data['objects_data'].values():
             if obj_data['type'] == 'structure':
                 qimage = self.window.load_image(obj_data['res'], self.window.edit_panel_handler.palette)
@@ -175,11 +179,14 @@ class FileHandler:
 
             self.map_path = path
 
+        return path
+
     def save(self):
         if self.map_path is not None:
             self._save(self.map_path)
+            return True
         else:
-            self.save_as()
+            return self.save_as()
 
     def open(self):
         path, _ = QtWidgets.QFileDialog.getOpenFileName(self.window, 'Ouvrir', 'data/maps',

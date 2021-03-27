@@ -74,6 +74,10 @@ set_camera_settings:
     type: int
     optional: true
     default: 0
+  right_limit:
+    type: int
+    optional: true
+    default: 0
   max_speed:
     type: int
     optional: true
@@ -132,6 +136,45 @@ load_map:
     type: int
     optional: false
     default: 0
+
+set_camera_position:
+  type_: SetCameraPosition
+  x:
+    type: int
+    optional: false
+    default: 0
+  y:
+    type: int
+    optional: false
+    default: 0
+
+create_transition:
+  type_: CreateTransition
+  fade:
+    type: str
+    optional: false
+    default: "in"
+  color:
+    type: list
+    optional: false
+    default: [0, 0, 0]
+  duration:
+    type: int
+    optional: false
+    default: 1
+  priority:
+    type: int
+    optional: false
+    default: 0
+  stop_after_end:
+    type: bool
+    optional: true
+    default: true
+  trigger_to_enable:
+    type: int
+    optional: true
+    default: 0
+
 
 
 

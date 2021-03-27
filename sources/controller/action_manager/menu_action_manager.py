@@ -6,36 +6,25 @@ from utils.save_modifier import SaveComponent
 
 
 class BaseMenuActionManager(ActionManager):
-    def __init__(self, window, buttons, classic_buttons, classic_buttons_order, panels,
-                 panel_order, additional_texts, additional_structures):
+    def __init__(self, action_manager_data):
 
-        """constructor of the class
-
-        :param window: app.window
-        :param buttons: button sprite group
-        :param classic_buttons: base buttons, buttons which are always there even when the panel changes
-        :param classic_buttons_order: order of the buttons, useful for the controller
-        :param panels: dict which binds the name of the panel with the data of the panel
-        :param panel_order: panel order, useful for the next_panel and previous_panel fonctions
-        :param additional_texts: additional texts to display regardless of the panel
-        :param additional_structures: not implemented yet, has currently no effect
-        """
+        """constructor of the class"""
 
         super().__init__()
 
-        self.additional_texts = additional_texts
-        self.additional_structures = additional_structures
+        self.additional_texts = action_manager_data.additional_texts
+        self.additional_structures = action_manager_data.additional_structures
 
-        self.window = window
+        self.window = action_manager_data.window
 
-        self.panels = panels
-        self.panel_order = panel_order
+        self.panels = action_manager_data.panels
+        self.panel_order = action_manager_data.panel_order
         self.current_panel = ""
 
-        self.base_classic_buttons = classic_buttons.copy()  # base
-        self.classic_buttons_order = classic_buttons_order  # current
-        self.classic_buttons = classic_buttons  # current
-        self.buttons_sprite_group = buttons  # current
+        self.base_classic_buttons = action_manager_data.classic_buttons.copy()  # base
+        self.classic_buttons_order = action_manager_data.classic_buttons_order  # current
+        self.classic_buttons = action_manager_data.classic_buttons  # current
+        self.buttons_sprite_group = action_manager_data.buttons  # current
         self.additional_buttons = {}  # current
 
         self.confirmation_messages = {}  # current
@@ -260,15 +249,12 @@ class MainMenuActionManager(BaseMenuActionManager):
 
     ACTIVATE = 5
 
-    def __init__(self, window, buttons, classic_buttons, classic_buttons_order, panels,
-                 panel_order, additional_texts, additional_structures, start_game_callback,
-                 quit_game_callback, open_options_callback):
-        super(MainMenuActionManager, self).__init__(window, buttons, classic_buttons, classic_buttons_order, panels,
-                                                    panel_order, additional_texts, additional_structures)
+    def __init__(self, action_manager_data):
+        super(MainMenuActionManager, self).__init__(action_manager_data)
 
-        self.play = start_game_callback
-        self.quit = quit_game_callback
-        self.open_options_menu = open_options_callback
+        self.play = action_manager_data.play_callback
+        self.quit = action_manager_data.quit_game_callback
+        self.open_options_menu = action_manager_data.open_options_callback
 
         self.do_handlers[self.MOUSEMOTION] = self.update_buttons
         self.do_handlers[self.LEFT_CLICK] = self.left_click
@@ -298,22 +284,18 @@ class OptionsActionManager(BaseMenuActionManager):
 
     SET_CTRL = 10
 
-    def __init__(self, window, buttons, classic_buttons, classic_buttons_order, panels,
-                 panel_order, additional_texts, additional_structures,
-                 close_options_callback, change_kb_ctrls_callback, change_con_ctrls_callback,
-                 set_ctrl_callback, options_data, reinit_page_callback, set_fullscreen_callback):
+    def __init__(self, action_manager_data):
 
-        super(OptionsActionManager, self).__init__(window, buttons, classic_buttons, classic_buttons_order, panels,
-                                                   panel_order, additional_texts, additional_structures)
+        super(OptionsActionManager, self).__init__(action_manager_data)
 
-        self._close_options = close_options_callback
-        self.reinit_page = reinit_page_callback
+        self._close_options = action_manager_data.return_to_mainmenu_callback
+        self.reinit_page = action_manager_data.reinit_page_callback
 
-        self.change_kb_ctrls = change_kb_ctrls_callback
-        self.change_con_ctrls = change_con_ctrls_callback
-        self._set_ctrl = set_ctrl_callback
+        self.change_kb_ctrls = action_manager_data.change_kb_ctrls_callback
+        self.change_con_ctrls = action_manager_data.change_con_ctrls_callback
+        self._set_ctrl = action_manager_data.set_ctrl_callback
 
-        self.set_fullscreen = set_fullscreen_callback
+        self.set_fullscreen = action_manager_data.set_fullscreen_callback
 
         self.do_handlers[self.MOUSEMOTION] = self.update_buttons
         self.do_handlers[self.LEFT_CLICK] = self.left_click
@@ -330,7 +312,7 @@ class OptionsActionManager(BaseMenuActionManager):
 
         self.do_handlers[self.SET_CTRL] = self.set_ctrl
 
-        self.options_data = options_data
+        self.options_data = action_manager_data.options_data
 
         self.changing_ctrl = ''
         self.changing_ctrl_button = None
@@ -424,15 +406,11 @@ class CharacterSelectionActionManager(BaseMenuActionManager):
 
     ACTIVATE = 5
 
-    def __init__(self, window, buttons, classic_buttons, classic_buttons_order, panels,
-                 panel_order, additional_texts, additional_structures, start_game_callback,
-                 return_to_mainmenu_callback):
-        super(CharacterSelectionActionManager, self).__init__(window, buttons, classic_buttons, classic_buttons_order,
-                                                              panels, panel_order, additional_texts,
-                                                              additional_structures)
+    def __init__(self, action_manager_data):
+        super(CharacterSelectionActionManager, self).__init__(action_manager_data)
 
-        self.start_game = start_game_callback
-        self.return_to_mainmenu_callback = return_to_mainmenu_callback
+        self.start_game = action_manager_data.start_game_callback
+        self.return_to_mainmenu_callback = action_manager_data.return_to_mainmenu_callback
 
         self.do_handlers[self.MOUSEMOTION] = self.update_buttons
         self.do_handlers[self.LEFT_CLICK] = self.left_click

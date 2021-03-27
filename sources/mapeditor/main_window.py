@@ -91,6 +91,7 @@ class Window(QMainWindow):
         for listwidget in self.edit_panel_handler.struct_lists.values():
             listwidget.itemDoubleClicked.connect(self.edit_panel_handler.add_structure_to_scene)
         self.action_delete_selected_structure.triggered.connect(self.scene_handler.delete_selected_structure)
+        self.action_preview_current_map.triggered.connect(self.scene_handler.preview_current_map)
 
         self.action_set_bg.triggered.connect(self.scene_handler.set_bg)
 

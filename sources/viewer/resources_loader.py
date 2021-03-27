@@ -53,15 +53,17 @@ class ResourcesLoader:
         logger.debug(f'Loads {res_name} from disk')
 
         res = None
+
         if res_name.endswith('st'):
             with open(local_dir, 'r', encoding='utf8') as file:
                 s = file.read()
             res = Structure(s)  # only resource type which is stored in a single file
 
         else:
+
             datafile_path = os.path.join(local_dir, 'data.json').replace('\\', '/')
             with open(datafile_path, encoding='utf8') as datafile:
-                data = json.load(datafile, encoding='utf8')
+                data = json.load(datafile)
 
             if res_name.endswith('.stsp'):
                 res = StructTSPalette(data, res_name, self.dir_)
@@ -69,8 +71,6 @@ class ResourcesLoader:
                 res = Object(data, res_name)
             elif res_name.endswith('.bg'):
                 res = Background(data, res_name)
-            elif res_name.endswith('.ts'):
-                res = Tileset(data, res_name)
             elif res_name.endswith('bgobj'):
                 res = BackgroundObjectSet(data, res_name)
 

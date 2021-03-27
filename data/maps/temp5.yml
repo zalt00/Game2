@@ -20,77 +20,32 @@ checkpoints:
 - - checkpoint0
   - - 107
     - 32
-- - checkpoint1
-  - - 107
-    - 32
-- - checkpoint2
-  - - 107
-    - 32
-- - checkpoint3
-  - - 107
-    - 32
-- - checkpoint4
-  - - 107
-    - 32
-- - checkpoint5
-  - - 107
-    - 32
-- - checkpoint6
-  - - 107
-    - 32
-- - checkpoint7
-  - - 107
-    - 32
-- - checkpoint8
-  - - 107
-    - 32
-- - checkpoint9
-  - - 107
-    - 32
-- - checkpoint10
-  - - 107
-    - 32
-- - checkpoint11
-  - - 107
-    - 32
-- - checkpoint12
-  - - 107
-    - 32
-- - checkpoint13
-  - - 107
-    - 32
-- - checkpoint14
-  - - 107
-    - 32
-- - checkpoint15
-  - - 107
-    - 32
 objects_data:
-  constraint18_constraint:
+  constraint19_constraint:
     anchor_a:
     - 20
     - 160
     anchor_b:
+    - 5
     - 0
-    - 0
-    name: constraint18
-    object_a: dynamic_struct
+    name: constraint19
+    object_a: dynamic
     object_b: support
     res: special_objects/rope.obj
     type: constraint
-  constraint19_constraint:
+  constraint20_constraint:
     anchor_a:
     - -20
     - 160
     anchor_b:
+    - -5
     - 0
-    - 0
-    name: constraint19
-    object_a: dynamic_struct
+    name: constraint20
+    object_a: dynamic
     object_b: support
     res: special_objects/rope.obj
     type: constraint
-  dynamic_struct_structure:
+  dynamic_structure:
     center_of_gravity:
     - 0
     - 32
@@ -104,7 +59,7 @@ objects_data:
     is_built: false
     layer: 0
     mass: 100
-    name: dynamic_struct
+    name: dynamic
     pos:
     - 384.0
     - 405.0
@@ -233,6 +188,22 @@ objects_data:
     res: structures/basic_structures/forest/black_area2x2.st
     state: base
     type: structure
+  struct17_structure:
+    ground: []
+    is_built: false
+    layer: 0
+    name: struct17
+    pos:
+    - -16.0
+    - 32.0
+    res: structures/mainbuilds/forest/wall.st
+    state: base
+    type: structure
+    walls:
+    - - - 16
+        - 736
+      - - 16
+        - 0
   struct1_structure:
     ground:
     - - - -80
@@ -251,20 +222,36 @@ objects_data:
     walls: []
   struct20_structure:
     ground:
-    - - - -80
-        - 128
-      - - 80
-        - 128
+    - - - -56
+        - 160
+      - - 56
+        - 160
     is_built: false
     layer: 0
     name: struct20
     pos:
-    - -80.0
-    - -96.0
-    res: structures/basic_structures/forest/ground5x5.st
+    - 315.0
+    - 144.0
+    res: structures/basic_structures/forest/platform4x4_slope_left.st
     state: base
     type: structure
-    walls: []
+    walls:
+    - - - -56
+        - 160
+      - - -56
+        - 96
+    - - - 56
+        - 160
+      - - 56
+        - 32
+    - - - 56
+        - 32
+      - - -32
+        - 56
+    - - - -32
+        - 56
+      - - -56
+        - 96
   struct2_structure:
     ground:
     - - - -80
@@ -424,7 +411,7 @@ objects_data:
     name: support
     pos:
     - 384.0
-    - 1330.0
+    - 822.0
     res: structures/basic_structures/forest/platform4x2.st
     state: base
     type: structure
@@ -444,16 +431,6 @@ objects_data:
 palette: structure_palettes/forest/forest_structure_tilesets.stsp
 space: true
 triggers_data:
-  border_of_world:
-    actions:
-    - entity_name: player
-      npos:
-      - -16
-      - 50
-      type_: TPEntity
-    enabled: true
-    id: 49
-    right: -18
   bottom_of_world:
     actions:
     - entity_name: player
@@ -473,37 +450,6 @@ triggers_data:
     enabled: true
     id: 3
     top: -50
-  level_transition_1:
-    actions:
-    - color:
-      - 0
-      - 0
-      - 0
-      duration: 8
-      fade: in
-      priority: 8
-      stop_after_end: false
-      trigger_to_enable: 19
-      type_: CreateTransition
-    - target: 18
-      type_: DisableTrigger
-    enabled: true
-    id: 18
-    right: 8
-  load_previous_level:
-    actions:
-    - map_id: 0
-      type_: LoadMap
-    - entity_name: player
-      npos:
-      - 820
-      - 273
-      type_: TPEntity
-    - type_: SetCameraPosition
-      x: -176
-      y: 0
-    enabled: false
-    id: 19
   lock_cam:
     actions:
     - mode: follow
@@ -518,20 +464,13 @@ triggers_data:
       type_: CameraSettings
     - target: 2
       type_: EnableTrigger
-    - color:
-      - 0
-      - 0
-      - 0
-      duration: 8
-      fade: out
-      priority: 0
-      type_: CreateTransition
     enabled: true
     id: 1
+    left: 10
   move_cam:
     actions:
     - dx: 640
-      dy: 400
+      dy: 0
       fade_in: 1
       fade_out: 1
       total_duration: 40
@@ -540,3 +479,4 @@ triggers_data:
       type_: DisableTrigger
     enabled: false
     id: 2
+    left: 9

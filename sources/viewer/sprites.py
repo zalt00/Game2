@@ -18,7 +18,7 @@ class SpriteMetaclass(type):
     def get_constructor(mcs, sprite_type_name):
         if sprite_type_name in mcs.instantiable_constructors:
             return mcs.instantiable_constructors[sprite_type_name]
-        raise ValueError('no constructor with this name')
+        raise ValueError('no constructor has this name')
 
 
 class BaseSprite(pyglet.sprite.Sprite, metaclass=SpriteMetaclass, instantiable=False):
@@ -42,7 +42,7 @@ class BaseSprite(pyglet.sprite.Sprite, metaclass=SpriteMetaclass, instantiable=F
         self.position_changed = False
         self.image_changed = False
 
-        self.affected_by_screen_offset = True
+        self._affected_by_screen_offset = True
         self._hide_next_update = False
         self._show_next_update = False
 
@@ -56,6 +56,17 @@ class BaseSprite(pyglet.sprite.Sprite, metaclass=SpriteMetaclass, instantiable=F
         if hasattr(image_handler, 'res'):
             if hasattr(image_handler.res, 'scale'):
                 self.scale = image_handler.res.scale
+
+    @property
+    def affected_by_screen_offset(self):
+        return self._affected_by_screen_offset
+
+    @affected_by_screen_offset.setter
+    def affected_by_screen_offset(self, value):
+        assert isinstance(value, bool)
+        if value != self.affected_by_screen_offset:
+            self._affected_by_screen_offset = value
+            self.update_position()
 
     def on_animation_end(self):
         try:
@@ -142,7 +153,7 @@ class Entity(BaseSprite, metaclass=SpriteMetaclass):
 
         self.thrust = Vec2d(0, 0)
 
-        self.is_on_ground = False
+        self.is_on_ground = True
 
         self.physic_state_updater = physic_state_updater
         self.particles_handler = particles_handler

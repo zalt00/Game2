@@ -79,7 +79,7 @@ class GameActionManager(ActionManager):
         self.next_state = 'idle'
         self.next_direction = 1
 
-        self.already_dashed = True
+        self.already_dashed = False
 
         self.are_player_debug_values_hidden = False
         self.god = False
@@ -87,6 +87,7 @@ class GameActionManager(ActionManager):
         self.show_player_debug_values = show_player_debug_values
 
     def dev_command(self):
+        self.player.die()
         logger.info('dev debug command')
 
     def toggle_god_mod(self):
@@ -159,7 +160,7 @@ class GameActionManager(ActionManager):
                 (0, 1_250_000), self.player.position_handler.body.center_of_gravity)
 
     def dash(self):
-        if not self.already_dashed or self.god:
+        if (not self.already_dashed or self.god) and not self.player.is_on_ground:
             if self.player.state == 'fall' or self.player.state == 'jump':
                 self.player.state = 'dash'
                 self.already_dashed = True
@@ -226,21 +227,27 @@ class GameActionManager(ActionManager):
             self.player.state = 'idle'
         self.next_state = 'idle'
 
+        if self.player.secondary_state in ('walk', 'run'):
+            self.player.secondary_state = ''
+
     def set_state(self, *args, **kwargs):
 
         if not self.player.dead and not self.player.sleeping:
+
+            if not self.player.is_on_ground:
+                if self.still_walking:
+                    if self.still_running:
+                        self.player.secondary_state = 'run'
+                    else:
+                        self.player.secondary_state = 'walk'
+                else:
+                    self.player.secondary_state = ''
+
             if self.player.state == 'land':
                 self.player.secondary_state = ''
 
             if self.player.state == 'dash':
                 self.player.state = 'fall'
-                if self.still_walking:
-                    if self.still_running:
-                        self.player.position_handler.end_of_dash('running', self.player)
-                    else:
-                        self.player.position_handler.end_of_dash('walking', self.player)
-                else:
-                    self.player.position_handler.end_of_dash('', self.player)
 
             if not self.player.is_on_ground:
                 if self.player.state in ('jump',) or self.next_state in ('walk', 'run', 'prejump'):

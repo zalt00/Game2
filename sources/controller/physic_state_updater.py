@@ -1,6 +1,7 @@
 # -*- coding:Utf-8 -*-
 
 from time import perf_counter
+import time
 import pymunk
 from utils.logger import logger
 
@@ -10,8 +11,10 @@ class PhysicStateUpdater:
         self.body = body
         self.space = space
 
-        self.on_ground = False
+        self.on_ground = True
         self.collide = False
+        self.collide_for_one_tick = False
+        self.dashing_for_one_tick = False
         self.collide_with_slippery_slope = False
 
         self.land = landing_callback
@@ -111,7 +114,7 @@ class PhysicStateUpdater:
                      round(contact_point.point_b.y) == py - 1)) or on_dynamic_ground:
 
                 if (self.current_state_name != 'jump' or self.body.velocity.y < 1
-                        or on_dynamic_ground):
+                        or on_dynamic_ground or self.current_state_name == 'dash'):
 
                     self.on_ground = True
                     self.collide_with_slippery_slope = False
@@ -121,7 +124,7 @@ class PhysicStateUpdater:
                     if not self.stable_ground:
                         self.collide_with_dynamic_ground = body
                     return True
-        return self.collide_with_dynamic_ground is not None
+        return self.collide_with_dynamic_ground is not None or self.current_state_name == 'dash'
 
     def collision_with_ground_post_solve(self, arbiter, *_, **__):
         self.landing_strength = max(self.landing_strength, arbiter.total_impulse.y)
@@ -163,7 +166,7 @@ class PhysicStateUpdater:
             self.previous_collision_data = None
 
         if arbiter.shapes[1].body.body_type == pymunk.Body.DYNAMIC:
-            if arbiter.total_impulse.y < -10000:
+            if arbiter.total_impulse.length > 10000 and self.current_state_name != 'dash':
                 self.actions.append(('die', []))
 
     def update_(self, entity, n=1):
@@ -177,19 +180,29 @@ class PhysicStateUpdater:
 
                     # bug fix (prevents the player to keep his/her speed during the dash if he or she hits the ground)
                     if (self.on_ground or self.collide_with_dynamic_ground is not None) and entity.state == 'dash':
-                        self.body.velocity /= 20
+                        self.body.velocity /= 10
                         entity.state = 'fall'
 
                     if not self.collide_with_slippery_slope:
                         # bug fix (prevents the player to force his/her way through walls when dashing)
                         if self.collide and entity.state == 'dash':
-                            entity.can_dash_velocity_be_applied = False
+                            if not self.dashing_for_one_tick:
+                                entity.can_dash_velocity_be_applied = True
+                                self.dashing_for_one_tick = True
+                            else:
+                                entity.can_dash_velocity_be_applied = False
                         else:
                             entity.can_dash_velocity_be_applied = True
                     elif entity.state == 'dash':
                         if abs(self.body.velocity.x) > 800:
                             entity.state = 'fall'
                             self.body.velocity *= 800 / abs(self.body.velocity.x)
+
+                        self.dashing_for_one_tick = True
+
+                    if entity.state != 'dash':
+                        self.collide_for_one_tick = False
+                        self.dashing_for_one_tick = False
 
                     # rough approximation of air resistance
                     # uses this formula: C * 1/2 * p(air) * v**2 * S * <vector>u
@@ -217,7 +230,7 @@ class PhysicStateUpdater:
                     # prevents a "flicker" effect when the player leaves the ground for 1 or 2 ticks (it sometimes
                     # happens when the player simply runs on a structure after a weird landing)
                     if not self.on_ground:
-                        if self.a > 3:
+                        if self.a > 1:
                             on_ground = False
                         else:
                             self.a += 1
@@ -246,10 +259,12 @@ class PhysicStateUpdater:
                         entity.state = 'fall'
 
                     landed = (not entity.is_on_ground) and on_ground
+                    can_dash = entity.is_on_ground and not on_ground
                     entity.is_on_ground = on_ground
                     if landed:
                         self.land(self.landing_strength)
-
+                    if can_dash:
+                        pass
         else:
             self.body.velocity = (0, 0)
             self.body.angle = 0

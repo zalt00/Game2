@@ -6,8 +6,34 @@ from pygame.locals import *
 from .structbuilder_resource_loader import ResourcesLoader
 from .template_reader import TemplateReader
 from .tileset import Tileset
-import tkinter as tk
-from tkinter.filedialog import asksaveasfilename, askopenfilename
+
+try:
+    import tkinter as tk
+    from tkinter.filedialog import asksaveasfilename, askopenfilename
+except ImportError:
+    tk = None
+    askopenfilename = None
+    asksaveasfilename = None
+
+    def open_filename(**_):
+        pass
+
+    def save_as_filename(**_):
+        pass
+
+else:
+    def open_filename(**kwargs):
+        root = tk.Tk()
+        path = askopenfilename(parent=root, **kwargs)
+        root.destroy()
+        return path
+
+    def save_as_filename(**kwargs):
+        root = tk.Tk()
+        filename = asksaveasfilename(parent=root, **kwargs)
+        root.destroy()
+        return filename
+
 import json
 import os
 import importlib
@@ -271,9 +297,7 @@ class App:
     def save(self):
         sub_tab = self.create_subtab()
 
-        root = tk.Tk()
-        filename = asksaveasfilename(parent=root, filetypes=[("structure", "*.st"), ("all files", "*")])
-        root.destroy()
+        filename = save_as_filename(filetypes=[("structure", "*.st"), ("all files", "*")])
 
         if filename:
             if not filename.endswith('.st'):
@@ -305,9 +329,8 @@ class App:
         return width, height
 
     def load(self):
-        root = tk.Tk()
-        path = askopenfilename(parent=root, filetypes=[("structure", "*.st"), ("all files", "*")])
-        root.destroy()
+
+        path = open_filename(filetypes=[("structure", "*.st"), ("all files", "*")])
 
         if path:
             _, res_name = self.rl.load_from_path(path, return_res_name=True)

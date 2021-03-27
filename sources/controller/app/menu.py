@@ -3,6 +3,7 @@
 
 from ..position_handler import StaticPositionHandler, BgLayerPositionHandler
 from ..action_manager import MainMenuActionManager, OptionsActionManager, CharacterSelectionActionManager
+from ..action_manager.action_manager_data import MenuActionManagerData
 from ..text_getter import FormatTextGetter, SimpleTextGetter
 from utils.save_modifier import SaveComponent
 from pyglet.window import key
@@ -129,53 +130,37 @@ class Menu:
                 if hasattr(data, 'button_name'):
                     self.classic_buttons[data.button_name] = obj
 
+        action_manager_data = MenuActionManagerData(
+            self.window,
+            self.viewer_page.buttons,
+            self.classic_buttons,
+            self.page.Objects.classic_buttons_order,
+            self.panels,
+            self.page.Objects.panel_order,
+            self.texts,
+            {},
+            self.play,
+            self.quit_game,
+            self.open_options,
+            self.return_to_main_menu,
+            self.change_kb_ctrls,
+            self.change_con_ctrls,
+            self.set_ctrl,
+            self.model.Options,
+            self.reinit_page,
+            self.window.set_display_mode,
+            self.start_game_callback
+        )
+
         actionmanager = None
         if self.page.action_manager == 'MainMenuActionManager':
-            actionmanager = MainMenuActionManager(
-                self.window,
-                self.viewer_page.buttons,
-                self.classic_buttons,
-                self.page.Objects.classic_buttons_order,
-                self.panels,
-                self.page.Objects.panel_order,
-                self.texts,
-                (),
-                self.play,
-                self.quit_game,
-                self.open_options
-            )
+            actionmanager = MainMenuActionManager(action_manager_data)
 
         elif self.page.action_manager == 'OptionsActionManager':
-            actionmanager = OptionsActionManager(
-                self.window,
-                self.viewer_page.buttons,
-                self.classic_buttons,
-                self.page.Objects.classic_buttons_order,
-                self.panels,
-                self.page.Objects.panel_order,
-                self.texts,
-                (),
-                self.return_to_main_menu,
-                self.change_kb_ctrls,
-                self.change_con_ctrls,
-                self.set_ctrl,
-                self.model.Options,
-                self.reinit_page,
-                self.window.set_display_mode
-            )
+            actionmanager = OptionsActionManager(action_manager_data)
+
         elif self.page.action_manager == 'CharacterSelectionActionManager':
-            actionmanager = CharacterSelectionActionManager(
-                self.window,
-                self.viewer_page.buttons,
-                self.classic_buttons,
-                self.page.Objects.classic_buttons_order,
-                self.panels,
-                self.page.Objects.panel_order,
-                self.texts,
-                (),
-                self.start_game_callback,
-                self.return_to_main_menu
-            )
+            actionmanager = CharacterSelectionActionManager(action_manager_data)
 
         if actionmanager is None:
             raise ValueError(f'invalid action manager name: {self.page.action_manager}')
@@ -281,14 +266,6 @@ class Menu:
 
         button.change_text(name)
         self.window.set_event_manager('MenuEventManager', self.action_manager)
-
-    def reverse_trajectory(self, t):
-        if int(t.target[0]) == 0:
-            for p in self.pos_hdlrs:
-                p.add_trajectory((-2300, 0), 1500, 400, 400)
-        else:
-            for p in self.pos_hdlrs:
-                p.add_trajectory((0, 0), 1500, 400, 400)
 
     @staticmethod
     def dump_save():

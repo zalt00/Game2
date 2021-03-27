@@ -3,6 +3,7 @@
 from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtCore import Qt
 import os
+from subprocess import Popen, PIPE
 
 
 class GraphicsViewItemsDict(dict):
@@ -191,17 +192,26 @@ class SceneHandler:
     def display_trigger_bbox(self, left, right, top, bottom):
         pen = QtGui.QPen(QtGui.QColor(7389830))
 
-        line1 = self._scene.addLine(left, top, right, top)
-        line2 = self._scene.addLine(left, bottom, right, bottom)
-        line3 = self._scene.addLine(left, bottom, left, top)
-        line4 = self._scene.addLine(right, bottom, right, top)
+        brush = QtGui.QBrush(QtGui.QColor(112, 194, 134, 80))
+        rect = self._scene.addRect(QtCore.QRectF(left, top, abs(right - left), abs(top - bottom)), pen=pen, brush=brush)
+        rect.setZValue(29)
+        return rect
 
-        lines = line1, line2, line3, line4
-        for line in lines:
-            line.setPen(pen)
-        return lines
+    def remove_trigger_bbox(self, rect):
+        self._scene.removeItem(rect)
 
-    def remove_trigger_bbox(self, bbox):
-        for line in bbox:
-            self._scene.removeItem(line)
+    def preview_current_map(self):
+        answer = QtWidgets.QMessageBox.question(self.window, 'Preview', 'Current map will be saved confirm ?')
+        if answer == QtWidgets.QMessageBox.Yes:
+            saved = self.window.file_handler.save()
+            if saved:
+                path = self.window.file_handler.map_path
+                path = os.path.relpath(path)
+
+                process = Popen("cmd.exe", shell=False, universal_newlines=True, stdin=PIPE, stdout=PIPE, stderr=PIPE)
+
+                commands = f'.\\commands\\activate.cmd\npython sources\\main.py --debug --map "{path}"\n'
+                out, err = process.communicate(commands)
+                print(err)
+
 

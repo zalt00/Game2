@@ -9,6 +9,7 @@ from . import image_handler as ihdlr
 from .page import Page
 from utils import window_event
 from pyglet import clock
+from .ordered_groups import OrderedGroupList
 
 pyglet.image.Texture.default_min_filter = pyglet.gl.gl.GL_NEAREST
 pyglet.image.Texture.default_mag_filter = pyglet.gl.gl.GL_NEAREST
@@ -18,13 +19,13 @@ class Window(pyglet.window.Window):
     def __init__(self, width, height, display_mode, *args, **kwargs):
         super().__init__(width, height, fullscreen=display_mode, *args, **kwargs)
 
-        self._screen_offset = [0, 0]
+        self._screen_offset = [0, 0]  # offset between physic coords and display coords
 
         self.menu_page = self.new_page('menu')
         self.game_page = self.new_page('game')
         self.current_page = self.menu_page
 
-        self.ordered_groups = [pyglet.graphics.OrderedGroup(i) for i in range(20)]
+        self.ordered_groups = OrderedGroupList(30)
 
         self.resource_loader = None
 
@@ -266,7 +267,7 @@ class Window(pyglet.window.Window):
         return self.add_structure(page, layer, position_handler, res, dynamic=dynamic)
 
     def get_group(self, layer):
-        return self.ordered_groups[layer + 10]
+        return self.ordered_groups[layer]
 
     def set_event_manager(self, event_manager_name, *args, **kwargs):
         self.event_manager = getattr(evtm, event_manager_name)(*args, **kwargs)
@@ -279,8 +280,12 @@ class Window(pyglet.window.Window):
         return len(res.layers)
 
     def add_transition(self, transition):
-        self.current_transition = transition
-        transition.start()
+        if self.current_transition is None or self.current_transition.state in {1, 2} or\
+                transition.priority >= self.current_transition.priority:
+            if self.current_transition is not None:
+                self.current_transition.stop()
+            self.current_transition = transition
+            transition.start()
 
     def update(self, *_, **__):
         pass

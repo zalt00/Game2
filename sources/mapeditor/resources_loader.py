@@ -55,7 +55,7 @@ class ResourcesLoader:
         else:
             datafile_path = os.path.join(local_dir, 'data.json').replace('\\', '/')
             with open(datafile_path, encoding='utf8') as datafile:
-                data = json.load(datafile, encoding='utf8')
+                data = json.load(datafile)
 
             if res_name.endswith('.stsp'):
                 res = StructTSPalette(data, res_name, self.dir_)

@@ -16,7 +16,25 @@ background_data:
   - -550
   res: backgrounds/forest/forest.bg
 biome: forest
-checkpoints: []
+checkpoints:
+- - checkpoint0
+  - - 107
+    - 32
+- - checkpoint1
+  - - 107
+    - 32
+- - checkpoint2
+  - - 107
+    - 32
+- - checkpoint3
+  - - 107
+    - 32
+- - checkpoint4
+  - - 107
+    - 32
+- - checkpoint5
+  - - 107
+    - 32
 objects_data:
   player:
     res: player/white_guy.obj
@@ -270,6 +288,37 @@ triggers_data:
     enabled: true
     id: 0
     top: -200
+  level_transition:
+    actions:
+    - color:
+      - 0
+      - 0
+      - 0
+      duration: 8
+      fade: in
+      priority: 8
+      stop_after_end: false
+      trigger_to_enable: 13
+      type_: CreateTransition
+    - target: 14
+      type_: DisableTrigger
+    enabled: true
+    id: 14
+    left: 923
+  load_next_map:
+    actions:
+    - map_id: 1
+      type_: LoadMap
+    - entity_name: player
+      npos:
+      - 78
+      - 33
+      type_: TPEntity
+    - type_: SetCameraPosition
+      x: 0
+      y: 0
+    enabled: false
+    id: 13
   lock_cam:
     actions:
     - mode: follow
@@ -284,6 +333,14 @@ triggers_data:
       type_: CameraSettings
     - target: 2
       type_: EnableTrigger
+    - color:
+      - 0
+      - 0
+      - 0
+      duration: 8
+      fade: out
+      priority: 0
+      type_: CreateTransition
     enabled: true
     id: 1
     left: 10

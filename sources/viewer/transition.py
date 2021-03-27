@@ -5,7 +5,7 @@ import pyglet
 
 
 class Transition:
-    def __init__(self, duration, color, img_size, end_of_transition_callback, fade, stop_after_end=True):
+    def __init__(self, duration, color, img_size, end_of_transition_callback, fade, stop_after_end=True, priority=0):
         self.duration = duration
         self.base_color = color
         if len(self.base_color) == 3:
@@ -20,6 +20,8 @@ class Transition:
         self.t0 = perf_counter()
         self.state = 0
 
+        self.priority = priority
+
     def start(self):
         self.t0 = perf_counter()
 
@@ -33,11 +35,13 @@ class Transition:
                 opacity = round(255 / self.duration * (self.duration - n))
             self.sprite.opacity = opacity
 
-        else:
-            self.on_transition_end()
-            self.state = 0
+        elif self.state == 0:
+            self.state = 1
             if self.stop_after_end:
                 self.stop()
+
+            self.on_transition_end()
+
 
     def stop(self):
         self.state = 2

@@ -20,6 +20,7 @@ class SaveComponent:
     path = ""
     menu_save_length = 0
     game_save_length = 0
+    no_dump_mode = False
     
     def __init__(self, i):
         self.i = i
@@ -76,11 +77,12 @@ class SaveComponent:
         self.set_bytes(ord(s[0]), ord(s[1]), save_id)
     
     @classmethod
-    def init(cls, path, menu_save_length=0, game_save_length=0):
+    def init(cls, path, menu_save_length=0, game_save_length=0, no_dump_mode=False):
         cls.path = path
         cls.menu_save_length = menu_save_length
         cls.game_save_length = game_save_length
-    
+        cls.no_dump_mode = no_dump_mode
+
     @classmethod
     def load(cls):
         if logger is not None:
@@ -92,13 +94,14 @@ class SaveComponent:
     
     @classmethod
     def dump(cls):
-        if logger is not None:
-            logger.debug('Dumping save to disk')
-        p = xdrlib.Packer()
-        p.pack_array(cls.data, p.pack_int)
-        b = p.get_buffer()
-        with open(cls.path, 'wb') as file:
-            file.write(b)
+        if not cls.no_dump_mode:
+            if logger is not None:
+                logger.debug('Dumping save to disk')
+            p = xdrlib.Packer()
+            p.pack_array(cls.data, p.pack_int)
+            b = p.get_buffer()
+            with open(cls.path, 'wb') as file:
+                file.write(b)
     
     def __repr__(self):
         return 'SaveComponent({})'.format(self.i)

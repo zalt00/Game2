@@ -31,12 +31,12 @@ class TriggerMapping:
 
         if trigger.right is None:
             if trigger.left is not None:
-                while trigger.left not in self.tiles[-1]:
+                while trigger.left > self.tiles[-1].x2:
                     self.create_new_tile()
             self.triggers_in_all_new_right_tiles.add(trigger_id)
 
         else:
-            while trigger.right not in self.tiles[-1]:
+            while trigger.right > self.tiles[-1].x2:
                 self.create_new_tile()
 
         left = trigger.left

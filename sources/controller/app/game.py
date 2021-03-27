@@ -214,13 +214,10 @@ class Game:
                 sprite = self.window.add_simple_image(
                     self.viewer_page, 9, heart_position_handler, heart_resource, self.model.Game.full_heart_state)
                 sprite.affected_by_screen_offset = False
-                sprite.static = True
-                sprite.position_changed = True
                 self.viewer_page.hearts.add(sprite)
                 self.hearts.append(sprite)
 
         #####
-
 
         ### EVENT MANAGER ###
         ctrls = {}
@@ -351,18 +348,25 @@ class Game:
 
         self.entities[name] = self.player
 
-    def spawn_particle(self, pos, state, direction, particle_id, res):
+    def spawn_particle(self, pos, state, direction, particle_id, res, layer=-1, lifetime=8):
+        if (len(self.dash_particles) != 0 and len(self.dash_particles) > particle_id and state == 'dash_effect' and
+                res == self.player.image_handler.res):
 
-        if len(self.dash_particles) != 0 and len(self.dash_particles) > particle_id:
+            # for dash particles, applies a small optimisation (because the player is supposed to dash often,
+            # and the maximum number of particles is predictable, the particles are not destroyed and recreated every
+            # time, but just hidden and shown)
             particle = self.dash_particles[particle_id]
             particle.direction = direction
             particle.image_changed = True
             particle.show()
+
             particle.change_position(*pos)
             particle.image_handler.revive()
+
         else:
             position_handler = StaticPositionHandler(pos)
-            particle = self.window.spawn_particle(self.viewer_page, -1, position_handler, res, state, direction, 8)
+            particle = self.window.spawn_particle(self.viewer_page, layer, position_handler, res,
+                                                  state, direction, lifetime)
             self.viewer_page.dash_particles.add(particle)
             self.dash_particles.append(particle)
 
@@ -396,8 +400,8 @@ class Game:
             round(self.player.position_handler.body.position.x), self.current_save_id)
         self.model.Game.BasePlayerData.pos_y.set(
             round(self.player.position_handler.body.position.y), self.current_save_id)
-        self.model.Game.BaseBGData.camera_pos_x.set(round(self.window.screen_offset[0]), self.current_save_id)
-        self.model.Game.BaseBGData.camera_pos_y.set(round(self.window.screen_offset[1]), self.current_save_id)
+        self.model.Game.BaseBGData.camera_pos_x.set(round(self.camera_handler.pos[0]), self.current_save_id)
+        self.model.Game.BaseBGData.camera_pos_y.set(round(self.camera_handler.pos[1]), self.current_save_id)
 
     def player_loose_one_life(self):
         self.player_lives -= 1
@@ -503,7 +507,7 @@ class Game:
             self.player.position_handler.body.position = new_pos
             self.player.position_handler.body.velocity = (0, 0)
 
-        transition = Transition(120, (0, 0, 0, 255), (1280, 720), self.reanimate_player, 'in')
+        transition = Transition(120, (0, 0, 0, 255), (1280, 720), self.reanimate_player, 'in', priority=9)
         self.window.add_transition(transition)
 
     def reanimate_player(self, *_, **__):
@@ -515,7 +519,7 @@ class Game:
             self.model.Game.BaseBGData.camera_pos_x.set(self.window.screen_offset[0], self.current_save_id)
             self.model.Game.BaseBGData.camera_pos_y.set(self.window.screen_offset[1], self.current_save_id)
 
-            self.load_map(self.model.Game.last_checkpoints_map.get(self.current_save_id))
+            self.load_map(self.model.Game.last_checkpoints_map.get(self.current_save_id), death_warp=True)
         else:
 
             self.is_player_dead = False
@@ -542,7 +546,7 @@ class Game:
         for heart in self.hearts:
             heart.state = 'full'
 
-        transition = Transition(300, (0, 0, 0, 255), (1280, 720), lambda *_, **__: None, 'out')
+        transition = Transition(300, (0, 0, 0, 255), (1280, 720), lambda *_, **__: None, 'out', priority=5)
         self.window.add_transition(transition)
 
     def load_map_file(self, map_id):
@@ -557,15 +561,32 @@ class Game:
     def load_map_on_next_frame(self, map_id):
         self.additional_commands.append(lambda: self.load_map(map_id))
 
-    def load_map(self, map_id):
+    def load_map(self, map_id, death_warp=False):
         self.model.Game.current_map_id.set(map_id, self.current_save_id)
+
+        if not death_warp:
+            self.save_position()
 
         self.level = self.load_map_file(self.model.Game.current_map_id.get(self.current_save_id))
         self.level_res = self.level['background_data']['res']
 
         self.window.reset_event_manager()
 
+        still_walking = self.action_manager.still_walking
+        still_running = self.action_manager.still_running
+
+        player_direction = self.player.direction
+
         self.start_game()
+
+        if still_walking:
+            if player_direction == -1:
+                self.action_manager.do(self.action_manager.LEFT)
+            else:
+                self.action_manager.do(self.action_manager.RIGHT)
+
+        if still_running:
+            self.action_manager.do(self.action_manager.RUN)
 
     def quit(self):
         for func in self.scheduled_func:

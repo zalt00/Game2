@@ -3,6 +3,7 @@
 from dataclasses import dataclass
 from typing import Any
 from utils.logger import logger
+from viewer.transition import Transition
 
 
 @dataclass
@@ -65,6 +66,7 @@ class GameActionGetter(ActionGetter):
         follow_sensitivity: int = -1
         moving_threshold: int = -1
         left_limit: int = 2_147_483_641
+        right_limit: int = -2_147_483_641
         max_speed: int = 2_147_483_641
 
         def __call__(self):
@@ -76,6 +78,16 @@ class GameActionGetter(ActionGetter):
                 self.ag.camera_handler.left_limit = self.left_limit
             if self.max_speed != 2_147_483_641:
                 self.ag.camera_handler.max_speed = self.max_speed
+            if self.right_limit != -2_147_483_641:
+                self.ag.camera_handler.right_limit = self.right_limit
+
+    @dataclass
+    class SetCameraPosition(AbstractAction):
+        x: int
+        y: int
+
+        def __call__(self):
+            self.ag.camera_handler.move_to(self.x, self.y)
 
     @dataclass
     class EnableTrigger(AbstractAction):
@@ -144,5 +156,25 @@ class GameActionGetter(ActionGetter):
 
         def __call__(self):
             self.ag.load_map(self.map_id)
+
+    @dataclass
+    class CreateTransition(AbstractAction):
+        fade: str
+        color: list
+        duration: int
+        stop_after_end: bool = True
+        trigger_to_enable: int = -1
+        priority: int = 0
+
+        def __call__(self):
+            if self.trigger_to_enable >= 0:
+                callback = GameActionGetter.EnableTrigger(self.ag, self.trigger_to_enable)
+            else:
+                def callback(*_, **__):
+                    pass
+
+            transition = Transition(self.duration, tuple(self.color), (1280, 800),
+                                    callback, self.fade, self.stop_after_end, priority=self.priority)
+            self.ag.window.add_transition(transition)
 
 

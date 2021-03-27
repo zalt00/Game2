@@ -28,7 +28,7 @@ class EntityImageHandler(ImageHandler):
         self.advance = 0
         self.previous_state = 'idle'
 
-    def update_image(self, _):
+    def update_image(self, _, __=1):
         raise NotImplementedError
 
 
@@ -75,7 +75,7 @@ class RopeImageHandler(ImageHandler):
     def update_image(self, rope, n=1):
         img = self.res.sheets[rope.state]
         img.anchor_x = 0
-        img.anchor_y = 0
+        img.anchor_y = 2
         return img
 
 

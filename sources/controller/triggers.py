@@ -29,15 +29,15 @@ class Trigger:
 
     def collide(self, x, y):
         if self.top is not None:
-            if y > self.top:
+            if y >= self.top:
                 return False
         if self.bottom is not None:
-            if y < self.bottom:
+            if y <= self.bottom:
                 return False
         if self.right is not None:
-            if x > self.right:
+            if x >= self.right:
                 return False
         if self.left is not None:
-            if x < self.left:
+            if x <= self.left:
                 return False
         return True
