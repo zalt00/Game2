@@ -2,9 +2,9 @@
 
 from ..position_handler import StaticPositionHandler, \
     PlayerPositionHandler, BgLayerPositionHandler, DecorationPositionHandler, DynamicStructurePositionHandler, \
-    RopePositionHandler
+    RopePositionHandler, EntityPositionHandler, KinematicStructurePositionHandler
 from ..action_manager import GameActionManager
-from ..physic_state_updater import PhysicStateUpdater
+from ..physic_state_updater import PlayerPhysicStateUpdater, BasePhysicStateUpdater
 from ..particles_handler import ParticleHandler
 from ..text_getter import FormatTextGetter, SimpleTextGetter
 from ..space import GameSpace
@@ -20,6 +20,7 @@ from ..camera_handler import CameraHandler
 from utils.logger import logger
 import os
 from ..trigger_mapping import TriggerMapping
+from ..sprite_action_manager import PlayerActionManager, BaseEntityActionManager
 
 
 class Game:
@@ -43,13 +44,14 @@ class Game:
 
         self.t1 = self.count = self.number_of_space_updates = self.space = \
             self.player = self.entities = self.structures = self.triggers = self.ag = self.action_manager = None
+        self.kinematic_structures = None
         self.checkpoints = None
         self.camera_handler = None
         self.is_player_dead = False
         self.is_camera_handler_activated = True
         self.sprites_to_delete = []
         self.already_hidden = []
-        self.scheduled_func = set()
+        self.scheduled_func = dict()
 
         self.player_lives = 3
 
@@ -108,7 +110,7 @@ class Game:
         self.dash_particles = []
         self.sprites_to_delete = []
         self.already_hidden = []
-        self.scheduled_func = set()
+        self.scheduled_func = dict()
 
         try:
             self.window.game_page.remove_child('Game')
@@ -147,7 +149,8 @@ class Game:
         bg_layers = self.window.add_bg(
             self.viewer_page,
             pos_hdlrs,
-            self.level_res
+            self.level_res,
+            parallax=True
         )
         self.viewer_page.bg_layers.update(bg_layers)
 
@@ -163,13 +166,14 @@ class Game:
             )
             pos_hdlrs.append(pos_hdlr)
             decoration_layer = self.window.add_bg_layer(
-                self.viewer_page, self.level['background_data']['bg_decoration_layer_id'], pos_hdlr, layer_res)
+                self.viewer_page, self.level['background_data']['bg_decoration_layer_id'], pos_hdlr, layer_res, True)
             self.viewer_page.bg_layers.add(decoration_layer)
 
         ######
 
         self.entities = dict()
         self.structures = dict()
+        self.kinematic_structures = dict()
 
         ### CAMERA ###
         self.camera_handler = CameraHandler((0, 0), None)
@@ -179,14 +183,15 @@ class Game:
         ### TRIGGERS ###
         self.triggers = TriggerMapping(100)
         self.ag = GameActionGetter(self.triggers, self.window, self.camera_handler, self.entities, self.model,
-                                   self.current_save_id, self.load_map_on_next_frame)
+                                   self.current_save_id, self.load_map_on_next_frame, self.schedule_function,
+                                   self.kinematic_structures)
         for trigdata in self.level['triggers_data'].values():
             self.triggers[trigdata['id']] = Trigger(trigdata, self.ag)
 
         #####
 
         action_manager = GameActionManager(
-            None, return_to_main_menu, self.save_position, self.toggle_debug_draw, self.pause, self.tp_to_stable_ground,
+            None, return_to_main_menu, self.save_position, self.toggle_debug_draw, self.pause,
             self.show_player_debug_values)
         self.action_manager = action_manager
 
@@ -197,6 +202,8 @@ class Game:
 
             if data['type'] == 'player':
                 self.init_player(data)
+            elif data['type'] == 'entity':
+                self.init_entity(data)
             elif data['type'] == 'structure':
                 self.init_structure(data)
             elif data['type'] == 'text':
@@ -264,6 +271,21 @@ class Game:
     def pause(self):
         self.paused = not self.paused
 
+    def init_entity(self, data):
+        name = data['name']
+        res_name = data['res']
+
+        physic_state_updater = BasePhysicStateUpdater(dict())
+        position_handler = StaticPositionHandler(data['pos'])
+        particle_handler = ParticleHandler(self.spawn_particle)
+        action_manager = BaseEntityActionManager(None)
+
+        entity = self.window.add_entity(self.viewer_page, 0, position_handler, res_name, physic_state_updater,
+                                        particle_handler, action_manager)
+
+        action_manager.entity = entity
+        self.entities[name] = entity
+
     def init_structure(self, data):
         name = data['name']
         is_decoration = '3d_effect_layer' in data
@@ -282,8 +304,9 @@ class Game:
                 is_slippery_slope = False
 
             if not dynamic:
+                kinematic = data.get('kinematic', False)
                 self.space.add_structure(data['pos'], data['walls'], data['ground'], name,
-                                         action_on_touch, is_slippery_slope)
+                                         action_on_touch, is_slippery_slope, is_kinematic=kinematic)
             else:
                 try:
                     mass = data['mass']
@@ -307,6 +330,12 @@ class Game:
             pos_handler = DecorationPositionHandler(data['pos'], data['3d_effect_layer'], self.window.screen_offset)
         elif dynamic:
             pos_handler = DynamicStructurePositionHandler(self.space.objects[name][0], correct_angle)
+        elif data.get('kinematic', False):
+            if name in self.space.objects:
+                body = self.space.objects[name][0]
+            else:
+                body = None
+            pos_handler = KinematicStructurePositionHandler(data['pos'], body)
         else:
             pos_handler = StaticPositionHandler(data['pos'])
         layer = data.get('layer', 0)
@@ -322,6 +351,9 @@ class Game:
 
         self.structures[name] = struct
 
+        if data.get('kinematic', False):
+            self.kinematic_structures[name] = struct
+
     def init_player(self, additional_data):
         player_data = self.model.Game.BasePlayerData
         name = player_data.name
@@ -330,15 +362,21 @@ class Game:
                                        player_data.width, (player_data.pos_x.get(self.current_save_id),
                                                            player_data.pos_y.get(self.current_save_id)), name)
 
+        player_action_manager = PlayerActionManager(None, self.tp_to_stable_ground, self.player_loose_one_life)
+
         self.player = self.window.add_entity(
-            self.viewer_page, 0, PlayerPositionHandler(self.space.objects[name][0], self.triggers,
-                                                       self.model.Game.BasePlayerData),
-            additional_data['res'],
-            PhysicStateUpdater(self.space.objects[name][0], self.action_manager.land, self.save_position, self.space,
-                               player_data.StateDuration),
-            ParticleHandler(self.spawn_particle), self.action_manager.set_state,
-            self.player_loose_one_life
+            page=self.viewer_page,
+            layer=0,
+            position_handler=PlayerPositionHandler(self.space.objects[name][0], self.triggers,
+                                                   self.model.Game.BasePlayerData),
+            res=additional_data['res'],
+            physics_updater=PlayerPhysicStateUpdater(self.space.objects[name][0], self.action_manager.land,
+                                                     self.save_position, self.space, player_data.StateDuration),
+            particle_handler=ParticleHandler(self.spawn_particle),
+            action_manager=player_action_manager
         )
+
+        player_action_manager.entity = self.player
 
         self.camera_handler.player = self.player
         self.player.position_handler.do_update_triggers = True
@@ -447,8 +485,7 @@ class Game:
 
         self.sprites_to_delete.append(bg)
 
-        self.scheduled_func.add(self.display_death_screen)
-        self.window.schedule_once(self.display_death_screen, 1.8)
+        self.schedule_function(self.display_death_screen, dt=1.8)
 
         cp_id = self.model.Game.last_checkpoint.get(self.current_save_id)
         map_id = self.model.Game.last_checkpoints_map.get(self.current_save_id)
@@ -496,8 +533,7 @@ class Game:
         self.sprites_to_delete.append(bg)
         self.sprites_to_delete.append(death_screen)
 
-        self.scheduled_func.add(self.start_reviving_transition)
-        self.window.schedule_once(self.start_reviving_transition, 3.4)
+        self.schedule_function(self.start_reviving_transition, dt=3.4)
 
     def start_reviving_transition(self, *_, **__):
         self.is_camera_handler_activated = True
@@ -572,8 +608,8 @@ class Game:
 
         self.window.reset_event_manager()
 
-        still_walking = self.action_manager.still_walking
-        still_running = self.action_manager.still_running
+        still_walking = self.player.action_manager.still_walking
+        still_running = self.player.action_manager.still_running
 
         player_direction = self.player.direction
 
@@ -589,10 +625,23 @@ class Game:
             self.action_manager.do(self.action_manager.RUN)
 
     def quit(self):
-        for func in self.scheduled_func:
-            self.window.unschedule(func)
-        self.scheduled_func = set()
+        self.scheduled_func = dict()
         self.dump_save()
+
+    def schedule_function(self, func, dt=-1., ticks=-1, args=()):
+        if dt != -1:
+            ticks = round(dt * 60)
+        elif ticks == -1:
+            raise ValueError('either dt or ticks must be precised')
+
+        self.scheduled_func[id(func)] = [func, ticks, args]
+
+    def update_scheduled_functions(self):
+        for id_, data in list(self.scheduled_func.items()):
+            data[1] -= 1
+            if data[1] <= 0:
+                data[0](*data[2])
+                self.scheduled_func.pop(id_)
 
     def update_positions(self, *_, **__):
         if self.t1 == -1:
@@ -603,7 +652,8 @@ class Game:
         for i in range(n1):
             if not self.paused:
                 self.space.step(1/60/4)
-                self.player.update_state(1/60/4)
+                if self.player is not None:
+                    self.player.update_state(1/60/4)
                 if self.count == 3:
                     self.count = 0
                     if self.is_camera_handler_activated:
@@ -611,6 +661,9 @@ class Game:
                     for sprite in sprites:
                         last = i + 4 - self.count >= (n1 // 3 - 1)
                         sprite.update_position(last)
+
+                    self.update_scheduled_functions()
+
                 else:
                     self.count += 1
         self.number_of_space_updates += n1

@@ -175,6 +175,44 @@ create_transition:
     optional: true
     default: 0
 
+schedule_trigger_enabling:
+  type_: ScheduleTriggerEnabling
+  ticks:
+    type: int
+    optional: false
+    default: 1
+  trigger_to_enable:
+    type: int
+    optional: false
+    default: 0
+
+move_kinematic_structure:
+  type_: MoveKinematicStructure
+  x:
+    type: int
+    optional: false
+    default: 0
+  y:
+    type: int
+    optional: false
+    default: 0
+  total_duration:
+    type: int
+    optional: false
+    default: 1
+  fade_in:
+    type: int
+    optional: false
+    default: 0
+  fade_out:
+    type: int
+    optional: false
+    default: 0
+  struct_name:
+    type: str
+    optional: false
+    default: structure_name
+
 
 
 

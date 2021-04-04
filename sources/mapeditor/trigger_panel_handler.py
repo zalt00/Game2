@@ -88,6 +88,11 @@ class TriggerPanelHandler:
 
     def refresh_edit_trigger_box(self):
         if self._selected_trigger is not None:
+
+            if self.window.display_trigger_button.isChecked():
+                self.display_trigger(False)
+                self.display_trigger(True)
+
             self.empty_actions_scroll_area_content_layout()
             trigger_name, trigger_data = self._triggers[self._selected_trigger]
 

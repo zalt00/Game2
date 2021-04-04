@@ -374,7 +374,7 @@ class Data(DataContainer):
         heart_positions = [(x_offset + spacing * i, y) for (i, x_offset, spacing, y)
                            in zip(range(_number), [_x_offset] * _number, [_spacing] * _number, [_y] * _number)]
 
-        maps = ('data/maps/temp3.yml', 'data/maps/temp2.yml')
+        maps = ('data/maps/temp3.yml', 'data/maps/temp2.yml', 'data/maps/temptemp.yml')
 
         death_screen_res_path = 'special_objects/death_screen.obj'
 

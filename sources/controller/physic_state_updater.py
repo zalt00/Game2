@@ -6,8 +6,38 @@ import pymunk
 from utils.logger import logger
 
 
-class PhysicStateUpdater:
-    def __init__(self, body, landing_callback, save_position_callback, space, state_duration):
+class BasePhysicStateUpdater:
+    def __init__(self, states_durations):
+        self.states_durations = states_durations
+
+        self.current_state_name = 'idle'
+        self.current_state_duration = 0
+        self.t0 = 0
+        self.current_time = 0
+
+    def change_physic_state(self, entity, state):
+        if entity.state != 'die' or not entity.dead:
+            duration = self.states_durations.get(state, None)
+            if duration is None:
+                duration = entity.image_handler.get_state_duration(state)
+            self.current_state_duration = duration
+            self.current_state_name = state
+            self.t0 = self.current_time
+        if entity.dead and entity.state != 'die':
+            entity.state = 'die'
+
+    def update_physic_state(self, entity):
+        if self.current_time - self.t0 >= self.current_state_duration:
+            entity.end_of_state(self.current_state_name)
+
+    def step(self, dt):
+        self.current_time += dt
+
+
+class PlayerPhysicStateUpdater(BasePhysicStateUpdater):
+    def __init__(self, body, landing_callback, save_position_callback, space, states_durations):
+        super(PlayerPhysicStateUpdater, self).__init__(states_durations)
+        
         self.body = body
         self.space = space
 
@@ -45,30 +75,12 @@ class PhysicStateUpdater:
         player_wall_collision_handler.begin = self.check_actions_on_touch
         player_slippery_slope_collision_handler.begin = self.check_actions_on_touch
 
-        self.state_duration = state_duration
-
-        self.current_state_name = 'idle'
-        self.current_state_duration = 0
-        self.t0 = 0
-        self.current_time = 0
-
         self.stable_ground = False
         self.collide_with_dynamic_ground = None
 
         self.previous_collision_data = None
 
         self.actions = []
-
-    def change_physic_state(self, entity, state):
-        if entity.state != 'die' or not entity.dead:
-            duration = self.state_duration.get(state, None)
-            if duration is None:
-                duration = entity.image_handler.get_state_duration(state)
-            self.current_state_duration = duration
-            self.current_state_name = state
-            self.t0 = self.current_time
-        if entity.dead and entity.state != 'die':
-            entity.state = 'die'
 
     def check_actions_on_touch(self, arbiter, *_, **__):
         shapes = arbiter.shapes
@@ -269,11 +281,4 @@ class PhysicStateUpdater:
             self.body.velocity = (0, 0)
             self.body.angle = 0
             self.body.space.reindex_shapes_for_body(self.body)
-
-    def update_physic_state(self, entity):
-        if self.current_time - self.t0 >= self.current_state_duration:
-            entity.end_of_state(self.current_state_name)
-
-    def step(self, dt):
-        self.current_time += dt
 

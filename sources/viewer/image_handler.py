@@ -13,12 +13,28 @@ class ImageHandler:
 
 
 class BgLayerImageHandler(ImageHandler):
-    def __init__(self, res, layer):
+    def __init__(self, res, layer, parallax=False):
         super().__init__(res)
         self.layer = layer
 
+        self.parallax = parallax
+
+        self.image = self.res.layers[self.layer]
+
+        if parallax:
+            image_data = self.image.get_image_data()
+
+            _image = pyglet.image.Texture.create(self.image.width * 2, self.image.height)
+            _image.blit_into(image_data, 0, 0, 0)
+            _image.blit_into(image_data, self.image.width, 0, 0)
+
+            self.image = _image
+
     def update_image(self, sprite, n=1):
-        return self.res.layers[self.layer]
+        return self.image
+
+    def is_parallax(self):
+        return self.parallax
 
 
 class EntityImageHandler(ImageHandler):

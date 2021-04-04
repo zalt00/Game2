@@ -1,10 +1,11 @@
 # -*- coding:Utf-8 -*-
 
 from pymunk.vec2d import Vec2d
-from .trajectory import CameraMovementTrajectory
+from .trajectory import FadeInFadeOutTrajectory
 from time import perf_counter
 from queue import Queue
 import numpy as np
+from utils.logger import logger
 from math import pi
 import math
 
@@ -15,6 +16,52 @@ class StaticPositionHandler:
         
     def update_position(self, entity, n=1):
         return self.pos[0], self.pos[1]
+
+
+class KinematicStructurePositionHandler:
+
+    def __init__(self, pos, body=None):
+        self.pos = pos
+        self.current_trajectory = None
+        self.t = 0
+
+        self.body = body
+
+    def update_position(self, entity, n=1):
+        if self.current_trajectory is not None:
+            if not self.current_trajectory.trajectory_ended:
+                self.pos[:] = self.current_trajectory(self.t)
+
+                if self.body is not None:
+                    x, y = self.pos
+                    bx, by = self.body.position
+                    if abs(bx - x) > 5:
+                        logger.warning(f'x desinc on kinematic structure of type {type(entity).__name__}')
+                        bx = x
+                        self.body.position = x, by
+                    if abs(by - y) > 5:
+                        logger.warning(f'y desinc on kinematic structure of type {type(entity).__name__}')
+                        self.body.position = bx, y
+
+                    if self.t != self.current_trajectory.duration:
+                        npos = self.current_trajectory(self.t + 1)
+                        vx = (npos[0] - self.pos[0]) * 60
+                        vy = (npos[1] - self.pos[1]) * 60
+                        self.body.velocity = vx, vy
+
+                self.t += 1
+            else:
+                if self.body is not None:
+                    self.body.velocity = (0, 0)
+                self.current_trajectory = None
+                self.t = 1
+
+        return self.pos[0], self.pos[1]
+
+    def add_trajectory(self, trajectory):
+        self.t = 1
+        self.current_trajectory = trajectory
+        self.body.position = self.pos
 
 
 class DecorationPositionHandler:
@@ -54,7 +101,7 @@ class DynamicStructurePositionHandler:
     def update_position(self, struct, n=1):
 
         if struct.constrained:
-            self.body.velocity = self.body.velocity / 1.002
+            self.body.velocity = self.body.velocity / 1.001
 
         if self.correct_angle:
             while self.body.angle > pi / 4:
@@ -96,6 +143,10 @@ class BgLayerPositionHandler:
         self.base_pos = tuple(pos)
         self._3d_effect_layer = _3d_effect_layer
 
+        self.entity_base_width = -1
+
+        self._unsure_width = True
+
     def get_layer(self, entity):
         if self._3d_effect_layer is None:
             return entity.get_layer()
@@ -107,7 +158,22 @@ class BgLayerPositionHandler:
         if i == 0:
             i = 1
 
-        return self.base_pos[0] + self.sdr[0] / i * 2, self.base_pos[1] + self.sdr[1] / i * 2
+        if entity.is_parallax():
+            if self.entity_base_width == -1 or self._unsure_width:
+                if self.entity_base_width != -1:
+                    self._unsure_width = False
+                self.entity_base_width = entity.get_base_width()
+
+            d = self.sdr[0] / i * 2
+            while -d > self.entity_base_width:
+                d += self.entity_base_width
+
+            x = self.base_pos[0] + d
+        else:
+            x = self.base_pos[0] + (self.sdr[0] / i * 2)
+        y = self.base_pos[1] + self.sdr[1] / i * 2
+
+        return x, y
                 
 
 class EntityPositionHandler:

@@ -36,9 +36,13 @@ class GameSpace(pymunk.Space):
         
         self.objects[name] = (body, shape)
 
-    def add_structure(self, pos, walls, segments, name, action_on_touch=None, is_slippery_slope=False):
+    def add_structure(self, pos, walls, segments, name, action_on_touch=None, is_slippery_slope=False,
+                      is_kinematic=False):
 
-        body = pymunk.Body(body_type=pymunk.Body.STATIC)
+        if is_kinematic:
+            body = pymunk.Body(body_type=pymunk.Body.KINEMATIC)
+        else:
+            body = pymunk.Body(body_type=pymunk.Body.STATIC)
         body.position = pos
 
         self._add_structure(pos, walls, segments, name, action_on_touch, is_slippery_slope, body)
@@ -67,14 +71,14 @@ class GameSpace(pymunk.Space):
         for a, b in walls:
             assert is_slippery_slope == 0 or is_slippery_slope == 1
 
-            s = pymunk.Segment(body, a, b, 1)
+            s = pymunk.Segment(body, a, b, 1.5)
             shapes.append(s)
             s.friction = frictions[0]
             s.collision_type = 2 + is_slippery_slope
             s.action_on_touch = action_on_touch
 
         for a, b in segments:
-            s = pymunk.Segment(body, a, b, 1)
+            s = pymunk.Segment(body, a, b, 1.5)
             shapes.append(s)
             s.friction = frictions[1]
             s.collision_type = 1

@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import Any
 from utils.logger import logger
 from viewer.transition import Transition
+from .trajectory import FadeInFadeOutTrajectory
 
 
 @dataclass
@@ -20,14 +21,20 @@ class ActionGetter:
 
 
 class GameActionGetter(ActionGetter):
-    def __init__(self, triggers, window, camera_handler, entities, model, current_save_id, load_map_callback):
+    def __init__(self, triggers, window, camera_handler, entities, model, current_save_id, load_map_callback,
+                 schedule_function_callback, kinematic_structures):
         self.triggers = triggers
         self.window = window
         self.camera_handler = camera_handler
         self.model = model
+
         self.entities = entities
+        self.kinematic_structures = kinematic_structures
+
         self.current_save_id = current_save_id
+
         self.load_map = load_map_callback
+        self.schedule_function = schedule_function_callback
 
     @dataclass
     class AbsoluteMovecam(AbstractAction):
@@ -121,9 +128,7 @@ class GameActionGetter(ActionGetter):
             except KeyError:
                 pass
             else:
-                action = getattr(entity, self.action_name, None)
-                if action is not None:
-                    action(*self.arg)
+                entity.call_action(self.action_name, self.arg)
 
     @dataclass
     class TPEntity(AbstractAction):
@@ -176,5 +181,31 @@ class GameActionGetter(ActionGetter):
             transition = Transition(self.duration, tuple(self.color), (1280, 800),
                                     callback, self.fade, self.stop_after_end, priority=self.priority)
             self.ag.window.add_transition(transition)
+
+    @dataclass
+    class ScheduleTriggerEnabling(AbstractAction):
+        ticks: int
+        trigger_to_enable: int
+
+        def __call__(self):
+            self.ag.schedule_function(GameActionGetter.EnableTrigger(self.ag, self.trigger_to_enable), ticks=self.ticks)
+
+    @dataclass
+    class MoveKinematicStructure(AbstractAction):
+        x: int
+        y: int
+        total_duration: int
+        fade_in: int
+        fade_out: int
+        struct_name: str
+
+        def __call__(self):
+            struct = self.ag.kinematic_structures[self.struct_name]
+
+            trajectory = FadeInFadeOutTrajectory(tuple(struct.position_handler.pos),
+                                                 (self.x, self.y), self.total_duration,
+                                                 self.fade_in, self.fade_out)
+
+            struct.position_handler.add_trajectory(trajectory)
 
 

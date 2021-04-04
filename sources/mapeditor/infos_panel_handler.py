@@ -45,6 +45,8 @@ class InfosPanelHandler:
 
                     data[5].setText(data[3])
 
+                    data[6] = self.window.is_kinematic_checkbox.isChecked()
+
                     self.update_structure_infos()
 
     def update_structure_infos(self):
@@ -60,6 +62,8 @@ class InfosPanelHandler:
             self.window.name_lineedit.setText(data[3])
 
             self.window.layer_spinbox.setValue(data[4])
+
+            self.window.is_kinematic_checkbox.setChecked(data[6])
 
             rect = data[0].boundingRect()
             x, y = int(data[0].x()), int(data[0].y())

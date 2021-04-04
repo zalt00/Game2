@@ -40,7 +40,7 @@ class Window(pyglet.window.Window):
 
         self.paused = False
 
-        pyglet.clock.schedule_interval(self._update, 1 / 120.0)
+        pyglet.clock.schedule_interval(self._update, 1 / 240.0)
 
     def create_resources_loader(self, dir_):
         self.resource_loader = ResourcesLoader(dir_)
@@ -149,11 +149,11 @@ class Window(pyglet.window.Window):
         sprite = constructor(batch, layer_group, position_handler, image_handler, self.screen_offset, *args, **kwargs)
         return sprite
 
-    def add_bg_layer(self, page, layer, position_handler, res):
+    def add_bg_layer(self, page, layer, position_handler, res, parallax=False):
         if isinstance(res, str):
             res = self.resource_loader.load(res)
         batch = page.batch
-        image_handler = ihdlr.BgLayerImageHandler(res, layer)
+        image_handler = ihdlr.BgLayerImageHandler(res, layer, parallax=parallax)
         sprite = self._add_sprite(batch, 'BgLayer', layer, position_handler, image_handler)
         return sprite
 
@@ -167,13 +167,13 @@ class Window(pyglet.window.Window):
         return sprite
 
     def add_entity(self, page, layer, position_handler, res, physics_updater, particle_handler,
-                   end_of_state_callback, on_death_callback):
+                   action_manager):
         if isinstance(res, str):
             res = self.resource_loader.load(res)
         batch = page.batch
         image_handler = ihdlr.TBEntityImageHandler(res, lambda *_, **__: None)
         sprite = self._add_sprite(batch, 'Entity', layer, position_handler, image_handler,
-                                  physics_updater, particle_handler, end_of_state_callback, on_death_callback)
+                                  physics_updater, particle_handler, action_manager)
         return sprite
 
     def add_structure(self, page, layer, position_handler, res, dynamic=False):
@@ -206,7 +206,7 @@ class Window(pyglet.window.Window):
         img_hdlr.end_of_life = particle.hide
         return particle
 
-    def add_bg(self, page, position_handlers, res):
+    def add_bg(self, page, position_handlers, res, parallax=False):
         if isinstance(res, str):
             res = self.resource_loader.load(res)
 
@@ -214,7 +214,7 @@ class Window(pyglet.window.Window):
         i = 0
         for layer in res.bg:
             layer_id = layer['layer']
-            bg_layers.append(self.add_bg_layer(page, layer_id, position_handlers[i], res))
+            bg_layers.append(self.add_bg_layer(page, layer_id, position_handlers[i], res, parallax=parallax))
             position_handlers[i].pos[0] += layer['relative_pos'][0]
             position_handlers[i].pos[1] += layer['relative_pos'][1]
             position_handlers[i].base_pos = tuple(position_handlers[i].pos)
@@ -222,7 +222,7 @@ class Window(pyglet.window.Window):
 
         for layer in res.fg:
             layer_id = layer['layer']
-            bg_layers.append(self.add_bg_layer(page, layer_id, position_handlers[i], res))
+            bg_layers.append(self.add_bg_layer(page, layer_id, position_handlers[i], res, parallax=parallax))
             position_handlers[i].pos[0] += layer['relative_pos'][0]
             position_handlers[i].pos[1] += layer['relative_pos'][1]
             position_handlers[i].base_pos = tuple(position_handlers[i].pos)

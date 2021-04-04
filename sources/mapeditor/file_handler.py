@@ -79,14 +79,21 @@ class FileHandler:
         while len(constraints) != 0:
             constraints[-1].remove()
 
+        checkpoints = self.window.checkpoint_panel_handler.checkpoints
+        while len(checkpoints) != 0:
+            checkpoints[-1].remove()
+
         for obj_data in data['objects_data'].values():
             if obj_data['type'] == 'structure':
                 qimage = self.window.load_image(obj_data['res'], self.window.edit_panel_handler.palette)
                 pos = obj_data['pos']
 
+                kinematic = obj_data.get('kinematic', False)
+
                 item = self.window.scene_handler.init_item(qimage, obj_data['res'],
                                                            name=obj_data['name'],
-                                                           layer=obj_data['layer'])
+                                                           layer=obj_data['layer'],
+                                                           kinematic=kinematic)
                 rect = item.boundingRect()
                 item.setX(self.window.datax2canvasx(pos[0], rect))
                 item.setY(self.window.datay2canvasy(pos[1], rect))
@@ -116,6 +123,7 @@ class FileHandler:
             name = item_data[3]
             layer = item_data[4]
             item = item_data[0]
+            kinematic = item_data[6]
 
             rect = item.boundingRect()
             x = self.window.canvasx2datax(item.x(), rect)
@@ -138,6 +146,9 @@ class FileHandler:
             obj_data['pos'] = [x, y]
             obj_data['layer'] = layer
 
+            if kinematic:
+                obj_data['kinematic'] = True
+
             families = self._get_struct_families(res, self.additional_structure_data['structure_families'])
             for family_name in families:
                 family = self.additional_structure_data['structure_families'][family_name]
@@ -149,7 +160,6 @@ class FileHandler:
                     obj_data[key] = value
 
         constraint_data = self.window.constraint_panel_handler.get_data(data['objects_data'])
-        print(constraint_data)
         data['objects_data'].update(constraint_data)
 
         data['background_data']['res'] = self.window.scene_handler.bg_res
@@ -159,6 +169,8 @@ class FileHandler:
 
         with open(path, 'w') as datafile:
             yaml.safe_dump(data, datafile)
+
+        print('info - level successfully saved')
 
     @staticmethod
     def _get_struct_families(res, families_data):

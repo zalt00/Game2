@@ -11,6 +11,9 @@ import pyglet
 import sys
 
 
+PROFILING = False
+
+
 def main():
     lg.logger.info('Imports succeeded, starting program')
     parser = argparse.ArgumentParser()
@@ -35,7 +38,10 @@ def main():
         a.start_game(1, map_test_mode=True)
 
     with ExceptionWrapper(w, lg.logger):
-        pyglet.app.run()
+        if PROFILING:
+            run('pyglet.app.run()', sort='cumtime')
+        else:
+            pyglet.app.run()
 
 
 if __name__ == '__main__':

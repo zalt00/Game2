@@ -1,13 +1,15 @@
 # -*- coding:Utf-8 -*-
 
 
-class CameraMovementTrajectory:
+class FadeInFadeOutTrajectory:
     def __init__(self, base_point, target, total_duration, fade_in, fade_out):
         self.base_point = base_point
         self.target = target
         self.duration = total_duration
         self.fade_in = fade_in
         self.fade_out = fade_out
+
+        self.trajectory_ended = False
         
         self.dx = self.target[0] - self.base_point[0]
         self.dy = self.target[1] - self.base_point[1]
@@ -36,7 +38,7 @@ class CameraMovementTrajectory:
         self.dyl = self.dy - self.dyin - self.dyout
 
     def __call__(self, t):
-        if t <= self.fade_in:
+        if t <= self.fade_in != 0:
             t_squared = t * t
             x = 0.5 * self.axin * t_squared + self.base_point[0]
             y = 0.5 * self.ayin * t_squared + self.base_point[1]
@@ -44,12 +46,16 @@ class CameraMovementTrajectory:
             t2 = t - self.fade_in
             x = self.vxl * t2 + self.base_point[0] + self.dxin
             y = self.vyl * t2 + self.base_point[1] + self.dyin
-        elif (self.fade_in + self.dtl) < t <= self.duration:
+        elif (self.fade_in + self.dtl) < t < self.duration:
             t3 = t - self.fade_in - self.dtl
             t3_squared = t3 * t3
             x = 0.5 * -self.axout * t3_squared + self.vxl * t3 + self.base_point[0] + self.dxin + self.dxl
             y = 0.5 * -self.ayout * t3_squared + self.vyl * t3 + self.base_point[1] + self.dyin + self.dyl
+        elif t == self.duration:
+            x, y = self.target
+            self.trajectory_ended = True
         else:
             x, y = self.base_point
+            self.trajectory_ended = True
         return x, y
 

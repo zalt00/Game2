@@ -84,6 +84,8 @@ class Window(QMainWindow):
         self.y_spinbox.valueChanged.connect(self.infos_panel_handler.apply_structure_infos_changes)
         self.layer_spinbox.valueChanged.connect(self.infos_panel_handler.apply_structure_infos_changes)
 
+        self.is_kinematic_checkbox.clicked.connect(self.infos_panel_handler.apply_structure_infos_changes)
+
         self.name_lineedit.returnPressed.connect(self.infos_panel_handler.apply_structure_infos_changes)
 
         self.obj_list.currentItemChanged.connect(self.obj_list_handler.change_selection_in_scene)

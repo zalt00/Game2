@@ -2,7 +2,7 @@
 
 
 from queue import Queue
-from .trajectory import CameraMovementTrajectory
+from .trajectory import FadeInFadeOutTrajectory
 
 
 class CameraHandler:
@@ -42,11 +42,11 @@ class CameraHandler:
 
         if self.trajectory is None:
             if relative:
-                self.trajectory = CameraMovementTrajectory(
+                self.trajectory = FadeInFadeOutTrajectory(
                     tuple(self.relative_pos), target, total_duration, fade_in, fade_out)
             else:
                 npos = target[0] + self.base_pos[0], target[1] + self.base_pos[1]
-                self.trajectory = CameraMovementTrajectory(tuple(self.pos), npos, total_duration, fade_in, fade_out)
+                self.trajectory = FadeInFadeOutTrajectory(tuple(self.pos), npos, total_duration, fade_in, fade_out)
             self.trajectory_duration = total_duration
             self.advance = 0
             self.is_current_trajectory_relative = relative

@@ -79,7 +79,7 @@ class SceneHandler:
 
         self.graphics_view.setSceneRect(-300, -2000, 10000, 2200)
 
-    def init_item(self, qimage, res, pos=(), name='--default--', layer=0):
+    def init_item(self, qimage, res, pos=(), name='--default--', layer=0, kinematic=False):
         i = self.window.generate_identifier()
         item = QtWidgets.QGraphicsPixmapItem(QtGui.QPixmap(qimage))
         self._scene.addItem(item)
@@ -108,7 +108,7 @@ class SceneHandler:
 
         item.setZValue(layer)
 
-        self.graphics_view_items[i] = [item, res, qimage, name, layer, list_item]
+        self.graphics_view_items[i] = [item, res, qimage, name, layer, list_item, kinematic]
 
         return item
 

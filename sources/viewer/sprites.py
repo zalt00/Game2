@@ -3,6 +3,7 @@
 import pyglet
 from pymunk import Vec2d
 import numpy as np
+from utils.logger import logger
 
 
 class SpriteMetaclass(type):
@@ -39,6 +40,8 @@ class BaseSprite(pyglet.sprite.Sprite, metaclass=SpriteMetaclass, instantiable=F
         self.animated = True
         self.static = False
 
+        self.action_manager = None
+
         self.position_changed = False
         self.image_changed = False
 
@@ -56,6 +59,16 @@ class BaseSprite(pyglet.sprite.Sprite, metaclass=SpriteMetaclass, instantiable=F
         if hasattr(image_handler, 'res'):
             if hasattr(image_handler.res, 'scale'):
                 self.scale = image_handler.res.scale
+
+    def call_action(self, action_name, args=(), stop=False):
+        if self.action_manager is not None:
+            if stop:
+                self.action_manager.stop(action_name, *args)
+            else:
+                self.action_manager.do(action_name, *args)
+
+        else:
+            logger.warning(f'entity of type {type(self).__name__} has no action manager')
 
     @property
     def affected_by_screen_offset(self):
@@ -87,9 +100,11 @@ class BaseSprite(pyglet.sprite.Sprite, metaclass=SpriteMetaclass, instantiable=F
             if self.affected_by_screen_offset:
                 position[0] += self.screen_offset[0]
                 position[1] += self.screen_offset[1]
-            self.__position = position
-            if last_update:
-                self.position = position
+
+            if position != self.__position:
+                self.__position = position
+                if last_update:
+                    self.position = position
 
     def update_image(self):
         if self.animated or self.image_changed:
@@ -129,12 +144,11 @@ class BaseSprite(pyglet.sprite.Sprite, metaclass=SpriteMetaclass, instantiable=F
 
 class Entity(BaseSprite, metaclass=SpriteMetaclass):
     def __init__(self, batch, layer_group, position_handler,
-                 image_handler, screen_offset, physic_state_updater, particles_handler, end_of_state_callback,
-                 on_death_callback):
+                 image_handler, screen_offset, physic_state_updater, particles_handler,
+                 action_manager):
 
         self.dead = False
         self.sleeping = False
-        self.on_death = on_death_callback
 
         # bug fix, prevents the dash velocity to be applied in certain circumstances
         self.can_dash_velocity_be_applied = True
@@ -159,18 +173,15 @@ class Entity(BaseSprite, metaclass=SpriteMetaclass):
         self.particles_handler = particles_handler
 
         self._state = 'idle'
-        self.end_of_state = end_of_state_callback
 
         self._direction = 1
 
         super().__init__(batch, layer_group, position_handler, image_handler, screen_offset)
 
-    def die(self, trigger_to_enable=0):
-        if not self.sleeping and not self.dead:
-            if self.on_death():
-                self.dead = True
-            else:
-                self.sleeping = True
+        self.action_manager = action_manager
+
+    def end_of_state(self, *_, **__):
+        self.call_action('end_of_state')
 
     def start_recording_position(self, default_array_size=2000):
         self.record_position = True
@@ -227,18 +238,22 @@ class BgLayer(BaseSprite, metaclass=SpriteMetaclass):
     def __init__(self, batch, layer_group, position_handler, image_handler, screen_offset):
         super().__init__(batch, layer_group, position_handler, image_handler, screen_offset, state='base')
         self.affected_by_screen_offset = False
-        image_data = self.image.get_image_data()
-
-        _image = pyglet.image.Texture.create(self.image.width * 2, self.image.height)
-        _image.blit_into(image_data, 0, 0, 0)
-        _image.blit_into(image_data, self.image.width, 0, 0)
-
-        self.image = _image
 
         self.animated = False
 
+    def get_base_width(self):
+        width = self.image_handler.update_image(self).width
+        if self.is_parallax():
+            return width / 2 * self.scale
+        return width * self.scale
+
     def get_layer(self):
         return self.image_handler.layer
+
+    def is_parallax(self):
+        if hasattr(self.image_handler, 'is_parallax'):
+            return self.image_handler.is_parallax()
+        return False
 
 
 class Structure(BaseSprite, metaclass=SpriteMetaclass):

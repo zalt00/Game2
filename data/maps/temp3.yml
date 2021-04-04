@@ -16,25 +16,7 @@ background_data:
   - -550
   res: backgrounds/forest/forest.bg
 biome: forest
-checkpoints:
-- - checkpoint0
-  - - 107
-    - 32
-- - checkpoint1
-  - - 107
-    - 32
-- - checkpoint2
-  - - 107
-    - 32
-- - checkpoint3
-  - - 107
-    - 32
-- - checkpoint4
-  - - 107
-    - 32
-- - checkpoint5
-  - - 107
-    - 32
+checkpoints: []
 objects_data:
   player:
     res: player/white_guy.obj
