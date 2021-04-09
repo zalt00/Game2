@@ -11,7 +11,8 @@ class GameLogger:
         self.logger.setLevel(lg.DEBUG)
 
         self.base_directory = os.path.normpath(os.environ.get('base', '.\\'))
-
+        if not os.path.exists(self.base_directory + '\\logs'):
+            os.mkdir(self.base_directory + '\\logs')
         self.base_handler = RotatingFileHandler(self.base_directory + '\\logs\\main.log',
                                                 'a', 1000000, 1, encoding='utf8')
         self.error_handler = lg.FileHandler(self.base_directory + '\\logs\\main.error.log', encoding='utf8')
