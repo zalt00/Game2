@@ -193,8 +193,19 @@ class Object:
                 animation = pyglet.image.Animation.from_image_sequence(img_grid, 0.1, loop=True)
                 for frame in animation.frames:
                     frame.image.anchor_x = self.dec[0]
+
+                inverted_animation = animation.get_transform()
+                assert inverted_animation is not animation
+                inverted_animation.frames = inverted_animation.frames[::-1]
+
+                inverted_flipped_animation = animation.get_transform(True)
+                inverted_flipped_animation.frames = inverted_flipped_animation.frames[::-1]
+
                 self.sheets[name] = animation
+                self.sheets['inverted_' + name] = inverted_animation
                 self.flipped_sheets[name] = animation.get_transform(True)
+                self.flipped_sheets['inverted_' + name] = inverted_flipped_animation
+
         else:
             fn = self.data['image']
             path = os.path.join(directory, fn).replace('\\', '/')

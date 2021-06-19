@@ -5,9 +5,11 @@ from .trajectory import FadeInFadeOutTrajectory
 from time import perf_counter
 from queue import Queue
 import numpy as np
+import numpy.random as rd
 from utils.logger import logger
 from math import pi
 import math
+import random
 
 
 class StaticPositionHandler:
@@ -18,21 +20,48 @@ class StaticPositionHandler:
         return self.pos[0], self.pos[1]
 
 
-class KinematicStructurePositionHandler:
+class NonStaticStructurePositionHandler:
+    def __init__(self, body):
+        self.body = body
+
+    def update_structure_collision(self, entity):
+        assert self.body is not None
+
+        shapes = self.body.shapes
+
+        for segment in shapes:
+            if hasattr(segment, 'normal'):
+                normal = segment.normal
+                base_angle = normal.angle
+
+                center_of_gravity = self.body.center_of_gravity
+                if center_of_gravity.y == 0:
+                    center_of_gravity = center_of_gravity.x, entity.image_handler.res.height // 2
+
+                normalized_angle = (base_angle + self.body.angle) % math.pi
+                if (math.pi / 4 > normalized_angle or math.pi / 4 > math.pi - normalized_angle) or \
+                        (self.body.local_to_world((segment.a + segment.b) / 2)).y < self.body.local_to_world(center_of_gravity).y:
+                    segment.collision_type = 2
+                else:
+                    segment.collision_type = 1
+
+
+class KinematicStructurePositionHandler(NonStaticStructurePositionHandler):
 
     def __init__(self, pos, body=None):
+        super(KinematicStructurePositionHandler, self).__init__(body)
         self.pos = pos
         self.current_trajectory = None
         self.t = 0
 
-        self.body = body
-
     def update_position(self, entity, n=1):
+
         if self.current_trajectory is not None:
             if not self.current_trajectory.trajectory_ended:
                 self.pos[:] = self.current_trajectory(self.t)
 
                 if self.body is not None:
+
                     x, y = self.pos
                     bx, by = self.body.position
                     if abs(bx - x) > 5:
@@ -79,10 +108,10 @@ class DecorationPositionHandler:
                 self.base_pos[1] + self.screen_offset[1] * self._3d_effect_layer)
 
 
-class DynamicStructurePositionHandler:
+class DynamicStructurePositionHandler(NonStaticStructurePositionHandler):
     def __init__(self, body, correct_angle=True):
+        super(DynamicStructurePositionHandler, self).__init__(body)
         self.correct_angle = correct_angle
-        self.body = body
         self.relative_angle = 0
 
         self._correct_angle = correct_angle
@@ -99,18 +128,12 @@ class DynamicStructurePositionHandler:
             return 0
 
     def update_position(self, struct, n=1):
+        self.update_structure_collision(struct)
 
         if struct.constrained:
             self.body.velocity = self.body.velocity / 1.001
 
-        if self.correct_angle:
-            while self.body.angle > pi / 4:
-                self.body.angle -= pi / 2
-                self.relative_angle -= pi / 2
-            while self.body.angle < -pi / 4:
-                self.body.angle += pi / 2
-                self.relative_angle += pi / 2
-        struct.rotation = -(self.body.angle - self.relative_angle) / pi * 180
+        struct.rotation = -self.body.angle / pi * 180
         if self.correct_angle:
             return self.body.local_to_world(self.body.center_of_gravity)
         else:
@@ -200,13 +223,6 @@ class EntityPositionHandler:
         self.jumped = False
         self.jump_counter_deactivation_states = {'fall', 'land', 'walk', 'idle', 'run'}
 
-        self.mapping = dict(
-            walk=50,
-            run=130,
-            slowly_walk=50,
-            slowly_run=130,
-        )
-
     def update_position(self, entity, n=1):
         if not entity.dead and not entity.sleeping:
             if entity.state in self.jump_counter_deactivation_states:
@@ -244,8 +260,14 @@ class EntityPositionHandler:
 
             if entity.state == 'dash':
                 if self.dash_ticks_counter < self.dash_length:
+
                     if entity.can_dash_velocity_be_applied:
-                        self.body.velocity = Vec2d(self.dash_speed * entity.direction, 0)
+                        vx = self.dash_speed * entity.direction
+                        if self.dash_ticks_counter == 0:
+                            vy = 42
+                        else:
+                            vy = self.body.velocity.y
+                        self.body.velocity = vx, vy
 
                     self.dash_ticks_counter += 1
                     if self.dash_ticks_counter == self.dash_length:
@@ -267,7 +289,14 @@ class EntityPositionHandler:
                 body = entity.collide_with_dynamic_ground
 
                 if vector.y == 0:
-                    vector = vector.rotated(body.angle)
+                    angle = body.angle
+                    while angle < -math.pi / 4:
+                        angle += math.pi / 2
+
+                    while angle > math.pi / 4:
+                        angle -= math.pi / 2
+
+                    vector = vector.rotated(angle)
 
                 vx = vector.x * self.body.mass / body.mass
                 vy = vector.y * self.body.mass / body.mass
@@ -306,5 +335,73 @@ class PlayerPositionHandler(EntityPositionHandler):
 
     def update_triggers(self):
         self.triggers.update(self.body.position.x, self.body.position.y)
+
+
+class InvertedObjectPositionHandler(NonStaticStructurePositionHandler):
+    def __init__(self, body, get_position_data_callback, space, invisible_when_idle=False):
+        super(InvertedObjectPositionHandler, self).__init__(body)
+        self.pos = [0, 0]
+
+        self.opacity_factor = 1
+
+        self.space = space
+
+        self.get_position_data = get_position_data_callback
+
+        self.correct_position = False
+
+        self.invisible_when_idle = invisible_when_idle
+
+    def update_position(self, entity, n=1):
+        position_data = self.get_position_data()
+
+        position = position_data.position
+        rotation = position_data.rotation
+
+        if self.invisible_when_idle:
+
+            if entity.state.endswith('idle'):
+                if self.opacity_factor < 50:
+                    self.opacity_factor += 1
+            else:
+                if self.opacity_factor > 1:
+                    self.opacity_factor -= 1
+
+            if self.opacity_factor == 50:
+                entity.opacity = 0
+            else:
+                entity.opacity = entity.base_opacity / self.opacity_factor
+
+        if self.body is not None:
+            velocity = list((position_data.next_position - self.body.position) * 60)
+
+            body_angle = position_data.body_angle
+            angular_velocity = (position_data.next_body_angle - body_angle) * 60
+
+            if abs(self.body.angle - body_angle) > 0.1:
+                self.body.angle = body_angle
+
+            # if abs(self.body.position[0] - position[0]) > 2 or abs(self.body.position[1] - position[1]) > 2:
+            #     velocity[0] += (-self.body.position[0] + position[0]) * 60
+            #     velocity[1] += (-self.body.position[1] + position[1]) * 60
+
+            self.body.velocity = velocity
+            self.body.angular_velocity = angular_velocity
+
+            self.update_structure_collision(entity)
+            self.space.reindex_shapes_for_body(self.body)
+
+        else:
+            velocity = list((position_data.next_position - position) * 60)
+
+        entity.rotation = rotation
+        if self.correct_position:
+            return self.body.local_to_world(self.body.center_of_gravity)
+        else:
+            return tuple(position)
+
+    def add_trajectory(self, *_, **__):
+        pass
+
 
 

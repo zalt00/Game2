@@ -116,6 +116,11 @@ class TriggerPanelHandler:
                 widget = self._create_action_widget(action_name, action_data)
                 widget.set_parameters(parameters)
 
+            if trigger_data['id'] >= 90000:
+                self.window.trigger_id_spinbox.setEnabled(False)
+            else:
+                self.window.trigger_id_spinbox.setEnabled(True)
+
     def save_trigger(self):
         if self._selected_trigger is not None:
             _, trigger_data = self._triggers[self._selected_trigger]

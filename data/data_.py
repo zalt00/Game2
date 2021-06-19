@@ -364,8 +364,6 @@ class Data(DataContainer):
         full_heart_state = 'full'
         empty_heart_state = 'empty'
 
-        player_lives = SaveComponent(7)
-
         _x_offset = 30
         _y = 670
         _spacing = 40
@@ -405,10 +403,13 @@ class Data(DataContainer):
 
         class BasePlayerData(DataContainer):
             height = 50
-            width = 30
+            width = 35
             name = "player"
             pos_x = SaveComponent(2)
             pos_y = SaveComponent(3)
+
+            max_lives = 3
+            current_lives = SaveComponent(7)
 
             jump_y_impulse = 500
             walking_max_velocity = 50
@@ -418,6 +419,8 @@ class Data(DataContainer):
             air_control_acceleration = 15
             dash_speed = 2000
             dash_length = 6  # in ticks
+
+            on_death_trigger_id = 99000
 
             class StateDuration(DataContainer):
                 idle = 0.017

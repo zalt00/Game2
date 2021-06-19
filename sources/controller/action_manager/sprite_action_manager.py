@@ -28,11 +28,18 @@ class BaseEntityActionManager:
 
 
 class PlayerActionManager(BaseEntityActionManager):
-    def __init__(self, entity, tp_to_stable_ground, on_death_callback):
+    def __init__(self, entity, on_death_callback, player_data, current_save_id, hearts):
         super(PlayerActionManager, self).__init__(entity)
 
-        self.tp_to_stable_ground = tp_to_stable_ground
         self.on_death = on_death_callback
+
+        self.hearts = hearts
+
+        self.current_save_id = current_save_id
+        self.player_data = player_data
+        self.player_lives = self.player_data.current_lives.get(self.current_save_id)
+
+        self.on_death_trigger_id = self.player_data.on_death_trigger_id
 
         self.still_walking = False
         self.still_running = False
@@ -236,10 +243,61 @@ class PlayerActionManager(BaseEntityActionManager):
 
     def action_die(self):
         if not self.player.sleeping and not self.player.dead:
-            if self.on_death():
+            if self.player_loose_one_life():
                 self.player.dead = True
             else:
                 self.player.sleeping = True
+
+    def player_loose_one_life(self):
+        self.player_lives -= 1
+
+        heart = self.hearts[self.player_lives]
+        heart.state = 'empty'
+
+        if self.player_lives == 0:
+            self.player_lives = self.player_data.max_lives
+            self.player_death()
+            self.player_data.current_lives.set(self.player_lives, self.current_save_id)
+
+            return True
+        else:
+            self.player.position_handler.body.position = self.player.position_handler.body.position.x, 5000
+            self.player.state = 'hit'
+            self.player_data.current_lives.set(self.player_lives, self.current_save_id)
+
+            return False
+
+    def player_death(self):
+
+        triggers = self.player.position_handler.triggers
+        if self.on_death_trigger_id in triggers:
+            triggers[self.on_death_trigger_id].enabled = True
+        else:
+            logger.warning(f'no trigger with id {self.on_death_trigger_id}')
+
+        self.player.state = 'die'
+
+        new_pos = self.on_death()
+        self.player.position_handler.body.position = new_pos
+        self.player.position_handler.body.velocity = (0, 0)
+
+        self.player_data.pos_x.set(new_pos[0], self.current_save_id)
+        self.player_data.pos_y.set(new_pos[1], self.current_save_id)
+
+    def tp_to_stable_ground(self):
+        x = self.player_data.pos_x.get(self.current_save_id)
+        y = self.player_data.pos_y.get(self.current_save_id)
+        self.player.position_handler.body.position = x, y
+        self.player.physic_state_updater.space.reindex_shapes_for_body(self.player.position_handler.body)
+
+    def action_reanimate(self):
+        self.player.dead = False
+        self.player.state = 'idle'
+        self.player.direction = 1
+        self.next_direction = 1
+
+        for heart in self.hearts:
+            heart.state = 'full'
 
     def action_reset_dash(self):
         self.already_dashed = False

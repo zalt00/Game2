@@ -1,10 +1,11 @@
 # -*- coding:Utf-8 -*-
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Union
 from utils.logger import logger
 from viewer.transition import Transition
 from .trajectory import FadeInFadeOutTrajectory
+from pymunk import Vec2d
 
 
 @dataclass
@@ -22,7 +23,8 @@ class ActionGetter:
 
 class GameActionGetter(ActionGetter):
     def __init__(self, triggers, window, camera_handler, entities, model, current_save_id, load_map_callback,
-                 schedule_function_callback, kinematic_structures):
+                 schedule_function_callback, kinematic_structures, init_recording_array_callback,
+                 start_recording_for_inversion_callback, start_inversion_callback, stop_inversion_callback):
         self.triggers = triggers
         self.window = window
         self.camera_handler = camera_handler
@@ -35,6 +37,12 @@ class GameActionGetter(ActionGetter):
 
         self.load_map = load_map_callback
         self.schedule_function = schedule_function_callback
+
+        self.init_recording_array = init_recording_array_callback
+        self.start_inversion = start_inversion_callback
+        self.start_recording_for_inversion = start_recording_for_inversion_callback
+
+        self.stop_inversion = stop_inversion_callback
 
     @dataclass
     class AbsoluteMovecam(AbstractAction):
@@ -158,9 +166,20 @@ class GameActionGetter(ActionGetter):
     @dataclass
     class LoadMap(AbstractAction):
         map_id: int
+        relative: bool = False
 
         def __call__(self):
-            self.ag.load_map(self.map_id)
+            if self.relative:
+                current_map_id = self.ag.model.Game.current_map_id.get(self.ag.current_save_id)
+                new_map_id = current_map_id + self.map_id
+                if new_map_id < 0:
+                    new_map_id = 0
+                elif new_map_id >= len(self.ag.model.Game.maps):
+                    new_map_id = len(self.ag.model.Game.maps) - 1
+            else:
+                new_map_id = self.map_id
+                
+            self.ag.load_map(new_map_id)
 
     @dataclass
     class CreateTransition(AbstractAction):
@@ -186,9 +205,15 @@ class GameActionGetter(ActionGetter):
     class ScheduleTriggerEnabling(AbstractAction):
         ticks: int
         trigger_to_enable: int
+        function_id: Union[int, None] = None
 
         def __call__(self):
-            self.ag.schedule_function(GameActionGetter.EnableTrigger(self.ag, self.trigger_to_enable), ticks=self.ticks)
+            if self.function_id is not None:
+                if self.function_id < 0:
+                    self.function_id = None
+            self.ag.schedule_function(GameActionGetter.EnableTrigger(self.ag, self.trigger_to_enable),
+                                      ticks=self.ticks,
+                                      function_id=self.function_id)
 
     @dataclass
     class MoveKinematicStructure(AbstractAction):
@@ -208,4 +233,40 @@ class GameActionGetter(ActionGetter):
 
             struct.position_handler.add_trajectory(trajectory)
 
+    @dataclass
+    class MoveKinematicStructure2(AbstractAction):
+        x: int
+        y: int
+        velocity: int
+        struct_name: str
+
+        def __call__(self):
+            struct = self.ag.kinematic_structures[self.struct_name]
+
+            current_pos = tuple(struct.position_handler.pos)
+            vector = Vec2d(self.x - current_pos[0], self.y - current_pos[1])
+            total_duration = round(vector.length / self.velocity * 60)
+            if total_duration < 2:
+                total_duration = 2
+
+            trajectory = FadeInFadeOutTrajectory(current_pos, (self.x, self.y), total_duration, 1, 1)
+
+            struct.position_handler.add_trajectory(trajectory)
+
+    @dataclass
+    class StartRecordingForInversion(AbstractAction):
+        def __call__(self):
+            self.ag.init_recording_array()
+            self.ag.start_recording_for_inversion()
+
+    @dataclass
+    class StartInversion(AbstractAction):
+        def __call__(self):
+            self.ag.start_inversion()
+
+    @dataclass
+    class StopInversion(AbstractAction):
+        def __call__(self):
+            print(0)
+            self.ag.stop_inversion()
 

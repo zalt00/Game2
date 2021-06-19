@@ -25,13 +25,12 @@ objects_data:
 checkpoints: []
 
 triggers_data:
-  bottom_of_world:
+  bottom_of_world_killbox:
     actions:
     - entity_name: player
-      npos:
-      - 300
-      - 300
-      type_: TPEntity
+      action_name: die
+      arg: []
+      type_: ActionOnEntity
     enabled: true
     id: 0
     top: -200
@@ -55,7 +54,6 @@ triggers_data:
       type_: CreateTransition
     enabled: true
     id: 1
-    left: 10
   move_cam:
     actions:
     - dx: 640
@@ -68,4 +66,39 @@ triggers_data:
       type_: DisableTrigger
     enabled: false
     id: 2
-    left: 9
+  on_death:
+      actions:
+          - type_: DisableTrigger
+            target: 99000
+      enabled: false
+      id: 99000
+  load_previous_level:
+    actions:
+    - map_id: -1
+      relative: true
+      type_: LoadMap
+    - entity_name: player
+      npos:
+      - 500
+      - 500
+      type_: TPEntity
+    - type_: SetCameraPosition
+      x: 0
+      y: 0
+    enabled: false
+    id: 98000
+  load_next_level:
+    actions:
+    - map_id: 1
+      relative: true
+      type_: LoadMap
+    - entity_name: player
+      npos:
+      - 500
+      - 500
+      type_: TPEntity
+    - type_: SetCameraPosition
+      x: 0
+      y: 0
+    enabled: false
+    id: 98001

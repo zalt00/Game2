@@ -2,13 +2,12 @@
 
 from ..position_handler import StaticPositionHandler, \
     PlayerPositionHandler, BgLayerPositionHandler, DecorationPositionHandler, DynamicStructurePositionHandler, \
-    RopePositionHandler, EntityPositionHandler, KinematicStructurePositionHandler
+    RopePositionHandler, KinematicStructurePositionHandler
 from ..action_manager import GameActionManager
 from ..physic_state_updater import PlayerPhysicStateUpdater, BasePhysicStateUpdater
 from ..particles_handler import ParticleHandler
-from ..text_getter import FormatTextGetter, SimpleTextGetter
+from ..text_getter import FormatTextGetter
 from ..space import GameSpace
-import pymunk.pyglet_util
 from viewer.debug_draw import DrawOptions
 from utils.save_modifier import SaveComponent
 from ..triggers import Trigger
@@ -18,9 +17,9 @@ import yaml
 from viewer.transition import Transition
 from ..camera_handler import CameraHandler
 from utils.logger import logger
-import os
 from ..trigger_mapping import TriggerMapping
-from ..sprite_action_manager import PlayerActionManager, BaseEntityActionManager
+from controller.action_manager.sprite_action_manager import PlayerActionManager, BaseEntityActionManager
+from ..temporal_inversion_handler import TemporalInversionHandler
 
 
 class Game:
@@ -53,6 +52,8 @@ class Game:
         self.already_hidden = []
         self.scheduled_func = dict()
 
+        self.dynamic_structures = dict()
+
         self.player_lives = 3
 
         self.additional_commands = []
@@ -67,6 +68,10 @@ class Game:
 
         self._paused = False
         self.debug_draw_activated = False
+
+        self.should_inversion_handler_record = False
+        self.inverted_space = False
+        self.inversion_handler = None
 
         self.hearts = []
 
@@ -106,6 +111,9 @@ class Game:
         self.current_map_id = self.model.Game.current_map_id.get(self.current_save_id)
 
         self.is_player_dead = False
+
+        self.should_inversion_handler_record = False
+
         self.is_camera_handler_activated = True
         self.dash_particles = []
         self.sprites_to_delete = []
@@ -124,6 +132,9 @@ class Game:
         self.viewer_page.add_group('dash_particles')
         self.viewer_page.add_group('texts')
         self.viewer_page.add_group('hearts')
+        self.viewer_page.add_group('ghosts')
+        self.viewer_page.add_group('special_effects')
+        self.viewer_page.add_group('special_inversion_effects')
         self.hearts = []
 
         self.window.game_page.add_child(self.viewer_page)
@@ -174,6 +185,7 @@ class Game:
         self.entities = dict()
         self.structures = dict()
         self.kinematic_structures = dict()
+        self.dynamic_structures = dict()
 
         ### CAMERA ###
         self.camera_handler = CameraHandler((0, 0), None)
@@ -184,7 +196,8 @@ class Game:
         self.triggers = TriggerMapping(100)
         self.ag = GameActionGetter(self.triggers, self.window, self.camera_handler, self.entities, self.model,
                                    self.current_save_id, self.load_map_on_next_frame, self.schedule_function,
-                                   self.kinematic_structures)
+                                   self.kinematic_structures, self.init_inversion_handler_recording_array,
+                                   self.start_recording_for_inversion, self.start_inversion, self.stop_inversion)
         for trigdata in self.level['triggers_data'].values():
             self.triggers[trigdata['id']] = Trigger(trigdata, self.ag)
 
@@ -255,14 +268,17 @@ class Game:
         self.number_of_space_updates = 0
 
         # Lives
-        self.player_lives = self.model.Game.player_lives.get(self.current_save_id)
+        self.player_lives = self.model.Game.BasePlayerData.current_lives.get(self.current_save_id)
         if self.player_lives == 0:
             self.player_lives = 3
         else:
-            lost = 3 - self.player_lives
+            lost = self.model.Game.BasePlayerData.max_lives - self.player_lives
             for i in range(lost):
                 heart = self.hearts[-i - 1]
                 heart.state = 'empty'
+
+        self.inversion_handler = TemporalInversionHandler(self.space, self.window.add_entity,
+                                                          self.window.add_solid_color_background, self.viewer_page)
 
         self.window.update = self.update_positions
         self.window.update_image = self.update_images
@@ -335,7 +351,7 @@ class Game:
                 body = self.space.objects[name][0]
             else:
                 body = None
-            pos_handler = KinematicStructurePositionHandler(data['pos'], body)
+            pos_handler = KinematicStructurePositionHandler(list(data['pos']), body)
         else:
             pos_handler = StaticPositionHandler(data['pos'])
         layer = data.get('layer', 0)
@@ -354,6 +370,9 @@ class Game:
         if data.get('kinematic', False):
             self.kinematic_structures[name] = struct
 
+        elif dynamic:
+            self.dynamic_structures[name] = struct
+
     def init_player(self, additional_data):
         player_data = self.model.Game.BasePlayerData
         name = player_data.name
@@ -362,7 +381,8 @@ class Game:
                                        player_data.width, (player_data.pos_x.get(self.current_save_id),
                                                            player_data.pos_y.get(self.current_save_id)), name)
 
-        player_action_manager = PlayerActionManager(None, self.tp_to_stable_ground, self.player_loose_one_life)
+        player_action_manager = PlayerActionManager(None, self.player_death,
+                                                    self.model.Game.BasePlayerData, self.current_save_id, self.hearts)
 
         self.player = self.window.add_entity(
             page=self.viewer_page,
@@ -441,35 +461,10 @@ class Game:
         self.model.Game.BaseBGData.camera_pos_x.set(round(self.camera_handler.pos[0]), self.current_save_id)
         self.model.Game.BaseBGData.camera_pos_y.set(round(self.camera_handler.pos[1]), self.current_save_id)
 
-    def player_loose_one_life(self):
-        self.player_lives -= 1
-        self.player.position_handler.body.position = self.player.position_handler.body.position.x, 5000
-
-        heart = self.hearts[self.player_lives]
-        heart.state = 'empty'
-
-        if self.player_lives == 0:
-            self.player_lives = 3
-            self.player_death()
-            self.model.Game.player_lives.set(self.player_lives, self.current_save_id)
-
-            return True
-        else:
-            self.player.state = 'hit'
-            self.model.Game.player_lives.set(self.player_lives, self.current_save_id)
-
-            return False
-
-    def tp_to_stable_ground(self):
-        x = self.model.Game.BasePlayerData.pos_x.get(self.current_save_id)
-        y = self.model.Game.BasePlayerData.pos_y.get(self.current_save_id)
-        self.player.position_handler.body.position = x, y
-        self.space.reindex_shapes_for_body(self.player.position_handler.body)
-
     def player_death(self):
-        self.player.state = 'die'
         self.is_player_dead = True
         self.is_camera_handler_activated = False
+
         for sprite in self.viewer_page.get_all_sprites():
             if sprite != self.player:
                 if sprite.visible:
@@ -507,11 +502,7 @@ class Game:
                 _, new_pos = checkpoints[0]
                 logger.warning(f'invalid checkpoint id: "{cp_id}" for map {map_id}')
 
-        self.player.position_handler.body.position = new_pos
-        self.player.position_handler.body.velocity = (0, 0)
-
-        self.model.Game.BasePlayerData.pos_x.set(new_pos[0], self.current_save_id)
-        self.model.Game.BasePlayerData.pos_y.set(new_pos[1], self.current_save_id)
+        return new_pos
 
     def display_death_screen(self, *_, **__):
 
@@ -538,23 +529,18 @@ class Game:
     def start_reviving_transition(self, *_, **__):
         self.is_camera_handler_activated = True
 
-        if self.model.Game.last_checkpoints_map.get(self.current_save_id) == self.current_map_id:
-            _, new_pos = self.checkpoints[self.model.Game.last_checkpoint.get(self.current_save_id)]
-            self.player.position_handler.body.position = new_pos
-            self.player.position_handler.body.velocity = (0, 0)
-
         transition = Transition(120, (0, 0, 0, 255), (1280, 720), self.reanimate_player, 'in', priority=9)
         self.window.add_transition(transition)
 
     def reanimate_player(self, *_, **__):
-        if self.model.Game.last_checkpoints_map.get(self.current_save_id) != self.current_map_id:
-            self.window.screen_offset = self.camera_handler.get_camera_position_after_player_death(
-                (self.model.Game.BasePlayerData.pos_x.get(self.current_save_id),
-                 self.model.Game.BasePlayerData.pos_y.get(self.current_save_id))
-            )
-            self.model.Game.BaseBGData.camera_pos_x.set(self.window.screen_offset[0], self.current_save_id)
-            self.model.Game.BaseBGData.camera_pos_y.set(self.window.screen_offset[1], self.current_save_id)
+        self.window.screen_offset = self.camera_handler.get_camera_position_after_player_death(
+            (self.model.Game.BasePlayerData.pos_x.get(self.current_save_id),
+             self.model.Game.BasePlayerData.pos_y.get(self.current_save_id))
+        )
+        self.model.Game.BaseBGData.camera_pos_x.set(self.window.screen_offset[0], self.current_save_id)
+        self.model.Game.BaseBGData.camera_pos_y.set(self.window.screen_offset[1], self.current_save_id)
 
+        if self.model.Game.last_checkpoints_map.get(self.current_save_id) != self.current_map_id:
             self.load_map(self.model.Game.last_checkpoints_map.get(self.current_save_id), death_warp=True)
         else:
 
@@ -574,13 +560,7 @@ class Game:
                     sprite.show()
             self.already_hidden = []
 
-            self.player.dead = False
-            self.player.state = 'idle'
-            self.player.direction = 1
-            self.action_manager.next_direction = 1
-
-        for heart in self.hearts:
-            heart.state = 'full'
+        self.player.call_action('reanimate')
 
         transition = Transition(300, (0, 0, 0, 255), (1280, 720), lambda *_, **__: None, 'out', priority=5)
         self.window.add_transition(transition)
@@ -613,6 +593,9 @@ class Game:
 
         player_direction = self.player.direction
 
+        if self.inverted_space:
+            self.stop_inversion()
+
         self.start_game()
 
         if still_walking:
@@ -624,17 +607,43 @@ class Game:
         if still_running:
             self.action_manager.do(self.action_manager.RUN)
 
+    def init_inversion_handler_recording_array(self):
+        self.inversion_handler.init_recording_array(self.kinematic_structures, self.dynamic_structures, self.entities)
+
+    def start_recording_for_inversion(self):
+        self.should_inversion_handler_record = True
+
+    def stop_recording_fot_inversion(self):
+        self.should_inversion_handler_record = False
+
+    def start_inversion(self):
+        self.inversion_handler.setup_inversion()
+        self.inversion_handler.start_inversion()
+        self.inverted_space = True
+        self.should_inversion_handler_record = False
+
+    def stop_inversion(self):
+        self.inversion_handler.stop_inversion()
+        self.should_inversion_handler_record = False
+        self.inverted_space = False
+
     def quit(self):
         self.scheduled_func = dict()
         self.dump_save()
 
-    def schedule_function(self, func, dt=-1., ticks=-1, args=()):
+    def schedule_function(self, func, dt=-1., ticks=-1, args=(), function_id=None):
         if dt != -1:
             ticks = round(dt * 60)
         elif ticks == -1:
             raise ValueError('either dt or ticks must be precised')
 
-        self.scheduled_func[id(func)] = [func, ticks, args]
+        if function_id is None:
+            function_id = id(func)
+        else:
+            assert isinstance(function_id, int)
+            function_id = -abs(function_id)
+
+        self.scheduled_func[function_id] = [func, ticks, args]
 
     def update_scheduled_functions(self):
         for id_, data in list(self.scheduled_func.items()):
@@ -658,9 +667,16 @@ class Game:
                     self.count = 0
                     if self.is_camera_handler_activated:
                         self.window.screen_offset = self.camera_handler.update_camera_position(1)
+
+                    if self.inverted_space:
+                        self.inversion_handler.tick()
+
                     for sprite in sprites:
                         last = i + 4 - self.count >= (n1 // 3 - 1)
                         sprite.update_position(last)
+
+                    if self.should_inversion_handler_record:
+                        self.inversion_handler.record()
 
                     self.update_scheduled_functions()
 

@@ -136,6 +136,10 @@ load_map:
     type: int
     optional: false
     default: 0
+  relative:
+    type: bool
+    optional: true
+    default: false
 
 set_camera_position:
   type_: SetCameraPosition
@@ -185,6 +189,10 @@ schedule_trigger_enabling:
     type: int
     optional: false
     default: 0
+  function_id:
+    type: int
+    optional: true
+    default: -1
 
 move_kinematic_structure:
   type_: MoveKinematicStructure
@@ -213,9 +221,32 @@ move_kinematic_structure:
     optional: false
     default: structure_name
 
+move_kinematic_structure2:
+  type_: MoveKinematicStructure2
+  x:
+    type: int
+    optional: false
+    default: 0
+  y:
+    type: int
+    optional: false
+    default: 0
+  velocity:
+    type: int
+    optional: false
+    default: 1
+  struct_name:
+    type: str
+    optional: false
+    default: structure_name
 
+start_recording_for_inversion:
+  type_: StartRecordingForInversion
 
+start_inversion:
+  type_: StartInversion
 
-
+stop_inversion:
+  type_: StopInversion
 
 

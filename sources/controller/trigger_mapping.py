@@ -18,6 +18,11 @@ class TriggerMapping:
 
         self._invalid_position = False
 
+        self._global_triggers = dict()
+
+    def __contains__(self, trigger_id):
+        return trigger_id in self._triggers
+
     def __getitem__(self, trigger_id):
         assert isinstance(trigger_id, int)
 
@@ -29,31 +34,39 @@ class TriggerMapping:
 
         assert trigger_id not in self._triggers
 
-        if trigger.right is None:
-            if trigger.left is not None:
-                while trigger.left > self.tiles[-1].x2:
-                    self.create_new_tile()
-            self.triggers_in_all_new_right_tiles.add(trigger_id)
+        if trigger.is_global():
+            self._global_triggers[trigger_id] = trigger
 
         else:
-            while trigger.right > self.tiles[-1].x2:
-                self.create_new_tile()
+            if trigger.right is None:
+                if trigger.left is not None:
+                    while trigger.left > self.tiles[-1].x2:
+                        self.create_new_tile()
+                self.triggers_in_all_new_right_tiles.add(trigger_id)
 
-        left = trigger.left
-        if left is None:
-            left = -self.tile_width
-        right = trigger.right
-        if right is None:
-            right = self.tiles[-1].x2 - 1
+            else:
+                while trigger.right > self.tiles[-1].x2:
+                    self.create_new_tile()
 
-        i1 = self.get_tile_index(left)
-        i2 = self.get_tile_index(right)
-        for tile in self.tiles[i1:i2 + 1]:
-            tile.add(trigger_id)
+            left = trigger.left
+            if left is None:
+                left = -self.tile_width
+            right = trigger.right
+            if right is None:
+                right = self.tiles[-1].x2 - 1
+
+            i1 = self.get_tile_index(left)
+            i2 = self.get_tile_index(right)
+            for tile in self.tiles[i1:i2 + 1]:
+                tile.add(trigger_id)
 
         self._triggers[trigger_id] = trigger
 
     def update(self, x, y):
+
+        for trigger in self._global_triggers.values():
+            trigger.activate()
+
         if x <= -self.tile_width:
             if not self._invalid_position:
                 self._invalid_position = True

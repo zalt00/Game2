@@ -147,6 +147,10 @@ class Entity(BaseSprite, metaclass=SpriteMetaclass):
                  image_handler, screen_offset, physic_state_updater, particles_handler,
                  action_manager):
 
+        self._initializing = True
+
+        self.base_opacity = 255
+
         self.dead = False
         self.sleeping = False
 
@@ -180,6 +184,8 @@ class Entity(BaseSprite, metaclass=SpriteMetaclass):
 
         self.action_manager = action_manager
 
+        self._initializing = False
+
     def end_of_state(self, *_, **__):
         self.call_action('end_of_state')
 
@@ -198,7 +204,8 @@ class Entity(BaseSprite, metaclass=SpriteMetaclass):
     @state.setter
     def state(self, new_state):
         self._state = new_state
-        self.physic_state_updater.change_physic_state(self, new_state)
+        if not self._initializing:
+            self.physic_state_updater.change_physic_state(self, new_state)
 
     @property
     def direction(self):

@@ -21,34 +21,10 @@ checkpoints:
   - - 107
     - 32
 objects_data:
-  constraint18_constraint:
-    anchor_a:
-    - 20
-    - 160
-    anchor_b:
-    - 0
-    - 0
-    name: constraint18
-    object_a: dynamic_struct
-    object_b: support
-    res: special_objects/rope.obj
-    type: constraint
-  constraint19_constraint:
-    anchor_a:
-    - -20
-    - 160
-    anchor_b:
-    - 0
-    - 0
-    name: constraint19
-    object_a: dynamic_struct
-    object_b: support
-    res: special_objects/rope.obj
-    type: constraint
   dynamic_struct_structure:
     center_of_gravity:
     - 0
-    - 32
+    - 96
     correct_angle: true
     dynamic: true
     ground:
@@ -61,8 +37,8 @@ objects_data:
     mass: 100
     name: dynamic_struct
     pos:
-    - 384.0
-    - 405.0
+    - 238.0
+    - 555.0
     res: structures/dynamic_structures/forest/test.st
     state: base
     type: structure
@@ -257,16 +233,6 @@ objects_data:
     res: structures/basic_structures/forest/black_area2x2.st
     state: base
     type: structure
-  struct19_structure:
-    is_built: false
-    layer: -2
-    name: struct19
-    pos:
-    - 524.0
-    - 462.0
-    res: structures/basic_structures/forest/black_area2x2.st
-    state: base
-    type: structure
   struct1_structure:
     ground:
     - - - -80
@@ -445,8 +411,8 @@ objects_data:
     layer: 2
     name: struct9
     pos:
-    - 752.0
-    - 363.0
+    - 150.0
+    - 464.0
     res: structures/basic_structures/forest/platform4x2.st
     state: base
     type: structure
@@ -473,7 +439,7 @@ objects_data:
     layer: 0
     name: support
     pos:
-    - 384.0
+    - 492.0
     - 1330.0
     res: structures/basic_structures/forest/platform4x2.st
     state: base
@@ -504,16 +470,6 @@ triggers_data:
     enabled: true
     id: 49
     right: -18
-  bottom_of_world:
-    actions:
-    - entity_name: player
-      npos:
-      - 300
-      - 300
-      type_: TPEntity
-    enabled: true
-    id: 0
-    top: -200
   bottom_of_world_killbox:
     actions:
     - action_name: die
@@ -523,6 +479,52 @@ triggers_data:
     enabled: true
     id: 3
     top: -50
+  elevator_down:
+    actions:
+    - target: 24
+      type_: DisableTrigger
+    - target: 23
+      type_: DisableTrigger
+    - target: 22
+      type_: EnableTrigger
+    - struct_name: kinematic_s_1
+      type_: MoveKinematicStructure2
+      velocity: 100
+      x: 935
+      y: 80
+    enabled: false
+    id: 24
+    left: 500
+    right: 1700
+  elevator_ride:
+    actions:
+    - function_id: 5
+      ticks: 10
+      trigger_to_enable: 24
+      type_: ScheduleTriggerEnabling
+    bottom: 180
+    enabled: true
+    id: 23
+    left: 875
+    right: 990
+    top: 700
+  elevator_up:
+    actions:
+    - target: 22
+      type_: DisableTrigger
+    - target: 23
+      type_: EnableTrigger
+    - struct_name: kinematic_s_1
+      type_: MoveKinematicStructure2
+      velocity: 100
+      x: 935
+      y: 495
+    bottom: 180
+    enabled: true
+    id: 22
+    left: 875
+    right: 990
+    top: 280
   level_transition_1:
     actions:
     - color:
@@ -590,56 +592,49 @@ triggers_data:
       type_: DisableTrigger
     enabled: false
     id: 2
-  move_struct:
+  start_inversion:
     actions:
-    - fade_in: 1
-      fade_out: 1
-      struct_name: kinematic_s_1
-      total_duration: 300
-      type_: MoveKinematicStructure
-      x: 935
-      y: 495
+    - target: 26
+      type_: DisableTrigger
+    - type_: StartInversion
     - target: 22
       type_: DisableTrigger
-    - ticks: 300
-      trigger_to_enable: 24
-      type_: ScheduleTriggerEnabling
-    enabled: true
-    id: 22
-    left: 500
-    right: 1700
-  move_struct_2:
-    actions:
-    - ticks: 300
-      trigger_to_enable: 22
-      type_: ScheduleTriggerEnabling
-    - fade_in: 1
-      fade_out: 1
-      struct_name: kinematic_s_1
-      total_duration: 300
-      type_: MoveKinematicStructure
-      x: 935
-      y: 80
+    - target: 23
+      type_: DisableTrigger
     - target: 24
       type_: DisableTrigger
+    - color:
+      - 200
+      - 200
+      - 210
+      duration: 8
+      fade: out
+      priority: 3
+      stop_after_end: true
+      type_: CreateTransition
     enabled: false
-    id: 24
-    left: 500
-    right: 1700
-  reset_dash:
+    id: 26
+  start_inversion_recording:
     actions:
-    - ticks: 60
-      trigger_to_enable: 20
-      type_: ScheduleTriggerEnabling
-    - target: 20
+    - target: 25
       type_: DisableTrigger
-    - action_name: reset_dash
-      arg: []
-      entity_name: player
-      type_: ActionOnEntity
-    bottom: 430
+    - type_: StartRecordingForInversion
     enabled: true
-    id: 20
-    left: 467
-    right: 583
-    top: 529
+    id: 25
+  start_inversion_transition:
+    actions:
+    - target: 27
+      type_: DisableTrigger
+    - color:
+      - 200
+      - 200
+      - 210
+      duration: 8
+      fade: in
+      priority: 3
+      trigger_to_enable: 26
+      type_: CreateTransition
+    enabled: true
+    id: 27
+    left: 1092
+    right: 1200

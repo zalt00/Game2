@@ -16,6 +16,9 @@ class Trigger:
             action = action_getter(**action_data)
             self.actions.append(action)
 
+    def is_global(self):
+        return self.top is self.bottom is self.right is self.left is None
+
     def activate(self):
         if self.enabled:
             for action in self.actions:
@@ -28,6 +31,9 @@ class Trigger:
                     action()
 
     def collide(self, x, y):
+        return self._collide(x, y)
+
+    def _collide(self, x, y):
         if self.top is not None:
             if y >= self.top:
                 return False

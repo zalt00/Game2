@@ -42,7 +42,6 @@ class Transition:
 
             self.on_transition_end()
 
-
     def stop(self):
         self.state = 2
 

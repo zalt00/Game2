@@ -33,6 +33,9 @@ class BasePhysicStateUpdater:
     def step(self, dt):
         self.current_time += dt
 
+    def update_(self, entity):
+        pass
+
 
 class PlayerPhysicStateUpdater(BasePhysicStateUpdater):
     def __init__(self, body, landing_callback, save_position_callback, space, states_durations):
@@ -42,7 +45,9 @@ class PlayerPhysicStateUpdater(BasePhysicStateUpdater):
         self.space = space
 
         self.on_ground = True
-        self.collide = False
+        self.collide = 0
+        self.collide_with_ground = 0
+        self.collide_but_ignored = set()
         self.collide_for_one_tick = False
         self.dashing_for_one_tick = False
         self.collide_with_slippery_slope = False
@@ -50,6 +55,10 @@ class PlayerPhysicStateUpdater(BasePhysicStateUpdater):
         self.land = landing_callback
         self.save_position = save_position_callback
         self.a = 11
+
+        self.time_spent_on_ground_with_wrong_state = 0
+
+        self.extended_collision = None
 
         self.x1 = 0
         self.x2 = 0
@@ -71,7 +80,7 @@ class PlayerPhysicStateUpdater(BasePhysicStateUpdater):
         player_wall_collision_handler.separate = self.separate
         player_slippery_slope_collision_handler.separate = self.separate_from_slippery_slope
 
-        player_ground_collision_handler.begin = self.check_actions_on_touch
+        player_ground_collision_handler.begin = self.begin_collision_with_ground
         player_wall_collision_handler.begin = self.check_actions_on_touch
         player_slippery_slope_collision_handler.begin = self.check_actions_on_touch
 
@@ -80,13 +89,24 @@ class PlayerPhysicStateUpdater(BasePhysicStateUpdater):
 
         self.previous_collision_data = None
 
-        self.actions = []
+        self.actions = {}
+        self._identifier = 0
+
+    def get_identifier(self):
+        self._identifier += 1
+        return self._identifier
+
+    def begin_collision_with_ground(self, arbiter, *_, **__):
+        self.collide_with_ground += 1
+
+        return self.check_actions_on_touch(arbiter)
 
     def check_actions_on_touch(self, arbiter, *_, **__):
+        self.collide += 1
         shapes = arbiter.shapes
         for s in shapes:
             if s.action_on_touch is not None:
-                self.actions.append(s.action_on_touch)
+                self.schedule_action(s.action_on_touch[0], s.action_on_touch[1], 1)
         return True
 
     def separate_from_ground(self, *_, **__):
@@ -95,15 +115,16 @@ class PlayerPhysicStateUpdater(BasePhysicStateUpdater):
         self.landing_strength = 0
         self.collide_with_dynamic_ground = None
 
+        self.collide_with_ground -= 1
+
     def separate(self, *_, **__):
-        self.collide = False
+        self.collide -= 1
 
     def separate_from_slippery_slope(self, *_, **__):
         self.collide_with_slippery_slope = False
         self.separate()
 
     def collision_with_structure_wall(self, arbiter, *_, **__):
-        self.collide = True
         self.xb = arbiter.contact_point_set.points[0].point_a.x
 
         self.collision_with_structure(arbiter)
@@ -112,31 +133,43 @@ class PlayerPhysicStateUpdater(BasePhysicStateUpdater):
 
         points = arbiter.contact_point_set.points
         self.xb = points[0].point_a.x
-        self.collide = True
         if len(points) == 2:
             self.x1, self.x2 = points[0].point_a.x, points[1].point_a.x
+
+        body = arbiter.shapes[1].body
         for contact_point in points:
             py = round(self.body.position.y)
-
+            px = round(self.body.position.x)
             on_dynamic_ground = self.collide_with_dynamic_ground is not None
 
             if (((py - 8 <= round(contact_point.point_a.y) <= py + 8)
-                    and (py - 8 <= round(contact_point.point_b.y) <= py + 8))
-                and (round(contact_point.point_a.y) == py - 1 or
-                     round(contact_point.point_b.y) == py - 1)) or on_dynamic_ground:
+                    and (py - 8 <= round(contact_point.point_b.y) <= py + 8))) or on_dynamic_ground:
 
-                if (self.current_state_name != 'jump' or self.body.velocity.y < 1
-                        or on_dynamic_ground or self.current_state_name == 'dash'):
+                if (((round(contact_point.point_a.y) == py - 1)
+                     or (round(contact_point.point_b.y) == py - 1))) or self.body.velocity.length > 100:
 
-                    self.on_ground = True
-                    self.collide_with_slippery_slope = False
-
-                    body = arbiter.shapes[1].body
                     self.stable_ground = body.body_type == pymunk.Body.STATIC
-                    if not self.stable_ground:
-                        self.collide_with_dynamic_ground = body
-                    return True
-        return self.collide_with_dynamic_ground is not None or self.current_state_name == 'dash'
+
+                    if (self.body.velocity.y < 1
+                            or on_dynamic_ground or self.current_state_name == 'dash' or not self.stable_ground):
+
+                        self.on_ground = True
+                        self.collide_with_slippery_slope = False
+
+                        if not self.stable_ground:
+                            self.collide_with_dynamic_ground = body
+                        return True
+
+        if body.velocity.length > 500:
+            return True
+
+        on_ground = bool(self.collide_with_dynamic_ground is not None or self.current_state_name == 'dash')
+        if on_ground:
+            self.collide_but_ignored.add(arbiter.shapes[1])
+            if len(self.collide_but_ignored) >= self.collide_with_ground:
+                self.on_ground = False
+
+        return self.on_ground
 
     def collision_with_ground_post_solve(self, arbiter, *_, **__):
         self.landing_strength = max(self.landing_strength, arbiter.total_impulse.y)
@@ -149,46 +182,73 @@ class PlayerPhysicStateUpdater(BasePhysicStateUpdater):
     def collision_with_structure(self, arbiter, *_, **__):
 
         # unstuck mechanism (the player can get stuck between two structures without being able to do anything,
-        # this code detects this kind of situation and unsticks the player)
-        if self.previous_collision_data is None:
-            self.previous_collision_data = (arbiter.contact_point_set,
-                                            arbiter.shapes[1].body.body_type == pymunk.Body.DYNAMIC,
-                                            arbiter.shapes[1])
+        # this code detects this kind of situation and unblocks the player)
+        # very buggy, can be exploited to gain insane vertical velocity
 
-        else:
-            if arbiter.shapes[1].body != self.previous_collision_data[2].body:
-                if self.previous_collision_data[1] or arbiter.shapes[1].body.body_type == pymunk.Body.DYNAMIC:
-                    if round(arbiter.contact_point_set.normal.x * 1000) == -round(
-                            self.previous_collision_data[0].normal.x * 1000):
-                        if round(abs(arbiter.contact_point_set.normal.x)) > 0:
+        # (obsolete)
 
-                            arbiter.shapes[0].body.apply_impulse_at_local_point((0, 2000), (0, 0))
-                            logger.warning('unstuck mechanism applied')
+        # if self.previous_collision_data is None:
+        #     self.previous_collision_data = (arbiter.contact_point_set,
+        #                                     arbiter.shapes[1].body.body_type != pymunk.Body.STATIC,
+        #                                     arbiter.shapes[1])
+        #
+        # else:
+        #     if arbiter.shapes[1].body != self.previous_collision_data[2].body:
+        #         if self.previous_collision_data[1] or arbiter.shapes[1].body.body_type != pymunk.Body.STATIC:
+        #             if round(arbiter.contact_point_set.normal.x * 1000) == -round(
+        #                     self.previous_collision_data[0].normal.x * 1000):
+        #                 if round(abs(arbiter.contact_point_set.normal.x)) > 0:
+        #
+        #                     arbiter.shapes[0].body.apply_impulse_at_local_point((0, 2000), (0, 0))
+        #                     logger.warning('unstuck mechanism applied')
+        #
+        #             elif 27 < (abs(arbiter.contact_point_set.points[0].point_a.x) -
+        #                        abs(self.previous_collision_data[0].points[0].point_a.x)) < 33:
+        #                 if ((abs(round(arbiter.contact_point_set.normal.x)) == 1 and abs(round(
+        #                         self.previous_collision_data[0].normal.x * 1000)) == 819) or
+        #                     (abs(round(arbiter.contact_point_set.normal.x * 1000)) == 819 and abs(round(
+        #                           self.previous_collision_data[0].normal.x)) == 1)):
+        #
+        #                     arbiter.shapes[0].body.apply_impulse_at_local_point((0, 2000), (0, 0))
+        #                     logger.warning('unstuck mechanism applied')
+        #
+        #     self.previous_collision_data = None
 
-                    elif 27 < (abs(arbiter.contact_point_set.points[0].point_a.x) -
-                               abs(self.previous_collision_data[0].points[0].point_a.x)) < 33:
-                        if ((abs(round(arbiter.contact_point_set.normal.x)) == 1 and abs(round(
-                                self.previous_collision_data[0].normal.x * 1000)) == 819) or
-                            (abs(round(arbiter.contact_point_set.normal.x * 1000)) == 819 and abs(round(
-                                  self.previous_collision_data[0].normal.x)) == 1)):
+        if arbiter.shapes[1].body.body_type != pymunk.Body.STATIC:
+            if arbiter.total_impulse.length > 20000 and self.current_state_name != 'dash':
+                self.schedule_action('die', [], 1)
 
-                            arbiter.shapes[0].body.apply_impulse_at_local_point((0, 2000), (0, 0))
-                            logger.warning('unstuck mechanism applied')
-
-            self.previous_collision_data = None
-
-        if arbiter.shapes[1].body.body_type == pymunk.Body.DYNAMIC:
-            if arbiter.total_impulse.length > 10000 and self.current_state_name != 'dash':
-                self.actions.append(('die', []))
+    def schedule_action(self, action_name, action_arg, timer=0):
+        self.actions[self.get_identifier()] = [action_name, action_arg, timer]
 
     def update_(self, entity, n=1):
+
+        self.collide_but_ignored = set()
+
         if not entity.dead and not entity.sleeping:
-            for _ in range(len(self.actions)):
-                action_name, action_args = self.actions.pop()
-                getattr(entity, action_name, lambda *_, **__: None)(*action_args)
+            for key in list(self.actions):
+                action_name, action_args, timer = self.actions[key]
+                if timer == 0:
+                    entity.call_action(action_name, action_args)
+                    self.actions.pop(key)
+                else:
+                    self.actions[key][2] -= 1
+
             if not entity.dead:
                 for _ in range(n):
+
                     entity.can_air_control = True
+
+                    if entity.state == 'dash':
+                        for shape in self.body.shapes:
+                            if shape.sensor:
+                                if self.extended_collision is None:
+                                    self.extended_collision = shape
+                                shape.sensor = False
+                    else:
+                        if self.extended_collision is not None:
+                            if not self.extended_collision.sensor:
+                                self.extended_collision.sensor = True
 
                     # bug fix (prevents the player to keep his/her speed during the dash if he or she hits the ground)
                     if (self.on_ground or self.collide_with_dynamic_ground is not None) and entity.state == 'dash':
@@ -260,7 +320,7 @@ class PlayerPhysicStateUpdater(BasePhysicStateUpdater):
                             if entity.state == 'fall':
                                 entity.state = 'jump'
 
-                    # fixes weird behaviours when walking on a dynamic structure
+                    # useful to fix weird behaviours when walking on a dynamic structure
                     entity.collide_with_dynamic_ground = self.collide_with_dynamic_ground
 
                     self.body.angle = 0
@@ -270,15 +330,34 @@ class PlayerPhysicStateUpdater(BasePhysicStateUpdater):
                     if not entity.is_on_ground and entity.state in ('walk', 'run'):
                         entity.state = 'fall'
 
+                    # fix of a bug that happened once and that i can't reproduce
+                    if entity.is_on_ground and entity.state in ('jump', 'fall'):
+                        self.time_spent_on_ground_with_wrong_state += 1
+                        if self.time_spent_on_ground_with_wrong_state > 16:
+                            entity.state = 'idle'
+                    else:
+                        self.time_spent_on_ground_with_wrong_state = 0
+
+                    # landing util
                     landed = (not entity.is_on_ground) and on_ground
-                    can_dash = entity.is_on_ground and not on_ground
                     entity.is_on_ground = on_ground
                     if landed:
                         self.land(self.landing_strength)
-                    if can_dash:
-                        pass
+
         else:
             self.body.velocity = (0, 0)
             self.body.angle = 0
             self.body.space.reindex_shapes_for_body(self.body)
+
+
+class InvertedEntityStateUpdater(BasePhysicStateUpdater):
+    def __init__(self, get_state_callback):
+        self.get_state = get_state_callback
+
+        super(InvertedEntityStateUpdater, self).__init__({})
+
+    def update_(self, entity):
+        state_data = self.get_state()
+        entity.state = state_data.state
+        entity.direction = state_data.direction
 
