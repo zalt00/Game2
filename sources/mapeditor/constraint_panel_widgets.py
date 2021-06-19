@@ -26,11 +26,19 @@ class ConstraintFrame(QtWidgets.QWidget):
         self.init_combobox(self.object_b_combobox)
 
         self.remove_callback = lambda: None
+        self.display_callback = lambda *_, **__: None
+
+        self.scene_line = None
 
         self.remove_button.clicked.connect(self.remove)
 
+        self.display_checkbox.toggled.connect(self.display)
+
     def remove(self):
         self.remove_callback()
+
+    def display(self, value):
+        self.display_callback(value, self)
 
     def update_widget(self):
         self.object_a_combobox.setCurrentText(self.object_a)
@@ -46,6 +54,7 @@ class ConstraintFrame(QtWidgets.QWidget):
         self.res_lineedit.setText(self.resource)
 
     def update_data(self):
+
         self.object_a = self.object_a_combobox.currentText()
         self.object_b = self.object_b_combobox.currentText()
 
@@ -57,6 +66,10 @@ class ConstraintFrame(QtWidgets.QWidget):
         self.anchor_b[1] = self.anchor_b_y_spinbox.value()
 
         self.resource = self.res_lineedit.text()
+
+        if self.display_checkbox.isChecked():
+            self.display(False)
+            self.display(True)
 
     def reinit_all_comboboxes(self):
         self.reinit_combobox(self.object_a_combobox)

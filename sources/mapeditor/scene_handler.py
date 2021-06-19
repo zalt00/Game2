@@ -200,6 +200,17 @@ class SceneHandler:
     def remove_trigger_bbox(self, rect):
         self._scene.removeItem(rect)
 
+    def display_constraint_line(self, a, b):
+        pen = QtGui.QPen(QtGui.QColor(255, 86, 74, 180))
+        pen.setWidth(3)
+
+        line = self._scene.addLine(a[0], a[1], b[0], b[1], pen)
+        line.setZValue(29)
+        return line
+
+    def remove_constraint_line(self, line):
+        self._scene.removeItem(line)
+
     def preview_current_map(self):
         answer = QtWidgets.QMessageBox.question(self.window, 'Preview', 'Current map will be saved confirm ?')
         if answer == QtWidgets.QMessageBox.Yes:

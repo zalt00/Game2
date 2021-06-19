@@ -22,10 +22,45 @@ class ConstraintPanelHandler:
                                  object_a=object_a,
                                  object_b=object_b)
         widget.remove_callback = self.get_remove_callback(widget)
+        widget.display_callback = self.display_constraint
 
         self.window.constraints_scroll_area_content.layout().addWidget(widget)
         self.constraints.append(widget)
         widget.update_widget()
+
+    def display_constraint(self, value, widget):
+        if value:
+            item1 = self.window.scene_handler.graphics_view_items[widget.name_to_id[widget.object_a]][0]
+            item2 = self.window.scene_handler.graphics_view_items[widget.name_to_id[widget.object_b]][0]
+
+            rect1 = item1.boundingRect()
+            x1 = self.window.canvasx2datax(item1.x(), rect1)
+            y1 = self.window.canvasy2datay(item1.y(), rect1)
+
+            rect2 = item2.boundingRect()
+            x2 = self.window.canvasx2datax(item2.x(), rect2)
+            y2 = self.window.canvasy2datay(item2.y(), rect2)
+
+            anchor_a = widget.anchor_a
+            anchor_b = widget.anchor_b
+
+            x1 += anchor_a[0]
+            x2 += anchor_b[0]
+            y1 += anchor_a[1]
+            y2 += anchor_b[1]
+
+            # cx1 = self.window.datax2canvasx(x1, rect1)
+            # cy1 = self.window.datay2canvasy(y1, rect1)
+            # cx2 = self.window.datax2canvasx(x2, rect2)
+            # cy2 = self.window.datay2canvasy(y2, rect2)
+
+            line = self.window.scene_handler.display_constraint_line((x1, -y1), (x2, -y2))
+            widget.scene_line = line
+
+        else:
+            if widget.scene_line is not None:
+                self.window.scene_handler.remove_constraint_line(widget.scene_line)
+                widget.scene_line = None
 
     def get_remove_callback(self, widget):
         def remove():

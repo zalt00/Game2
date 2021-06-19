@@ -41,9 +41,11 @@ class NonStaticStructurePositionHandler:
                 normalized_angle = (base_angle + self.body.angle) % math.pi
                 if (math.pi / 4 > normalized_angle or math.pi / 4 > math.pi - normalized_angle) or \
                         (self.body.local_to_world((segment.a + segment.b) / 2)).y < self.body.local_to_world(center_of_gravity).y:
-                    segment.collision_type = 2
+                    if segment.collision_type != 2:
+                        segment.collision_type = 2
                 else:
-                    segment.collision_type = 1
+                    if segment.collision_type != 1:
+                        segment.collision_type = 1
 
 
 class KinematicStructurePositionHandler(NonStaticStructurePositionHandler):
@@ -130,9 +132,6 @@ class DynamicStructurePositionHandler(NonStaticStructurePositionHandler):
     def update_position(self, struct, n=1):
         self.update_structure_collision(struct)
 
-        if struct.constrained:
-            self.body.velocity = self.body.velocity / 1.001
-
         struct.rotation = -self.body.angle / pi * 180
         if self.correct_angle:
             return self.body.local_to_world(self.body.center_of_gravity)
@@ -143,6 +142,9 @@ class DynamicStructurePositionHandler(NonStaticStructurePositionHandler):
 class RopePositionHandler:
     def __init__(self, constraint):
         self.constraint = constraint
+        self.pos = (0, 0)
+
+        self.is_rope_position_handler = True
 
     def update_position(self, rope, n=1):
         pos1 = self.constraint.a.local_to_world(self.constraint.anchor_a)
@@ -156,7 +158,15 @@ class RopePositionHandler:
             angle *= -1
 
         rope.rotation = (angle - pi / 2) / pi * 180
+        self.pos = tuple(pos1)
         return pos1
+
+    def get_length(self, rope):
+        pos1 = self.constraint.a.local_to_world(self.constraint.anchor_a)
+        pos2 = self.constraint.b.local_to_world(self.constraint.anchor_b)
+
+        vec = pos2 - pos1
+        return vec.length / rope.scale
 
 
 class BgLayerPositionHandler:
@@ -349,6 +359,7 @@ class InvertedObjectPositionHandler(NonStaticStructurePositionHandler):
         self.get_position_data = get_position_data_callback
 
         self.correct_position = False
+        self.angle = 0
 
         self.invisible_when_idle = invisible_when_idle
 
@@ -357,6 +368,7 @@ class InvertedObjectPositionHandler(NonStaticStructurePositionHandler):
 
         position = position_data.position
         rotation = position_data.rotation
+        self.angle = position_data.body_angle
 
         if self.invisible_when_idle:
 
@@ -391,14 +403,18 @@ class InvertedObjectPositionHandler(NonStaticStructurePositionHandler):
             self.update_structure_collision(entity)
             self.space.reindex_shapes_for_body(self.body)
 
-        else:
-            velocity = list((position_data.next_position - position) * 60)
+        # else:
+        #     velocity = list((position_data.next_position - position) * 60)
 
         entity.rotation = rotation
         if self.correct_position:
             return self.body.local_to_world(self.body.center_of_gravity)
         else:
             return tuple(position)
+
+    def get_length(self, *_, **__):
+        # for ropes and in general length-based objects, the length is stored in the angle attribute
+        return self.angle
 
     def add_trajectory(self, *_, **__):
         pass

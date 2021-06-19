@@ -45,8 +45,8 @@ class PlayerPhysicStateUpdater(BasePhysicStateUpdater):
         self.space = space
 
         self.on_ground = True
-        self.collide = 0
-        self.collide_with_ground = 0
+        self.collision_counter = 0
+        self.ground_collision_counter = 0
         self.collide_but_ignored = set()
         self.collide_for_one_tick = False
         self.dashing_for_one_tick = False
@@ -58,7 +58,7 @@ class PlayerPhysicStateUpdater(BasePhysicStateUpdater):
 
         self.time_spent_on_ground_with_wrong_state = 0
 
-        self.extended_collision = None
+        self.extended_collision = None  # hitbox extension for player during a dash to prevent clipping through walls
 
         self.x1 = 0
         self.x2 = 0
@@ -77,11 +77,11 @@ class PlayerPhysicStateUpdater(BasePhysicStateUpdater):
         player_slippery_slope_collision_handler.post_solve = self.collision_with_slippery_slope
 
         player_ground_collision_handler.separate = self.separate_from_ground
-        player_wall_collision_handler.separate = self.separate
+        player_wall_collision_handler.separate = self.separate_from_wall
         player_slippery_slope_collision_handler.separate = self.separate_from_slippery_slope
 
         player_ground_collision_handler.begin = self.begin_collision_with_ground
-        player_wall_collision_handler.begin = self.check_actions_on_touch
+        player_wall_collision_handler.begin = self.begin_collision_with_wall
         player_slippery_slope_collision_handler.begin = self.check_actions_on_touch
 
         self.stable_ground = False
@@ -97,28 +97,86 @@ class PlayerPhysicStateUpdater(BasePhysicStateUpdater):
         return self._identifier
 
     def begin_collision_with_ground(self, arbiter, *_, **__):
-        self.collide_with_ground += 1
+        self.ground_collision_counter += 1
 
-        return self.check_actions_on_touch(arbiter)
-
-    def check_actions_on_touch(self, arbiter, *_, **__):
-        self.collide += 1
         shapes = arbiter.shapes
+        for shape in shapes:
+            if shape.collision_type == 1:
+                shape.collision_type_at_the_beginning_of_the_collision = 1
+
+        return self.check_actions_on_touch(arbiter, shapes=shapes)
+
+    def begin_collision_with_wall(self, arbiter, *_, **__):
+
+        shapes = arbiter.shapes
+        for shape in shapes:
+            if shape.collision_type == 2:
+                shape.collision_type_at_the_beginning_of_the_collision = 2
+
+        return self.check_actions_on_touch(arbiter, shapes=shapes)
+
+    def check_actions_on_touch(self, arbiter, *_, **kwargs):
+        if 'shapes' in kwargs:
+            shapes = kwargs['shapes']
+        else:
+            shapes = arbiter.shapes
+
+        self.collision_counter += 1
         for s in shapes:
             if s.action_on_touch is not None:
                 self.schedule_action(s.action_on_touch[0], s.action_on_touch[1], 1)
         return True
 
-    def separate_from_ground(self, *_, **__):
+    def separate_from_ground(self, arbiter, *_, **kwargs):
+
+        if 'do_not_check_collision_type_change' in kwargs:
+            check_collision_type_change = not kwargs['do_not_check_collision_type_change']
+        else:
+            check_collision_type_change = True
+
+        # detects if the collision type changed since the beginning of the collision (can happen if a dynamic block
+        # rotates for example) and change the collision callback if it did, so the collision counters are still
+        # accurate
+        if check_collision_type_change:
+            shapes = arbiter.shapes
+            for shape in shapes:
+                if shape.collision_type == 1:
+                    if getattr(shape, 'collision_type_at_the_beginning_of_the_collision', 1) == 2:
+                        logger.debug('Collision type 2 does not match with the beginning of the collision,'
+                                     ' changing collision callback')
+                        return self.separate_from_wall(arbiter, do_not_check_collision_type_change=True)
+
         self.separate()
-        self.on_ground = False
+
         self.landing_strength = 0
         self.collide_with_dynamic_ground = None
 
-        self.collide_with_ground -= 1
+        self.ground_collision_counter -= 1
+
+        if self.ground_collision_counter <= 0:
+            self.on_ground = False
+
+    def separate_from_wall(self, arbiter, *_, **kwargs):
+
+        if 'do_not_check_collision_type_change' in kwargs:
+            check_collision_type_change = not kwargs['do_not_check_collision_type_change']
+        else:
+            check_collision_type_change = True
+
+        # see above
+        if check_collision_type_change:
+            shapes = arbiter.shapes
+            for shape in shapes:
+                if shape.collision_type == 2:
+                    if getattr(shape, 'collision_type_at_the_beginning_of_the_collision', 2) == 1:
+                        logger.debug('Collision type 1 does not match with the beginning of the collision,'
+                                     ' changing collision callback')
+                        return self.separate_from_ground(arbiter, do_not_check_collision_type_change=True)
+
+        self.separate()
 
     def separate(self, *_, **__):
-        self.collide -= 1
+        self.collision_counter -= 1
 
     def separate_from_slippery_slope(self, *_, **__):
         self.collide_with_slippery_slope = False
@@ -139,11 +197,10 @@ class PlayerPhysicStateUpdater(BasePhysicStateUpdater):
         body = arbiter.shapes[1].body
         for contact_point in points:
             py = round(self.body.position.y)
-            px = round(self.body.position.x)
             on_dynamic_ground = self.collide_with_dynamic_ground is not None
 
             if (((py - 8 <= round(contact_point.point_a.y) <= py + 8)
-                    and (py - 8 <= round(contact_point.point_b.y) <= py + 8))) or on_dynamic_ground:
+                    and (py - 8 <= round(contact_point.point_b.y) <= py + 8)) or on_dynamic_ground):
 
                 if (((round(contact_point.point_a.y) == py - 1)
                      or (round(contact_point.point_b.y) == py - 1))) or self.body.velocity.length > 100:
@@ -161,13 +218,18 @@ class PlayerPhysicStateUpdater(BasePhysicStateUpdater):
                         return True
 
         if body.velocity.length > 500:
+            # if the player goes too fast, ignoring the collision can cause physic bugs far worse than
+            # just a weird interaction
             return True
 
         on_ground = bool(self.collide_with_dynamic_ground is not None or self.current_state_name == 'dash')
         if on_ground:
-            self.collide_but_ignored.add(arbiter.shapes[1])
-            if len(self.collide_but_ignored) >= self.collide_with_ground:
+            if not on_dynamic_ground:
+                self.collide_but_ignored.add(arbiter.shapes[1])
+            if len(self.collide_but_ignored) >= self.ground_collision_counter:
                 self.on_ground = False
+                vec = self.body.velocity.x / 10, self.body.velocity.y - 2
+                self.body.velocity = vec
 
         return self.on_ground
 
@@ -257,7 +319,7 @@ class PlayerPhysicStateUpdater(BasePhysicStateUpdater):
 
                     if not self.collide_with_slippery_slope:
                         # bug fix (prevents the player to force his/her way through walls when dashing)
-                        if self.collide and entity.state == 'dash':
+                        if self.collision_counter and entity.state == 'dash':
                             if not self.dashing_for_one_tick:
                                 entity.can_dash_velocity_be_applied = True
                                 self.dashing_for_one_tick = True
@@ -281,16 +343,19 @@ class PlayerPhysicStateUpdater(BasePhysicStateUpdater):
                     # C = 1.3, p(air) = 1.2, S = 1.5m * 0.3m = 0.5m^2
                     # divides by the mass, around 50kg, by 60 to convert seconds into time units (1/60s) and then
                     # by 50 again to convert distance units into meters (50 * 60 * 50 = 150 000)
-                    if self.body.velocity.length > 250 and not self.on_ground and entity.state != 'dash':
-                        ax = (0.8 * self.body.velocity.x * abs(self.body.velocity.x)) / 150_000
-                        ay = (0.8 * self.body.velocity.y * abs(self.body.velocity.y)) / 150_000
-                        self.body.velocity -= (ax, ay)
+
+                    # (obsolete)
+
+                    # if self.body.velocity.length > 250 and not self.on_ground and entity.state != 'dash':
+                    #     ax = (0.8 * self.body.velocity.x * abs(self.body.velocity.x)) / 150_000
+                    #     ay = (0.8 * self.body.velocity.y * abs(self.body.velocity.y)) / 150_000
+                    #     self.body.velocity -= (ax, ay)
 
                     # the player should not be able to air control against a wall because the wall can get him/her stuck
                     # this code tests if the direction of the player is in the same direction as the direction of the
                     # object he/she is colliding with
-                    if self.collide and ((entity.direction == 1 and self.xb > self.body.position.x)
-                                         or (entity.direction == -1 and self.xb < self.body.position.x)):
+                    if self.collision_counter and ((entity.direction == 1 and self.xb > self.body.position.x)
+                                                   or (entity.direction == -1 and self.xb < self.body.position.x)):
                         entity.can_air_control = False
 
                     # prevents saving an unstable position (at least half of the body must be on a stable structure)

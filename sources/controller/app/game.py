@@ -43,6 +43,7 @@ class Game:
 
         self.t1 = self.count = self.number_of_space_updates = self.space = \
             self.player = self.entities = self.structures = self.triggers = self.ag = self.action_manager = None
+        self.constraints = None
         self.kinematic_structures = None
         self.checkpoints = None
         self.camera_handler = None
@@ -182,6 +183,7 @@ class Game:
 
         ######
 
+        self.constraints = dict()
         self.entities = dict()
         self.structures = dict()
         self.kinematic_structures = dict()
@@ -449,6 +451,8 @@ class Game:
 
             self.structures[data['name']] = sprite
 
+            self.constraints[data['name']] = sprite
+
     @staticmethod
     def dump_save():
         SaveComponent.dump()
@@ -608,7 +612,8 @@ class Game:
             self.action_manager.do(self.action_manager.RUN)
 
     def init_inversion_handler_recording_array(self):
-        self.inversion_handler.init_recording_array(self.kinematic_structures, self.dynamic_structures, self.entities)
+        self.inversion_handler.init_recording_array(self.kinematic_structures, self.dynamic_structures, self.entities,
+                                                    self.constraints)
 
     def start_recording_for_inversion(self):
         self.should_inversion_handler_record = True

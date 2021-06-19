@@ -302,6 +302,11 @@ class Rope(BaseSprite, metaclass=SpriteMetaclass):
     def __init__(self, batch, layer_group, position_handler, image_handler, screen_offset, state='base'):
         super(Rope, self).__init__(batch, layer_group, position_handler, image_handler, screen_offset, 'base')
 
+    def get_length(self):
+        if getattr(self, 'position_handler', None) is None:
+            return 1
+        return self.position_handler.get_length(self)
+
 
 class Button(BaseSprite, metaclass=SpriteMetaclass):
     def __init__(self, batch, layer_group, position_handler, image_handler, screen_offset, action_name):

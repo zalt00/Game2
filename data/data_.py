@@ -372,7 +372,7 @@ class Data(DataContainer):
         heart_positions = [(x_offset + spacing * i, y) for (i, x_offset, spacing, y)
                            in zip(range(_number), [_x_offset] * _number, [_spacing] * _number, [_y] * _number)]
 
-        maps = ('data/maps/temp3.yml', 'data/maps/temp2.yml', 'data/maps/temptemp.yml')
+        maps = ('data/maps/temp3.yml', 'data/maps/test_falling_block.yml', 'data/maps/temptemp.yml')
 
         death_screen_res_path = 'special_objects/death_screen.obj'
 
@@ -385,7 +385,8 @@ class Data(DataContainer):
                     "camera x: {}\n" +
                     "camera y: {}\n" +
                     "framerate: {}\n" +
-                    "map id: {}")
+                    "map id: {}\n" +
+                    "ground collisions: {}")
 
             values = [
                 ['player', 'position_handler', 'body', 'velocity', 'x'],
@@ -395,7 +396,8 @@ class Data(DataContainer):
                 ['camera_handler', 'x'],
                 ['camera_handler', 'y'],
                 ['window', 'current_framerate'],
-                ['current_map_id']
+                ['current_map_id'],
+                ['player', 'physic_state_updater', 'ground_collision_counter']
             ]
 
             color = "#ffffff"

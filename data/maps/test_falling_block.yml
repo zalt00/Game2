@@ -23,14 +23,26 @@ checkpoints:
 objects_data:
   constraint21_constraint:
     anchor_a:
-    - 0
-    - 162
+    - -64
+    - 160
     anchor_b:
     - 0
-    - 0
+    - 80
     name: constraint21
     object_a: dynamic_struct
     object_b: support
+    res: special_objects/rope.obj
+    type: constraint
+  constraint22_constraint:
+    anchor_a:
+    - 64
+    - 160
+    anchor_b:
+    - 0
+    - 0
+    name: constraint22
+    object_a: dynamic_struct
+    object_b: kinematic_s_1
     res: special_objects/rope.obj
     type: constraint
   dynamic_struct_structure:
@@ -49,8 +61,8 @@ objects_data:
     mass: 100
     name: dynamic_struct
     pos:
-    - 517.0
-    - 427.0
+    - 603.0
+    - 337.0
     res: structures/dynamic_structures/forest/test.st
     state: base
     type: structure
@@ -94,8 +106,8 @@ objects_data:
     layer: 2
     name: kinematic_s_1
     pos:
-    - 935.0
-    - 80.0
+    - 940.0
+    - 454.0
     res: structures/basic_structures/forest/platform4x4_slope_left.st
     state: base
     type: structure
@@ -451,8 +463,8 @@ objects_data:
     layer: 0
     name: support
     pos:
-    - 492.0
-    - 1330.0
+    - 122.0
+    - 706.0
     res: structures/basic_structures/forest/platform4x2.st
     state: base
     type: structure
@@ -491,52 +503,6 @@ triggers_data:
     enabled: true
     id: 3
     top: -50
-  elevator_down:
-    actions:
-    - target: 24
-      type_: DisableTrigger
-    - target: 23
-      type_: DisableTrigger
-    - target: 22
-      type_: EnableTrigger
-    - struct_name: kinematic_s_1
-      type_: MoveKinematicStructure2
-      velocity: 100
-      x: 935
-      y: 80
-    enabled: false
-    id: 24
-    left: 500
-    right: 1700
-  elevator_ride:
-    actions:
-    - function_id: 5
-      ticks: 10
-      trigger_to_enable: 24
-      type_: ScheduleTriggerEnabling
-    bottom: 180
-    enabled: true
-    id: 23
-    left: 875
-    right: 990
-    top: 700
-  elevator_up:
-    actions:
-    - target: 22
-      type_: DisableTrigger
-    - target: 23
-      type_: EnableTrigger
-    - struct_name: kinematic_s_1
-      type_: MoveKinematicStructure2
-      velocity: 100
-      x: 935
-      y: 495
-    bottom: 180
-    enabled: true
-    id: 22
-    left: 875
-    right: 990
-    top: 280
   level_transition_1:
     actions:
     - color:
@@ -592,6 +558,37 @@ triggers_data:
       type_: CreateTransition
     enabled: true
     id: 1
+  make_block_fall:
+    actions:
+    - target: 24
+      type_: DisableTrigger
+    - fade_in: 3
+      fade_out: 3
+      struct_name: kinematic_s_1
+      total_duration: 30
+      type_: MoveKinematicStructure
+      x: 840
+      y: 500
+    enabled: false
+    id: 24
+  move_block_up:
+    actions:
+    - target: 23
+      type_: DisableTrigger
+    - fade_in: 3
+      fade_out: 3
+      struct_name: kinematic_s_1
+      total_duration: 400
+      type_: MoveKinematicStructure
+      x: 840
+      y: 1000
+    - ticks: 400
+      trigger_to_enable: 24
+      type_: ScheduleTriggerEnabling
+    enabled: true
+    id: 23
+    left: 780
+    right: 900
   move_cam:
     actions:
     - dx: 640
@@ -609,8 +606,6 @@ triggers_data:
     - target: 26
       type_: DisableTrigger
     - type_: StartInversion
-    - target: 22
-      type_: DisableTrigger
     - target: 23
       type_: DisableTrigger
     - target: 24

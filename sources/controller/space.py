@@ -8,17 +8,19 @@ class GameSpace(pymunk.Space):
     def __init__(self):
         super().__init__()
         self.gravity = (0, -1000)
+        self.damping = 0.95
         
         self.objects = {}
 
     def add_humanoid_entity(self, height, width, pos, name):
-        points = ((-round(width/4), 0),
-                  (round(width/4), 0),
-                  (width/3, height / 5),
-                  (width/3, height),
-                  (-width/3, height),
-                  (-width/3, height / 5))
-        radius = 1
+        points = ((-round(width/3), 0),
+                  (round(width/3), 0),
+                  # (width/3, height / 5),
+                  (round(width/3), height),
+                  (round(-width/3), height),
+                  # (-width/3, height / 5)
+                  )
+        radius = 0.5
         mass = 10
         moment = pymunk.moment_for_poly(mass, points, radius=radius)
 
@@ -33,8 +35,8 @@ class GameSpace(pymunk.Space):
 
         shape2 = pymunk.Poly(body,
                              vertices=(
-                                 (-width * 2 / 3, 0),
-                                 (width * 2 / 3, 0),
+                                 (-width * 2 / 3, -5),
+                                 (width * 2 / 3, -5),
                                  (-width * 2 / 3, height),
                                  (width * 2 / 3, height)),
                              radius=radius * 2)
@@ -114,7 +116,8 @@ class GameSpace(pymunk.Space):
     def add_constraint(self, object_a, object_b, anchor_a, anchor_b, name):
         body_a = self.objects[object_a][0]
         body_b = self.objects[object_b][0]
-        cons = pymunk.constraints.PinJoint(body_a, body_b, anchor_a, anchor_b)
+        vec = pymunk.Vec2d(*body_a.position + anchor_a - (body_b.position + anchor_b))
+        cons = pymunk.constraints.SlideJoint(body_a, body_b, anchor_a, anchor_b, min=2, max=vec.length)
 
         self.add(cons)
         self.objects[name] = (cons,)

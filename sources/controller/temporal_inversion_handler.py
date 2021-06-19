@@ -35,6 +35,7 @@ class TemporalInversionHandler:
         self.kinematic_structures = dict()
         self.dynamic_structures = dict()
         self.entities = dict()
+        self.constraints = dict()
 
         self.usual_position_handlers = dict()  # position handlers outside of the inversion
         self.inverted_object_position_handlers = dict()
@@ -56,7 +57,7 @@ class TemporalInversionHandler:
 
         self.t = 0
 
-    def init_recording_array(self, kinematic_structures, dynamic_structures, entities):
+    def init_recording_array(self, kinematic_structures, dynamic_structures, entities, constraints):
         self.objects = dict()
         self.usual_position_handlers = dict()
         self.usual_bodies = dict()
@@ -66,10 +67,12 @@ class TemporalInversionHandler:
         self.kinematic_structures = kinematic_structures.copy()
         self.dynamic_structures = dynamic_structures.copy()
         self.entities = entities.copy()
+        self.constraints = constraints.copy()
 
         self.objects.update(kinematic_structures)
         self.objects.update(dynamic_structures)
         self.objects.update(entities)
+        self.objects.update(constraints)
 
         self.name_to_id = dict()
         for i, obj_name in enumerate(self.objects):
@@ -105,7 +108,13 @@ class TemporalInversionHandler:
                 angle = position_handler.body.angle
             else:
                 position = position_handler.pos
-                angle = -obj.rotation * math.pi / 180
+
+                # if the object is a rope, stores the length in the angle attribute, as it is useless because there is
+                # no body attached to the object
+                if getattr(position_handler, 'is_rope_position_handler', False):
+                    angle = position_handler.get_length(obj)
+                else:
+                    angle = -obj.rotation * math.pi / 180
 
             rotation = obj.rotation
 
@@ -160,6 +169,9 @@ class TemporalInversionHandler:
 
         for obj_name, obj in self.entities.items():
             self.setup_ghost(obj_name, obj)
+
+        for obj_name, obj in self.constraints.items():
+            self.setup_object(obj_name, obj)
 
     def setup_object(self, obj_name, obj):
         has_body = getattr(obj.position_handler, 'body', None) is not None

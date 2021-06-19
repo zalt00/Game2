@@ -88,11 +88,24 @@ class StructureImageHandler(ImageHandler):
 
 
 class RopeImageHandler(ImageHandler):
+
+    def __init__(self, res):
+        super().__init__(res)
+        self.length = 0
+        self.img = None
+
     def update_image(self, rope, n=1):
-        img = self.res.sheets[rope.state]
-        img.anchor_x = 0
-        img.anchor_y = 2
-        return img
+
+        length = rope.get_length()
+        if self.img is None or length != self.length:
+            unscaled_img = self.res.sheets[rope.state]
+            img = unscaled_img.get_region(0, 0, length, unscaled_img.height)
+            self.img = img
+            self.length = length
+
+        self.img.anchor_x = 0
+        self.img.anchor_y = 2
+        return self.img
 
 
 class ButtonImageHandler(ImageHandler):
