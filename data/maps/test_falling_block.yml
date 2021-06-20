@@ -45,6 +45,18 @@ objects_data:
     object_b: kinematic_s_1
     res: special_objects/rope.obj
     type: constraint
+  constraint23_constraint:
+    anchor_a:
+    - -64
+    - 32
+    anchor_b:
+    - 0
+    - 80
+    name: constraint23
+    object_a: dynamic_struct
+    object_b: support
+    res: special_objects/rope.obj
+    type: constraint
   dynamic_struct_structure:
     center_of_gravity:
     - 0
@@ -305,6 +317,22 @@ objects_data:
     state: base
     type: structure
     walls: []
+  struct22_structure:
+    ground: []
+    is_built: false
+    layer: 0
+    name: struct22
+    pos:
+    - -175.0
+    - 8.0
+    res: structures/mainbuilds/forest/wall.st
+    state: base
+    type: structure
+    walls:
+    - - - 16
+        - 736
+      - - 16
+        - 0
   struct2_structure:
     ground:
     - - - -80
@@ -517,6 +545,8 @@ triggers_data:
       type_: CreateTransition
     - target: 18
       type_: DisableTrigger
+    - target: 49
+      type_: DisableTrigger
     enabled: true
     id: 18
     right: 8
@@ -524,15 +554,8 @@ triggers_data:
     actions:
     - map_id: -1
       relative: true
+      tp_to_checkpoint: -1
       type_: LoadMap
-    - entity_name: player
-      npos:
-      - 820
-      - 273
-      type_: TPEntity
-    - type_: SetCameraPosition
-      x: -176
-      y: 0
     enabled: false
     id: 19
   lock_cam:
@@ -594,9 +617,9 @@ triggers_data:
     actions:
     - dx: 640
       dy: 400
-      fade_in: 1
-      fade_out: 1
-      total_duration: 40
+      fade_in: 0
+      fade_out: 0
+      total_duration: 1
       type_: RelativeMovecam
     - target: 2
       type_: DisableTrigger

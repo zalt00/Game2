@@ -87,7 +87,7 @@ class CameraHandler:
         else:
             self.lock_mode = 'strict'
 
-    def get_camera_position_after_player_death(self, player_position):
+    def recenter_camera(self, player_position):
         if self.locked[0]:
             self.pos[0] = self.relative_pos[0] - player_position[0]
             if self.pos[0] > self.left_limit:

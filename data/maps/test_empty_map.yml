@@ -1,0 +1,96 @@
+background_data:
+  bg_decoration_layer_id: -4
+  bg_decoration_object_set_res: bg_decoration_sets/forest/forest_bg_decoration_set.bgobj
+  bg_decoration_objects_pos:
+  - 0
+  - -300
+  bg_decoration_sequence:
+  - shrub
+  - small_tree
+  - large_tree
+  - stump
+  - small_tree
+  - bush
+  pos:
+  - 0
+  - -550
+  res: backgrounds/forest/forest.bg
+biome: forest
+checkpoints: []
+objects_data:
+  player:
+    res: player/white_guy.obj
+    type: player
+palette: structure_palettes/forest/forest_structure_tilesets.stsp
+space: true
+triggers_data:
+  bottom_of_world_killbox:
+    actions:
+    - action_name: die
+      arg: []
+      entity_name: player
+      type_: ActionOnEntity
+    enabled: true
+    id: 97000
+    top: -200
+  load_next_level:
+    actions:
+    - map_id: 1
+      relative: true
+      tp_to_checkpoint: 0
+      type_: LoadMap
+    - target: 98001
+      type_: DisableTrigger
+    enabled: false
+    id: 98001
+  load_previous_level:
+    actions:
+    - map_id: -1
+      relative: true
+      tp_to_checkpoint: -1
+      type_: LoadMap
+    - target: 98000
+      type_: DisableTrigger
+    enabled: false
+    id: 98000
+  lock_cam:
+    actions:
+    - mode: follow
+      type_: LockCamera
+      x: true
+      y: false
+    - target: 97001
+      type_: DisableTrigger
+    - follow_sensitivity: 30
+      left_limit: 0
+      moving_threshold: 4
+      type_: CameraSettings
+    - target: 97002
+      type_: EnableTrigger
+    - color:
+      - 0
+      - 0
+      - 0
+      duration: 8
+      fade: out
+      type_: CreateTransition
+    enabled: true
+    id: 97001
+  move_cam:
+    actions:
+    - dx: 640
+      dy: 0
+      fade_in: 0
+      fade_out: 0
+      total_duration: 1
+      type_: RelativeMovecam
+    - target: 97002
+      type_: DisableTrigger
+    enabled: false
+    id: 97002
+  on_death:
+    actions:
+    - target: 99000
+      type_: DisableTrigger
+    enabled: false
+    id: 99000

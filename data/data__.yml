@@ -3,4 +3,5 @@ game:
   - data/maps/temp3.yml
   - data/maps/test_falling_block.yml
   - data/maps/temptemp.yml
+  - data/maps/test_empty_map.yml
 menu: {}

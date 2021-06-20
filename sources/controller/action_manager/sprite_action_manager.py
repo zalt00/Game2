@@ -272,6 +272,7 @@ class PlayerActionManager(BaseEntityActionManager):
         triggers = self.player.position_handler.triggers
         if self.on_death_trigger_id in triggers:
             triggers[self.on_death_trigger_id].enabled = True
+            triggers[self.on_death_trigger_id].update(*self.player.position_handler.body.position)
         else:
             logger.warning(f'no trigger with id {self.on_death_trigger_id}')
 

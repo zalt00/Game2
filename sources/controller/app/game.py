@@ -538,7 +538,7 @@ class Game:
         self.window.add_transition(transition)
 
     def reanimate_player(self, *_, **__):
-        self.window.screen_offset = self.camera_handler.get_camera_position_after_player_death(
+        self.window.screen_offset = self.camera_handler.recenter_camera(
             (self.model.Game.BasePlayerData.pos_x.get(self.current_save_id),
              self.model.Game.BasePlayerData.pos_y.get(self.current_save_id))
         )
@@ -579,10 +579,10 @@ class Game:
             self.level_cache[map_id] = level
             return level
 
-    def load_map_on_next_frame(self, map_id):
-        self.additional_commands.append(lambda: self.load_map(map_id))
+    def load_map_on_next_frame(self, map_id, tp_to_checkpoint=None):
+        self.additional_commands.append(lambda: self.load_map(map_id, tp_to_checkpoint=tp_to_checkpoint))
 
-    def load_map(self, map_id, death_warp=False):
+    def load_map(self, map_id, death_warp=False, tp_to_checkpoint=None):
         self.model.Game.current_map_id.set(map_id, self.current_save_id)
 
         if not death_warp:
@@ -611,6 +611,15 @@ class Game:
 
         if still_running:
             self.action_manager.do(self.action_manager.RUN)
+
+        if tp_to_checkpoint is not None:
+            _, npos = self.checkpoints[tp_to_checkpoint]
+            self.player.position_handler.body.position = npos
+            self.player.position_handler.body.velocity = (0, 0)
+            self.model.Game.BasePlayerData.pos_x.set(npos[0], self.current_save_id)
+            self.model.Game.BasePlayerData.pos_y.set(npos[1], self.current_save_id)
+
+            self.schedule_function(lambda: self.camera_handler.recenter_camera(npos), ticks=2)
 
     def init_inversion_handler_recording_array(self):
         self.inversion_handler.init_recording_array(self.kinematic_structures, self.dynamic_structures, self.entities,

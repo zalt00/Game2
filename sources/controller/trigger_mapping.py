@@ -70,7 +70,8 @@ class TriggerMapping:
         if x <= -self.tile_width:
             if not self._invalid_position:
                 self._invalid_position = True
-                logger.warning('invalid position')
+                logger.debug('invalid position')
+                self._slow_update(x, y)
         else:
             self._invalid_position = False
             tile_id = self.get_tile_index(x)
@@ -81,6 +82,10 @@ class TriggerMapping:
 
             for trigger_id in triggers:
                 self._triggers[trigger_id].update(x, y)
+
+    def _slow_update(self, x, y):
+        for trigger in self._triggers.values():
+            trigger.update(x, y)
 
     def create_new_tile(self):
         x = self.tiles[-1].x2

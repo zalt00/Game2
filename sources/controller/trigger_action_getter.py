@@ -182,12 +182,11 @@ class GameActionGetter(ActionGetter):
                     new_map_id = len(self.ag.model.Game.maps) - 1
             else:
                 new_map_id = self.map_id
-                
-            self.ag.load_map(new_map_id)
 
             if self.tp_to_checkpoint != -42:
-                _, pos = self.ag.checkpoints[self.tp_to_checkpoint]
-                GameActionGetter.TPEntity(self.ag, 'player', pos)()
+                self.ag.load_map(new_map_id, self.tp_to_checkpoint)
+            else:
+                self.ag.load_map(new_map_id)
 
     @dataclass
     class CreateTransition(AbstractAction):

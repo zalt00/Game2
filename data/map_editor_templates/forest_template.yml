@@ -3,7 +3,7 @@ palette: "structure_palettes/forest/forest_structure_tilesets.stsp"
 biome: "forest"
 
 background_data:
-    res: ""
+    res: "backgrounds/forest/forest.bg"
     pos: [0, -550]
 
     bg_decoration_object_set_res: bg_decoration_sets/forest/forest_bg_decoration_set.bgobj
@@ -32,7 +32,7 @@ triggers_data:
       arg: []
       type_: ActionOnEntity
     enabled: true
-    id: 0
+    id: 97000
     top: -200
   lock_cam:
     actions:
@@ -40,32 +40,32 @@ triggers_data:
       type_: LockCamera
       x: true
       y: false
-    - target: 1
+    - target: 97001
       type_: DisableTrigger
     - follow_sensitivity: 30
       left_limit: 0
       moving_threshold: 4
       type_: CameraSettings
-    - target: 2
+    - target: 97002
       type_: EnableTrigger
     - fade: "out"
       color: [0, 0, 0]
       duration: 8
       type_: CreateTransition
     enabled: true
-    id: 1
+    id: 97001
   move_cam:
     actions:
     - dx: 640
       dy: 0
-      fade_in: 1
-      fade_out: 1
-      total_duration: 40
+      fade_in: 0
+      fade_out: 0
+      total_duration: 1
       type_: RelativeMovecam
-    - target: 2
+    - target: 97002
       type_: DisableTrigger
     enabled: false
-    id: 2
+    id: 97002
   on_death:
       actions:
           - type_: DisableTrigger
@@ -77,14 +77,9 @@ triggers_data:
     - map_id: -1
       relative: true
       type_: LoadMap
-    - entity_name: player
-      npos:
-      - 500
-      - 500
-      type_: TPEntity
-    - type_: SetCameraPosition
-      x: 0
-      y: 0
+      tp_to_checkpoint: -1
+    - type_: DisableTrigger
+      target: 98000
     enabled: false
     id: 98000
   load_next_level:
@@ -92,13 +87,8 @@ triggers_data:
     - map_id: 1
       relative: true
       type_: LoadMap
-    - entity_name: player
-      npos:
-      - 500
-      - 500
-      type_: TPEntity
-    - type_: SetCameraPosition
-      x: 0
-      y: 0
+      tp_to_checkpoint: 0
+    - type_: DisableTrigger
+      target: 98001
     enabled: false
     id: 98001

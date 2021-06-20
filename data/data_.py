@@ -383,6 +383,14 @@ class Data(DataContainer):
 
         death_screen_res_path = 'special_objects/death_screen.obj'
 
+        class Triggers:
+            ON_PLAYER_DEATH = 99000
+            PREVIOUS_LEVEL = 98000
+            NEXT_LEVEL = 98001
+            BOTTOM_OF_WORLD_KILLBOX = 97000
+            LOCK_CAMERA = 97001
+            MOVE_CAMERA = 97002
+
         class PlayerDebugData(DataContainer):
             pos = [1100, 690]
             text = ("x velocity: {}\n" +

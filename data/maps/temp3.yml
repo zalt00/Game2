@@ -16,7 +16,10 @@ background_data:
   - -550
   res: backgrounds/forest/forest.bg
 biome: forest
-checkpoints: []
+checkpoints:
+- - checkpoint0
+  - - 840
+    - 271
 objects_data:
   player:
     res: player/white_guy.obj
@@ -293,9 +296,6 @@ triggers_data:
       relative: true
       tp_to_checkpoint: 0
       type_: LoadMap
-    - type_: SetCameraPosition
-      x: 0
-      y: 0
     enabled: false
     id: 13
   lock_cam:
@@ -327,9 +327,9 @@ triggers_data:
     actions:
     - dx: 640
       dy: 0
-      fade_in: 1
-      fade_out: 1
-      total_duration: 40
+      fade_in: 0
+      fade_out: 0
+      total_duration: 1
       type_: RelativeMovecam
     - target: 2
       type_: DisableTrigger
