@@ -194,12 +194,19 @@ class Game:
         self.camera_handler.move_to(x=self.model.Game.BaseBGData.camera_pos_x.get(self.current_save_id),
                                     y=self.model.Game.BaseBGData.camera_pos_y.get(self.current_save_id))
 
+        ###  CHECKPOINTS ###
+        self.checkpoints = self.level.get('checkpoints', [])
+
+        if len(self.checkpoints) == 0:
+            self.checkpoints.append(('base', self.model.Game.default_checkpoint_pos))
+
         ### TRIGGERS ###
         self.triggers = TriggerMapping(100)
         self.ag = GameActionGetter(self.triggers, self.window, self.camera_handler, self.entities, self.model,
                                    self.current_save_id, self.load_map_on_next_frame, self.schedule_function,
                                    self.kinematic_structures, self.init_inversion_handler_recording_array,
-                                   self.start_recording_for_inversion, self.start_inversion, self.stop_inversion)
+                                   self.start_recording_for_inversion, self.start_inversion, self.stop_inversion,
+                                   self.checkpoints)
         for trigdata in self.level['triggers_data'].values():
             self.triggers[trigdata['id']] = Trigger(trigdata, self.ag)
 
@@ -257,12 +264,6 @@ class Game:
             self.window.set_event_manager('GameEventManager', action_manager, ctrls,
                                           [0.35, 0.35, 0.3, 0.15, 0.15, 0.15])
         #####
-
-        #  checkpoints
-        self.checkpoints = self.level.get('checkpoints', [])
-
-        if len(self.checkpoints) == 0:
-            self.checkpoints.append(('base', self.model.Game.default_checkpoint_pos))
 
         self.t1 = -1
         self.count = 0  # every 4 space update ticks the position handler, the image handler

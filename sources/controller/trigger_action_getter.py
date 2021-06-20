@@ -24,11 +24,14 @@ class ActionGetter:
 class GameActionGetter(ActionGetter):
     def __init__(self, triggers, window, camera_handler, entities, model, current_save_id, load_map_callback,
                  schedule_function_callback, kinematic_structures, init_recording_array_callback,
-                 start_recording_for_inversion_callback, start_inversion_callback, stop_inversion_callback):
+                 start_recording_for_inversion_callback, start_inversion_callback, stop_inversion_callback,
+                 checkpoints):
         self.triggers = triggers
         self.window = window
         self.camera_handler = camera_handler
         self.model = model
+
+        self.checkpoints = checkpoints
 
         self.entities = entities
         self.kinematic_structures = kinematic_structures
@@ -167,6 +170,7 @@ class GameActionGetter(ActionGetter):
     class LoadMap(AbstractAction):
         map_id: int
         relative: bool = False
+        tp_to_checkpoint: int = -42
 
         def __call__(self):
             if self.relative:
@@ -180,6 +184,10 @@ class GameActionGetter(ActionGetter):
                 new_map_id = self.map_id
                 
             self.ag.load_map(new_map_id)
+
+            if self.tp_to_checkpoint != -42:
+                _, pos = self.ag.checkpoints[self.tp_to_checkpoint]
+                GameActionGetter.TPEntity(self.ag, 'player', pos)()
 
     @dataclass
     class CreateTransition(AbstractAction):

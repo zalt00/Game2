@@ -140,6 +140,10 @@ load_map:
     type: bool
     optional: true
     default: false
+  tp_to_checkpoint:
+    type: int
+    optional: true
+    default: 0
 
 set_camera_position:
   type_: SetCameraPosition

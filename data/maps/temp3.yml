@@ -290,12 +290,9 @@ triggers_data:
   load_next_map:
     actions:
     - map_id: 1
+      relative: true
+      tp_to_checkpoint: 0
       type_: LoadMap
-    - entity_name: player
-      npos:
-      - 78
-      - 33
-      type_: TPEntity
     - type_: SetCameraPosition
       x: 0
       y: 0

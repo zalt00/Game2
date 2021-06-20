@@ -522,7 +522,8 @@ triggers_data:
     right: 8
   load_previous_level:
     actions:
-    - map_id: 0
+    - map_id: -1
+      relative: true
       type_: LoadMap
     - entity_name: player
       npos:

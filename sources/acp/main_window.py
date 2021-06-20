@@ -74,11 +74,21 @@ class Window(QMainWindow):
                     group.add_widget(w)
                     self.save_component_widgets.append(w)
 
+        with open('data/data__.yml') as datafile:
+            additional_data = yaml.safe_load(datafile)
+
+        for map_ in additional_data['game']['maps']:
+            self.map_list.addItem(os.path.basename(map_))
+
         self.action_save_labels.triggered.connect(self.save_label_and_dtypes)
         self.action_save.triggered.connect(self.save)
         self.action_reload.triggered.connect(self.reload)
         self.action_new_save_component.triggered.connect(self.new_save_component)
         self.action_pop_last.triggered.connect(self.pop_last)
+
+        self.add_map_button.clicked.connect(self.add_map)
+        self.remove_map_button.clicked.connect(self.remove_map)
+        self.action_save_data.triggered.connect(self.save_data)
 
     def get_label(self, i, save_id):
         try:
@@ -158,7 +168,32 @@ class Window(QMainWindow):
         with open('data/acp_data/labels.json', 'w') as datafile:
             json.dump(self.labels, datafile)
 
+    def add_map(self):
+        path, _ = QtWidgets.QFileDialog.getOpenFileName(self, 'Select the map to add', 'data/maps')
+        if path:
+            assert 'data/maps' in path.replace('\\', '/')
+            self.map_list.addItem(os.path.basename(path))
 
+    def remove_map(self):
+        index = self.map_list.currentRow()
+        item = self.map_list.takeItem(index)
+        self.map_list.removeItemWidget(item)
+
+    def save_data(self):
+
+        with open('data/data__.yml') as datafile:
+            additional_data = yaml.safe_load(datafile)
+
+        maps = []
+        for i in range(self.map_list.count()):
+            map_name = self.map_list.item(i).text()
+            map_path = os.path.join('data/maps', map_name)
+            maps.append(map_path.replace('\\', '/'))
+
+        additional_data['game']['maps'] = maps
+
+        with open('data/data__.yml', 'w') as datafile:
+            yaml.safe_dump(additional_data, datafile)
 
 
 

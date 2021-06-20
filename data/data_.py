@@ -4,9 +4,16 @@ from utils.save_modifier import SaveComponent
 from utils.types import DataContainer
 from pymunk.vec2d import Vec2d
 from pyglet.window.key import *
+import yaml
+
+with open('data/data__.yml', 'r') as datafile:
+    additional_data = yaml.safe_load(datafile)
+
+del datafile
 
 
 class Data(DataContainer):
+
     save_path = 'data/saves/save.data'
     default_save_path = 'data/saves/default_save.data'
     resources_path = './resources/'
@@ -372,7 +379,7 @@ class Data(DataContainer):
         heart_positions = [(x_offset + spacing * i, y) for (i, x_offset, spacing, y)
                            in zip(range(_number), [_x_offset] * _number, [_spacing] * _number, [_y] * _number)]
 
-        maps = ('data/maps/temp3.yml', 'data/maps/test_falling_block.yml', 'data/maps/temptemp.yml')
+        maps = additional_data['game']['maps']
 
         death_screen_res_path = 'special_objects/death_screen.obj'
 
