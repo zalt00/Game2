@@ -31,6 +31,10 @@ class CameraHandler:
         self.moving_threshold = 2  # minimal offset between the target and the current position to move the camera
         self.left_limit = 2_147_483_640
         self.right_limit = -2_147_483_640
+
+        self.top_limit = -2_147_483_640
+        self.bottom_limit = 2_147_483_640
+
         self.max_speed = 2_147_483_640
 
     def add_trajectory(self, target, total_duration, fade_in, fade_out, relative=False):
@@ -88,15 +92,27 @@ class CameraHandler:
             self.lock_mode = 'strict'
 
     def recenter_camera(self, player_position):
+        self.pos[:] = self.get_position_target(player_position)
+        return self.pos
+
+    def get_position_target(self, player_position):
+        pos = list(self.pos)
+
         if self.locked[0]:
-            self.pos[0] = self.relative_pos[0] - player_position[0]
-            if self.pos[0] > self.left_limit:
-                self.pos[0] = self.left_limit
+            pos[0] = self.relative_pos[0] - player_position[0]
+            if pos[0] > self.left_limit:
+                pos[0] = self.left_limit
+            elif pos[0] < self.right_limit:
+                pos[0] = self.right_limit
 
         if self.locked[1]:
-            self.pos[1] = self.relative_pos[1] - player_position[1]
+            pos[1] = self.relative_pos[1] - player_position[1]
+            if pos[1] > self.bottom_limit:
+                pos[1] = self.bottom_limit
+            elif pos[1] < self.top_limit:
+                pos[1] = self.top_limit
 
-        return self.pos
+        return pos
 
     def update_camera_position(self, n):
         if self.trajectory is not None:
@@ -132,21 +148,15 @@ class CameraHandler:
                     self.relative_pos[1] = self.pos[1] + self.player.position_handler.body.position.y
 
         if self.trajectory is None or self.is_current_trajectory_relative:
+
+            pos_target = self.get_position_target(self.player.position_handler.body.position)
+
             if self.locked[0]:
                 if self.lock_mode == 'strict':
-                    self.pos[0] = self.relative_pos[0] - self.player.position_handler.body.position.x
-                    if self.pos[0] > self.left_limit:
-                        self.pos[0] = self.left_limit
-                    if self.pos[0] < self.right_limit:
-                        self.pos[0] = self.right_limit
+                    self.pos[0] = pos_target[0]
 
                 elif self.lock_mode == 'follow':
-                    dif = self.relative_pos[0] - self.player.position_handler.body.position.x - self.pos[0]
-                    if self.pos[0] + dif > self.left_limit:
-                        dif = self.left_limit - self.pos[0]
-
-                    if self.pos[0] + dif < self.right_limit:
-                        dif = self.right_limit - self.pos[0]
+                    dif = -self.pos[0] + pos_target[0]
 
                     dx = dif / self.follow_sensitivity
                     if abs(dif) > self.moving_threshold:
@@ -156,9 +166,10 @@ class CameraHandler:
 
             if self.locked[1]:
                 if self.lock_mode == 'strict':
-                    self.pos[1] = self.relative_pos[1] - self.player.position_handler.body.position.y
+                    self.pos[1] = pos_target[1]
                 elif self.lock_mode == 'follow':
-                    dif = self.relative_pos[1] - self.player.position_handler.body.position.y - self.pos[1]
+                    dif = -self.pos[1] + pos_target[1]
+
                     dy = dif / self.follow_sensitivity
                     if abs(dif) > self.moving_threshold:
                         if abs(dy) > self.max_speed:

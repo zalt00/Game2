@@ -21,40 +21,16 @@ checkpoints:
   - - 107
     - 32
 objects_data:
-  constraint21_constraint:
+  constraint22_constraint:
     anchor_a:
-    - -64
+    - 0
     - 160
     anchor_b:
     - 0
     - 80
-    name: constraint21
-    object_a: dynamic_struct
-    object_b: support
-    res: special_objects/rope.obj
-    type: constraint
-  constraint22_constraint:
-    anchor_a:
-    - 64
-    - 160
-    anchor_b:
-    - 0
-    - 0
     name: constraint22
     object_a: dynamic_struct
     object_b: kinematic_s_1
-    res: special_objects/rope.obj
-    type: constraint
-  constraint23_constraint:
-    anchor_a:
-    - -64
-    - 32
-    anchor_b:
-    - 0
-    - 80
-    name: constraint23
-    object_a: dynamic_struct
-    object_b: support
     res: special_objects/rope.obj
     type: constraint
   dynamic_struct_structure:
@@ -73,8 +49,8 @@ objects_data:
     mass: 100
     name: dynamic_struct
     pos:
-    - 603.0
-    - 337.0
+    - 758.0
+    - 110.0
     res: structures/dynamic_structures/forest/test.st
     state: base
     type: structure
@@ -563,12 +539,14 @@ triggers_data:
     - mode: follow
       type_: LockCamera
       x: true
-      y: false
+      y: true
     - target: 1
       type_: DisableTrigger
-    - follow_sensitivity: 30
+    - bottom_limit: 0
+      follow_sensitivity: 30
       left_limit: 0
       moving_threshold: 4
+      top_limit: -150
       type_: CameraSettings
     - target: 2
       type_: EnableTrigger

@@ -433,17 +433,18 @@ class Data(DataContainer):
             running_max_velocity = 132
             air_control_max_velocity = 100
             acceleration = 33
-            air_control_acceleration = 15
+            air_control_acceleration = 50
             dash_speed = 2000
             dash_length = 6  # in ticks
 
             on_death_trigger_id = 99000
 
             class StateDuration(DataContainer):
-                idle = 0.017
+                idle = 0.034
                 fall = 0.017
                 jump = 0.017
                 dash = 7 / 60
+                land = 0.14
 
         class BaseBGData(DataContainer):
             camera_pos_x = SaveComponent(0)

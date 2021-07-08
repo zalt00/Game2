@@ -78,6 +78,14 @@ set_camera_settings:
     type: int
     optional: true
     default: 0
+  top_limit:
+    type: int
+    optional: true
+    default: 0
+  bottom_limit:
+    type: int
+    optional: true
+    default: 0
   max_speed:
     type: int
     optional: true

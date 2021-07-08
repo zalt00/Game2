@@ -85,6 +85,8 @@ class GameActionGetter(ActionGetter):
         moving_threshold: int = -1
         left_limit: int = 2_147_483_641
         right_limit: int = -2_147_483_641
+        top_limit: int = -2_147_483_641
+        bottom_limit: int = 2_147_483_641
         max_speed: int = 2_147_483_641
 
         def __call__(self):
@@ -98,6 +100,11 @@ class GameActionGetter(ActionGetter):
                 self.ag.camera_handler.max_speed = self.max_speed
             if self.right_limit != -2_147_483_641:
                 self.ag.camera_handler.right_limit = self.right_limit
+
+            if self.top_limit != -2_147_483_641:
+                self.ag.camera_handler.top_limit = self.top_limit
+            if self.bottom_limit != 2_147_483_641:
+                self.ag.camera_handler.bottom_limit = self.bottom_limit
 
     @dataclass
     class SetCameraPosition(AbstractAction):

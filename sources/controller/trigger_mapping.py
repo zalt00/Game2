@@ -71,7 +71,7 @@ class TriggerMapping:
             if not self._invalid_position:
                 self._invalid_position = True
                 logger.debug('invalid position')
-                self._slow_update(x, y)
+            self._slow_update(x, y)
         else:
             self._invalid_position = False
             tile_id = self.get_tile_index(x)

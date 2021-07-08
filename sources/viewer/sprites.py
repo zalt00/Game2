@@ -145,7 +145,7 @@ class BaseSprite(pyglet.sprite.Sprite, metaclass=SpriteMetaclass, instantiable=F
 class Entity(BaseSprite, metaclass=SpriteMetaclass):
     def __init__(self, batch, layer_group, position_handler,
                  image_handler, screen_offset, physic_state_updater, particles_handler,
-                 action_manager):
+                 action_manager, default_state='idle'):
 
         self._initializing = True
 
@@ -176,11 +176,11 @@ class Entity(BaseSprite, metaclass=SpriteMetaclass):
         self.physic_state_updater = physic_state_updater
         self.particles_handler = particles_handler
 
-        self._state = 'idle'
+        self._state = default_state
 
         self._direction = 1
 
-        super().__init__(batch, layer_group, position_handler, image_handler, screen_offset)
+        super().__init__(batch, layer_group, position_handler, image_handler, screen_offset, self._state)
 
         self.action_manager = action_manager
 

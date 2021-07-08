@@ -281,7 +281,7 @@ class Game:
                 heart.state = 'empty'
 
         self.inversion_handler = TemporalInversionHandler(self.space, self.window.add_entity,
-                                                          self.window.add_solid_color_background, self.viewer_page)
+                                                          self.window.add_structure, self.viewer_page)
 
         self.window.update = self.update_positions
         self.window.update_image = self.update_images

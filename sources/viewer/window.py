@@ -167,13 +167,13 @@ class Window(pyglet.window.Window):
         return sprite
 
     def add_entity(self, page, layer, position_handler, res, physics_updater, particle_handler,
-                   action_manager):
+                   action_manager, *args, **kwargs):
         if isinstance(res, str):
             res = self.resource_loader.load(res)
         batch = page.batch
         image_handler = ihdlr.TBEntityImageHandler(res, lambda *_, **__: None)
         sprite = self._add_sprite(batch, 'Entity', layer, position_handler, image_handler,
-                                  physics_updater, particle_handler, action_manager)
+                                  physics_updater, particle_handler, action_manager, *args, **kwargs)
         return sprite
 
     def add_structure(self, page, layer, position_handler, res, dynamic=False):

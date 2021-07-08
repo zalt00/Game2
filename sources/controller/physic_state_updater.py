@@ -37,6 +37,15 @@ class BasePhysicStateUpdater:
         pass
 
 
+class InvertedGhostlyStructurePhysicStateUpdater(BasePhysicStateUpdater):
+    def __init__(self):
+        super(InvertedGhostlyStructurePhysicStateUpdater, self).__init__({})
+        self.current_state_name = 'base'
+
+    def change_physic_state(self, entity, state):
+        entity.state = 'base'
+
+
 class PlayerPhysicStateUpdater(BasePhysicStateUpdater):
     def __init__(self, body, landing_callback, save_position_callback, space, states_durations):
         super(PlayerPhysicStateUpdater, self).__init__(states_durations)
@@ -55,6 +64,8 @@ class PlayerPhysicStateUpdater(BasePhysicStateUpdater):
         self.land = landing_callback
         self.save_position = save_position_callback
         self.a = 11
+
+        self.counter2 = 0
 
         self.time_spent_on_ground_with_wrong_state = 0
 
@@ -91,6 +102,9 @@ class PlayerPhysicStateUpdater(BasePhysicStateUpdater):
 
         self.actions = {}
         self._identifier = 0
+
+        main_width = self.space.objects['player'][3]['main_width']
+        self.player_width = main_width
 
     def get_identifier(self):
         self._identifier += 1
@@ -194,21 +208,46 @@ class PlayerPhysicStateUpdater(BasePhysicStateUpdater):
         if len(points) == 2:
             self.x1, self.x2 = points[0].point_a.x, points[1].point_a.x
 
+        ground = arbiter.shapes[1]
+        on_dynamic_ground = self.collide_with_dynamic_ground is not None  # ambiguous
+
         body = arbiter.shapes[1].body
-        for contact_point in points:
-            py = round(self.body.position.y)
-            on_dynamic_ground = self.collide_with_dynamic_ground is not None
+        stable_ground = body.body_type == pymunk.Body.STATIC
 
-            if (((py - 8 <= round(contact_point.point_a.y) <= py + 8)
-                    and (py - 8 <= round(contact_point.point_b.y) <= py + 8)) or on_dynamic_ground):
+        py = round(self.body.position.y)
 
-                if (((round(contact_point.point_a.y) == py - 1)
-                     or (round(contact_point.point_b.y) == py - 1))) or self.body.velocity.length > 100:
+        do_check_collision = True
+        if stable_ground:
+            # for a static ground checks if the minimum y position of the ground is above the player's y position
+            # in that case it wont analyse in details the collision
+            ymin = min(ground.a.y, ground.b.y) - 1
+            if py < body.position.y + ymin:
 
-                    self.stable_ground = body.body_type == pymunk.Body.STATIC
+                xmin = min(ground.a.x, ground.b.x) + body.position.x
+                xmax = max(ground.a.x, ground.b.x) + body.position.x
+                if not (xmin <= self.body.position.x <= xmax):
+                    do_check_collision = False
+
+        if do_check_collision:
+            seg_a, seg_b = body.local_to_world(ground.a), body.local_to_world(ground.b)
+
+            # computes the equation of the continuum that holds the segment of the ground
+            p = (seg_a.y - seg_b.y) / (seg_a.x - seg_b.x)
+            q = (seg_a.x * seg_b.y - seg_b.x * seg_a.y) / (seg_a.x - seg_b.x)
+
+            for contact_point in points:
+
+                a = contact_point.point_a
+                b = contact_point.point_b
+
+                # checks if the player's position is bellow the continuum at the contact point, if the velocity is
+                # small that means the collision is invalid
+                if not (min(a.y, b.y) < p * a.x + q or min(a.y, b.y) < p * b.x + q) or self.body.velocity.y < -80:
 
                     if (self.body.velocity.y < 1
                             or on_dynamic_ground or self.current_state_name == 'dash' or not self.stable_ground):
+
+                        self.stable_ground = stable_ground
 
                         self.on_ground = True
                         self.collide_with_slippery_slope = False
@@ -217,18 +256,18 @@ class PlayerPhysicStateUpdater(BasePhysicStateUpdater):
                             self.collide_with_dynamic_ground = body
                         return True
 
-        if body.velocity.length > 500:
+        if self.body.velocity.length > 300:
             # if the player goes too fast, ignoring the collision can cause physic bugs far worse than
             # just a weird interaction
             return True
 
-        on_ground = bool(self.collide_with_dynamic_ground is not None or self.current_state_name == 'dash')
+        on_ground = bool(not stable_ground or self.current_state_name == 'dash')
         if on_ground:
-            if not on_dynamic_ground:
+            if stable_ground:
                 self.collide_but_ignored.add(arbiter.shapes[1])
             if len(self.collide_but_ignored) >= self.ground_collision_counter:
                 self.on_ground = False
-                vec = self.body.velocity.x / 10, self.body.velocity.y - 2
+                vec = self.body.velocity.x / 10, self.body.velocity.y - 20
                 self.body.velocity = vec
 
         return self.on_ground
@@ -375,6 +414,14 @@ class PlayerPhysicStateUpdater(BasePhysicStateUpdater):
                     else:
                         self.a = 0
                         on_ground = True
+
+                    if self.on_ground and self.ground_collision_counter == 0:
+                        if self.counter2 > 6:
+                            self.on_ground = False
+                        else:
+                            self.counter2 += 1
+                    else:
+                        self.counter2 = 0
 
                     # animation util
                     if not on_ground:

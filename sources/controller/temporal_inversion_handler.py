@@ -5,10 +5,11 @@ import numpy as np
 import math
 from .position_handler import InvertedObjectPositionHandler, StaticPositionHandler
 from .action_manager.sprite_action_manager import BaseEntityActionManager
-from .physic_state_updater import InvertedEntityStateUpdater
+from .physic_state_updater import InvertedEntityStateUpdater, InvertedGhostlyStructurePhysicStateUpdater
 from .particles_handler import ParticleHandler
 import dataclasses
 import pymunk
+from random import randint
 
 
 class TemporalInversionHandler:
@@ -26,7 +27,7 @@ class TemporalInversionHandler:
         state: str
         direction: int
 
-    def __init__(self, space, add_entity_callback, add_solid_color_background, page):
+    def __init__(self, space, add_entity_callback, add_structure, page, **additional_data):
         self.objects = dict()
         self.array = None
 
@@ -50,12 +51,14 @@ class TemporalInversionHandler:
         self.space = space
 
         self.add_ghost = add_entity_callback
-        self.add_solid_color_background = add_solid_color_background
+        self.add_structure = add_structure
         self.page = page
 
         self.inversion_started = False
 
         self.t = 0
+
+        self.inversion_effect_res = additional_data.get('inversion_effect', 'special_objects/inversion_effect.obj')
 
     def init_recording_array(self, kinematic_structures, dynamic_structures, entities, constraints):
         self.objects = dict()
@@ -166,6 +169,7 @@ class TemporalInversionHandler:
 
         for obj_name, obj in self.dynamic_structures.items():
             self.setup_object(obj_name, obj)
+            self.setup_ghostly_structure(obj_name, obj)
 
         for obj_name, obj in self.entities.items():
             self.setup_ghost(obj_name, obj)
@@ -202,7 +206,7 @@ class TemporalInversionHandler:
         self._setup_ghost(obj_name, obj)
 
         for time_offset in (-10, 6, -5, -8, -6, 3, -15):
-            self._setup_ghost(obj_name, obj, opacity=20, time_offset=time_offset)
+            self._setup_ghost(obj_name, obj, opacity=25, time_offset=time_offset)
 
     def _setup_ghost(self, obj_name, obj, opacity=120, time_offset=0):
         get_position_callback = self.define_get_position_data_callback(self.name_to_id[obj_name], time_offset)
@@ -217,6 +221,31 @@ class TemporalInversionHandler:
 
         ghost = self.add_ghost(self.page, -1, position_handler, obj.image_handler.res, state_updater,
                                ParticleHandler(lambda *_, **__: None), action_manager)
+        action_manager.entity = ghost
+        ghost.base_opacity = opacity
+        ghost.opacity = opacity
+        self.page.ghosts.add(ghost)
+
+    def setup_ghostly_structure(self, obj_name, obj):
+        for time_offset in (-10, 6, -5, -8, -6, 3, -15):
+
+            self._setup_ghostly_structure(obj_name, obj, 25, time_offset=time_offset)
+            self._setup_ghostly_structure(obj_name, obj, 25, time_offset=time_offset - 60)
+
+    def _setup_ghostly_structure(self, obj_name, obj, opacity=120, time_offset=0):
+        get_position_callback = self.define_get_position_data_callback(self.name_to_id[obj_name], time_offset)
+
+        position_handler = InvertedObjectPositionHandler(None, get_position_callback, self.space, True)
+
+        action_manager = BaseEntityActionManager(None)
+
+        state_updater = InvertedGhostlyStructurePhysicStateUpdater()
+
+        ghost = self.add_ghost(self.page, -1, position_handler, obj.image_handler.res, state_updater,
+                               ParticleHandler(lambda *_, **__: None), action_manager, default_state='base')
+
+        ghost.color = (255, 255, 255)
+
         action_manager.entity = ghost
         ghost.base_opacity = opacity
         ghost.opacity = opacity
@@ -248,8 +277,8 @@ class TemporalInversionHandler:
             self.objects[obj_name].position_handler = position_handler
 
         # blue screen effect
-        sprite = self.add_solid_color_background(self.page,
-                                                 10, StaticPositionHandler((0, 0)), (107, 134, 255, 40))
+        sprite = self.add_structure(self.page, 10, StaticPositionHandler((0, 0)), self.inversion_effect_res)
+        sprite.opacity = 200
         sprite.affected_by_screen_offset = False
         self.page.special_inversion_effects.add(sprite)
 

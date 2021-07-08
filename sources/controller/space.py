@@ -50,7 +50,7 @@ class GameSpace(pymunk.Space):
         shape.elasticity = 0
         self.add(body, shape, shape2)
         
-        self.objects[name] = (body, shape, shape2)
+        self.objects[name] = (body, shape, shape2, dict(main_width=round(width/3) * 2, aux_width=width * 2 / 3 * 2))
 
     def add_structure(self, pos, walls, segments, name, action_on_touch=None, is_slippery_slope=False,
                       is_kinematic=False):
@@ -92,7 +92,7 @@ class GameSpace(pymunk.Space):
             points.add(tuple(a))
             points.add(tuple(b))
 
-            s = pymunk.Segment(body, a, b, 2.5)
+            s = pymunk.Segment(body, a, b, 2)
             shapes.append(s)
             s.friction = frictions[0]
             s.collision_type = 2 + is_slippery_slope
@@ -103,7 +103,7 @@ class GameSpace(pymunk.Space):
             points.add(tuple(a))
             points.add(tuple(b))
 
-            s = pymunk.Segment(body, a, b, 2.5)
+            s = pymunk.Segment(body, a, b, 2)
             shapes.append(s)
             s.friction = frictions[1]
             s.collision_type = 1
