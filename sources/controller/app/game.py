@@ -141,9 +141,6 @@ class Game:
         self.window.game_page.add_child(self.viewer_page)
         self.window.set_page(self.window.game_page)
 
-        # self.window.res_loader.cache.clear()
-        return_to_main_menu = self.return_to_main_menu
-
         if self.debug_draw:
             self.draw_options = DrawOptions(self.window)
         else:
@@ -152,11 +149,10 @@ class Game:
         self.space = GameSpace()
 
         ### BG ###
-        dynamic = True
         n_layers = self.window.get_number_of_layers(self.level_res)
         pos = self.level['background_data']['pos']
         position_handler = BgLayerPositionHandler(pos, self.window.screen_offset)
-        pos_hdlrs = [position_handler for _ in range(n_layers)]
+        pos_hdlrs = [position_handler] * n_layers
 
         bg_layers = self.window.add_bg(
             self.viewer_page,
@@ -190,7 +186,7 @@ class Game:
         self.dynamic_structures = dict()
 
         ### CAMERA ###
-        self.camera_handler = CameraHandler((0, 0), None)
+        self.camera_handler = CameraHandler((0, 0))
         self.camera_handler.move_to(x=self.model.Game.BaseBGData.camera_pos_x.get(self.current_save_id),
                                     y=self.model.Game.BaseBGData.camera_pos_y.get(self.current_save_id))
 
@@ -202,19 +198,13 @@ class Game:
 
         ### TRIGGERS ###
         self.triggers = TriggerMapping(100)
-        self.ag = GameActionGetter(self.triggers, self.window, self.camera_handler, self.entities, self.model,
-                                   self.current_save_id, self.load_map_on_next_frame, self.schedule_function,
-                                   self.kinematic_structures, self.init_inversion_handler_recording_array,
-                                   self.start_recording_for_inversion, self.start_inversion, self.stop_inversion,
-                                   self.checkpoints)
+        self.ag = GameActionGetter(self)  # GameActionGetter only holds a weak reference to self
         for trigdata in self.level['triggers_data'].values():
             self.triggers[trigdata['id']] = Trigger(trigdata, self.ag)
 
         #####
 
-        action_manager = GameActionManager(
-            None, return_to_main_menu, self.save_position, self.toggle_debug_draw, self.pause,
-            self.show_player_debug_values)
+        action_manager = GameActionManager(self)  # does not hold a reference to self
         self.action_manager = action_manager
 
         ### OBJECTS ###
@@ -297,12 +287,12 @@ class Game:
         physic_state_updater = BasePhysicStateUpdater(dict())
         position_handler = StaticPositionHandler(data['pos'])
         particle_handler = ParticleHandler(self.spawn_particle)
-        action_manager = BaseEntityActionManager(None)
+        action_manager = BaseEntityActionManager()
 
         entity = self.window.add_entity(self.viewer_page, 0, position_handler, res_name, physic_state_updater,
                                         particle_handler, action_manager)
 
-        action_manager.entity = entity
+        action_manager.init_entity(entity)
         self.entities[name] = entity
 
     def init_structure(self, data):
@@ -384,7 +374,7 @@ class Game:
                                        player_data.width, (player_data.pos_x.get(self.current_save_id),
                                                            player_data.pos_y.get(self.current_save_id)), name)
 
-        player_action_manager = PlayerActionManager(None, self.player_death,
+        player_action_manager = PlayerActionManager(self.player_death,
                                                     self.model.Game.BasePlayerData, self.current_save_id, self.hearts)
 
         self.player = self.window.add_entity(
@@ -399,13 +389,13 @@ class Game:
             action_manager=player_action_manager
         )
 
-        player_action_manager.entity = self.player
+        player_action_manager.init_entity(self.player)
 
-        self.camera_handler.player = self.player
+        self.camera_handler.init_player(self.player)
         self.player.position_handler.do_update_triggers = True
 
         self.viewer_page.entities.add(self.player)
-        self.action_manager.player = self.player
+        self.action_manager.init_player(self.player)
 
         self.entities[name] = self.player
 

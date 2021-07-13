@@ -213,7 +213,7 @@ class TemporalInversionHandler:
 
         position_handler = InvertedObjectPositionHandler(None, get_position_callback, self.space, True)
 
-        action_manager = BaseEntityActionManager(None)
+        action_manager = BaseEntityActionManager()
 
         get_state_callback = self.define_get_state_data_callback(self.entity_name_to_entity_id[obj_name],
                                                                  obj_name, time_offset)
@@ -221,7 +221,7 @@ class TemporalInversionHandler:
 
         ghost = self.add_ghost(self.page, -1, position_handler, obj.image_handler.res, state_updater,
                                ParticleHandler(lambda *_, **__: None), action_manager)
-        action_manager.entity = ghost
+        action_manager.init_entity(ghost)
         ghost.base_opacity = opacity
         ghost.opacity = opacity
         self.page.ghosts.add(ghost)
@@ -237,7 +237,7 @@ class TemporalInversionHandler:
 
         position_handler = InvertedObjectPositionHandler(None, get_position_callback, self.space, True)
 
-        action_manager = BaseEntityActionManager(None)
+        action_manager = BaseEntityActionManager()
 
         state_updater = InvertedGhostlyStructurePhysicStateUpdater()
 
@@ -246,7 +246,7 @@ class TemporalInversionHandler:
 
         ghost.color = (255, 255, 255)
 
-        action_manager.entity = ghost
+        action_manager.init_entity(ghost)
         ghost.base_opacity = opacity
         ghost.opacity = opacity
         self.page.ghosts.add(ghost)

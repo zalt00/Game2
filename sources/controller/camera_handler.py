@@ -6,7 +6,7 @@ from .trajectory import FadeInFadeOutTrajectory
 
 
 class CameraHandler:
-    def __init__(self, pos, player):
+    def __init__(self, pos):
         self.pos = list(pos)  # position is ambiguous, it is actually the offset to apply to the sprites
         # that means that when the camera travels to the right, the x position of the camera actually decreases
         # TODO rename and add a position property which indicates the real position of the camera
@@ -20,7 +20,7 @@ class CameraHandler:
         self.trajectory_queue = Queue()
         self.is_current_trajectory_relative = False
 
-        self.player = player
+        self.player = None
 
         self.relative_pos = [0, 0]  # relative to player
         self.locked = [False, False]
@@ -36,6 +36,9 @@ class CameraHandler:
         self.bottom_limit = 2_147_483_640
 
         self.max_speed = 2_147_483_640
+
+    def init_player(self, player):
+        self.player = player
 
     def add_trajectory(self, target, total_duration, fade_in, fade_out, relative=False):
         target = list(target)

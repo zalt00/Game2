@@ -10,6 +10,7 @@ from utils.logger import logger
 import pyglet
 import os
 import glob
+import weakref
 
 
 class GameActionManager(ActionManager):
@@ -32,16 +33,16 @@ class GameActionManager(ActionManager):
     SCREENSHOT = 18
     TOGGLE_PLAYER_DEBUG_VALUES = 19
 
-    def __init__(self, player,
-                 return_to_main_menu, save_callback, toggle_debug_draw_callback, pause_callback,
-                 show_player_debug_values):
+    def __init__(self, game_app):
+
         super().__init__()
-        self.player = player
 
-        self.save = save_callback
+        self.player = None
 
-        self.toggle_debug_draw = toggle_debug_draw_callback
-        self.pause = pause_callback
+        self.save = game_app.save_position
+
+        self.toggle_debug_draw = game_app.toggle_debug_draw
+        self.pause = game_app.pause
 
         self.do_handlers[self.RIGHT] = self.walk_right
         self.stop_handlers[self.RIGHT] = self.stop_walking_right
@@ -56,7 +57,7 @@ class GameActionManager(ActionManager):
         self.do_handlers[self.JUMP] = self.jump
 
         self.do_handlers[self.SAVE] = self.save
-        self.do_handlers[self.MENU] = return_to_main_menu
+        self.do_handlers[self.MENU] = game_app.return_to_main_menu
 
         self.do_handlers[self.TOGGLE_DEBUG_DRAW] = self.toggle_debug_draw
         self.do_handlers[self.MANUALLY_RAISE_ERROR] = self.manually_raise_error
@@ -73,7 +74,10 @@ class GameActionManager(ActionManager):
 
         self.are_player_debug_values_hidden = False
 
-        self.show_player_debug_values = show_player_debug_values
+        self.show_player_debug_values = game_app.show_player_debug_values
+
+    def init_player(self, player):
+        self.player = player
 
     def dev_command(self):
         self.player.call_action('die')

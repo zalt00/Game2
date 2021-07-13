@@ -7,7 +7,10 @@ import numpy as np
 
 class BaseEntityActionManager:
 
-    def __init__(self, entity):
+    def __init__(self):
+        self.entity = None
+
+    def  init_entity(self, entity):
         self.entity = entity
 
     def do(self, action_name, *args, **kwargs):
@@ -28,8 +31,8 @@ class BaseEntityActionManager:
 
 
 class PlayerActionManager(BaseEntityActionManager):
-    def __init__(self, entity, on_death_callback, player_data, current_save_id, hearts):
-        super(PlayerActionManager, self).__init__(entity)
+    def __init__(self, on_death_callback, player_data, current_save_id, hearts):
+        super(PlayerActionManager, self).__init__()
 
         self.on_death = on_death_callback
 

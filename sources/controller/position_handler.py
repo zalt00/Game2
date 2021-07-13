@@ -322,9 +322,9 @@ class EntityPositionHandler:
 
     def end_of_dash(self, entity):
         if entity.secondary_state == 'run':
-            self.body.velocity = Vec2d((self.running_max_speed + self.acceleration) * entity.direction, 0)
+            self.body.velocity = Vec2d((self.running_max_speed + self.acceleration * 3) * entity.direction, 0)
         elif entity.secondary_state == 'walk':
-            self.body.velocity = Vec2d((self.walking_max_speed + self.acceleration) * entity.direction, 0)
+            self.body.velocity = Vec2d((self.walking_max_speed + self.acceleration * 2) * entity.direction, 0)
         else:
             self.body.velocity = Vec2d(0, 0)
 
